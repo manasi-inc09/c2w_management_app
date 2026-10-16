@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/members_detail_list.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -104,48 +105,53 @@ class _MembersListState extends State<MembersList> {
             itemBuilder: (context,index){
             return Column(
               children: [
-                Container(
-                  height: 80,
-                  width: 400,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                    color:AppTheme().appBarBackgroundColor
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(width: 1,color: Colors.white)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>MembersDetailList()));
+                  },
+                  child: Container(
+                    height: 80,
+                    width: 400,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      color:AppTheme().appBarBackgroundColor
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 10,
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.asset("assets/image.png",fit: BoxFit.cover,)
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Sumit Katkar",style:GoogleFonts.figtree(fontSize: 15,fontWeight: FontWeight(600),color: Colors.white)),
-                      Text("Member",style:GoogleFonts.figtree(fontSize: 13,fontWeight: FontWeight(400),color: Color.fromRGBO(255, 255, 255, 0.6)))
-                    ],
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1,color: Colors.white)
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Image.asset("assets/image.png",fit: BoxFit.cover,)
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Sumit Katkar",style:GoogleFonts.figtree(fontSize: 15,fontWeight: FontWeight(600),color: Colors.white)),
+                        Text("Member",style:GoogleFonts.figtree(fontSize: 13,fontWeight: FontWeight(400),color: Color.fromRGBO(255, 255, 255, 0.6)))
+                      ],
+                    ),
+                    Spacer(),
+                    Text("₹8560",style:GoogleFonts.figtree(fontSize:15 ,fontWeight: FontWeight(600),color: Colors.white)),
+                    const SizedBox(
+                      width: 10,
+                    )
+                      ],
+                    ),
+                    
+                    
                   ),
-                  Spacer(),
-                  Text("₹8560",style:GoogleFonts.figtree(fontSize:15 ,fontWeight: FontWeight(600),color: Colors.white)),
-                  const SizedBox(
-                    width: 10,
-                  )
-                    ],
-                  ),
-                  
-                  
                 ),
                 const SizedBox(
                   height: 10,

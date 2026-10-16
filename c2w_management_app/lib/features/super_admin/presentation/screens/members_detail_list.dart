@@ -21,7 +21,11 @@ class _MembersDetailListState extends State<MembersDetailList> {
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         titleSpacing: 0,
-        leading: Icon(Icons.arrow_back_sharp,color: Colors.white,),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Icon(Icons.arrow_back_sharp,color: Colors.white,)),
         backgroundColor: AppTheme().appBarBackgroundColor,
         title: Container(
                   // height: 80,

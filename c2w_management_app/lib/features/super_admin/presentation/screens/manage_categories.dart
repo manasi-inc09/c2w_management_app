@@ -42,7 +42,11 @@ class _ManageCategoriesState extends State<ManageCategories> {
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
         titleSpacing: 0,
-        leading: Icon(Icons.arrow_back, color: Colors.white),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Icon(Icons.arrow_back, color: Colors.white)),
         title: Text(
           "Manage Categories",
           style: GoogleFonts.figtree(

@@ -74,7 +74,11 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
-        leading: Icon(Icons.arrow_back, color: Colors.white),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Icon(Icons.arrow_back, color: Colors.white)),
         title: Text(
           "Transactions Details",
           style: GoogleFonts.figtree(

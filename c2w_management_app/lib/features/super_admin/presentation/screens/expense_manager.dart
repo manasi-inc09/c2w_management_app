@@ -1,4 +1,11 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/manage_categories.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/memberslist.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/view_all_expenses.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/wallet_screen.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseManager extends StatefulWidget {
@@ -40,7 +47,11 @@ class _ExpenseManagerState extends State<ExpenseManager> {
         centerTitle: true,
         backgroundColor: Color.fromRGBO(31, 34, 49, 1),
         actions: [
-          Icon(Icons.account_balance_wallet, color: Colors.amber),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context,MaterialPageRoute(builder: (context)=>WalletScreen()));
+            },
+            child: Icon(Icons.account_balance_wallet, color: Colors.amber)),
           const SizedBox(width: 10),
         ],
       ),
@@ -184,13 +195,18 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildMetricCard(
-                            title: 'Unpaid Amount',
-                            value: '5000',
-                            icon: Icons.trending_down,
-                            iconColor: const Color(0xFFFF5271),
-                            iconBgColor: const Color(0xFF3E1D2D),
-                            cardBg: cardColor,
+                          child: GestureDetector(
+                            onTap: () {
+                              
+                            },
+                            child: _buildMetricCard(
+                              title: 'Unpaid Amount',
+                              value: '5000',
+                              icon: Icons.trending_down,
+                              iconColor: const Color(0xFFFF5271),
+                              iconBgColor: const Color(0xFF3E1D2D),
+                              cardBg: cardColor,
+                            ),
                           ),
                         ),
                       ],
@@ -204,25 +220,35 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: _buildMetricCard(
-                            title: 'Categories',
-                            value: '12',
-                            icon: Icons.check_circle_outline,
-                            iconColor: Color.fromRGBO(252, 174, 16, 1),
-
-                            iconBgColor: Color.fromRGBO(252, 174, 16, 0.2),
-                            cardBg: cardColor,
+                          child: GestureDetector(
+                            onTap: (){
+                              Navigator.push(context,MaterialPageRoute(builder: (context)=>ManageCategories()));
+                            },
+                            child: _buildMetricCard(
+                              title: 'Categories',
+                              value: '12',
+                              icon: Icons.check_circle_outline,
+                              iconColor: Color.fromRGBO(252, 174, 16, 1),
+                            
+                              iconBgColor: Color.fromRGBO(252, 174, 16, 0.2),
+                              cardBg: cardColor,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildMetricCard(
-                            title: 'Members',
-                            value: '18',
-                            icon: Icons.person_outline,
-                            iconColor: Color.fromRGBO(5, 165, 255, 1),
-                            iconBgColor: const Color(0xFF143048),
-                            cardBg: cardColor,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(context,MaterialPageRoute(builder: (context)=>MembersList()));
+                            },
+                            child: _buildMetricCard(
+                              title: 'Members',
+                              value: '18',
+                              icon: Icons.person_outline,
+                              iconColor: Color.fromRGBO(5, 165, 255, 1),
+                              iconBgColor: const Color(0xFF143048),
+                              cardBg: cardColor,
+                            ),
                           ),
                         ),
                       ],
@@ -243,12 +269,17 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                     ),
                   ),
                   Spacer(),
-                  Text(
-                    "See all >",
-                    style: TextStyle(
-                      color: Color.fromRGBO(5, 165, 255, 1),
-                      fontSize: 14,
-                      fontWeight: FontWeight(500),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context,MaterialPageRoute(builder: (context)=>ViewAllExpenses()));
+                    },
+                    child: Text(
+                      "See all >",
+                      style: TextStyle(
+                        color: Color.fromRGBO(5, 165, 255, 1),
+                        fontSize: 14,
+                        fontWeight: FontWeight(500),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -259,50 +290,78 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                 itemCount: expenseList.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    color: const Color.fromRGBO(15, 20, 36, 1),
-                    child: Row(
-                      children: [
-                        // avatar circle
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            color: Color.fromRGBO(255, 179, 167, 1),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'A',
-                            style: TextStyle(
-                              color: Color.fromRGBO(158, 54, 42, 1),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(context,MaterialPageRoute(builder: (context)=>TransactionDetails()));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      color: const Color.fromRGBO(15, 20, 36, 1),
+                      child: Row(
+                        children: [
+                          // avatar circle
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
+                              color: Color.fromRGBO(255, 179, 167, 1),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'A',
+                              style: TextStyle(
+                                color: Color.fromRGBO(158, 54, 42, 1),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 14),
-
-                       
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(width: 14),
+                    
+                         
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  expenseList[index]['name'],
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  expenseList[index]['expense'],
+                                  style: TextStyle(
+                                    color: Color.fromRGBO(126, 139, 155, 1),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                    
+                         
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                expenseList[index]['name'],
+                                expenseList[index]['Rupee'],
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                expenseList[index]['expense'],
+                                expenseList[index]['Date'],
                                 style: TextStyle(
                                   color: Color.fromRGBO(126, 139, 155, 1),
                                   fontSize: 12,
@@ -310,31 +369,8 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                               ),
                             ],
                           ),
-                        ),
-
-                       
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              expenseList[index]['Rupee'],
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              expenseList[index]['Date'],
-                              style: TextStyle(
-                                color: Color.fromRGBO(126, 139, 155, 1),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -390,21 +426,31 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'New Transactions',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context,MaterialPageRoute(builder: (context)=>CreateNewTransaction()));
+                      },
+                      child: const Text(
+                        'New Transactions',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Divider(),
-                    const Text(
-                      'New Categories',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=>AddNewCategory()));
+                      },
+                      child: const Text(
+                        'New Categories',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -417,7 +463,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
         );
       },
       backgroundColor: Colors.blue,
-      child: const Icon(Icons.check, color: Colors.white),
+      child: const Icon(Icons.add, color: Colors.white),
     );
   },
 ),
