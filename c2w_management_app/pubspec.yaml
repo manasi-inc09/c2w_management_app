@@ -7,11 +7,14 @@ environment:
   sdk: ^3.11.5
 
 dependencies:
+  date_picker_plus: ^8.0.0
+  dotted_border: ^3.1.0
   flutter:
     sdk: flutter
   google_fonts: ^9.0.0
   toastification: ^3.2.0
   url_launcher: ^6.3.3
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +25,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/sales_admin/
+    - assets/
