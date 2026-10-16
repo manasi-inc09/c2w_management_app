@@ -1,9 +1,8 @@
-import 'package:c2w_management_app/core/app_theme.dart';
+
 import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/create_equiry.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/general_enquiry.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/manual_enquiry.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/widgets/enquiry_list.dart';
+import 'package:c2w_management_app/features/enquiry/create_equiry.dart';
+import 'package:c2w_management_app/features/enquiry/enquiry_overview.dart';
+import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -75,119 +74,7 @@ class _DashboardViewState extends State<DashboardView> {
               const SizedBox(width: 12),
             ],
           ),
-          drawer: Drawer(
-            backgroundColor: const Color(0xFF1C2030), // solid color
-            shape: const RoundedRectangleBorder(),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          "assets/images/sales_admin/core2web.png",
-                          width: 36.68,
-                          height: 30,
-                        ),
-                        Image.asset("assets/images/sales_admin/c2wtext.png"),
-                      ],
-                    ),
-                  ),
-                  const Divider(color: Colors.white12, height: 1),
-                  const SizedBox(height: 16),
-      
-                  // selected item (Home)
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2B2F42),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.home_outlined,
-                        color: Colors.white,
-                      ),
-                      title: Text(
-                        'Home',
-                        style: GoogleFonts.figtree(color: Colors.white),
-                      ),
-                      trailing: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-      
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.filter_none, color: Colors.white),
-                      title: Text(
-                        'General Enquiry',
-                        style: GoogleFonts.figtree(color: Colors.white),
-                      ),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => GeneralEnquiry(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-      
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.edit_note, color: Colors.white),
-                      title: Text(
-                        'Manual Enquiry',
-                        style: GoogleFonts.figtree(color: Colors.white),
-                      ),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ManualEnquiry(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-      
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.person_add_alt_outlined,
-                        color: Colors.white,
-                      ),
-                      title: Text(
-                        'New Signup',
-                        style: GoogleFonts.figtree(color: Colors.white),
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          
           body: SingleChildScrollView(
             child: Column(
               children: [
@@ -276,135 +163,6 @@ class _DashboardViewState extends State<DashboardView> {
                       Row(
                         children: [
                           Text(
-                            "Overview",
-                            style: GoogleFonts.figtree(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(
-                            Icons.calendar_month,
-                            color: Color.fromRGBO(5, 165, 255, 1),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            "Today",
-                            style: GoogleFonts.figtree(
-                              color: const Color.fromRGBO(5, 165, 255, 1),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      IntrinsicHeight(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '60',
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Total\nEnquiries',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const VerticalDivider(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '35',
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                    ),
-                                  ),
-                                  Text(
-                                    'General\nEnquiries',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const VerticalDivider(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '25',
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Manual\nEnquiries',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const VerticalDivider(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '10',
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                    ),
-                                  ),
-                                  Text(
-                                    'New\nSignup',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.figtree(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Text(
                             "New Enquiry",
                             style: GoogleFonts.figtree(
                               fontSize: 18,
@@ -413,13 +171,16 @@ class _DashboardViewState extends State<DashboardView> {
                             ),
                           ),
                           const Spacer(),
-                          Text(
-                            "See all",
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(context,MaterialPageRoute(builder: (context)=>Enquiry()));
+                            },
+                            child:Text("See all",
                             style: GoogleFonts.figtree(
                               fontSize: 14,
                               color: Colors.grey,
                             ),
-                          ),
+                          ),),
                           const Icon(Icons.chevron_right, color: Colors.grey),
                         ],
                       ),

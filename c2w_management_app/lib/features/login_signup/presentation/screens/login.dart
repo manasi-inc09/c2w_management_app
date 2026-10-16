@@ -1,5 +1,5 @@
 import 'package:c2w_management_app/features/login_signup/presentation/screens/signup.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/dashboard_view.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

@@ -1,17 +1,17 @@
 import 'dart:developer';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/widgets/enquiry_list.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/widgets/filters.dart';
+import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
+import 'package:c2w_management_app/features/enquiry/presentation/widgets/filters.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class GeneralEnquiry extends StatefulWidget {
-  const GeneralEnquiry({super.key});
+class Enquiry extends StatefulWidget {
+  const Enquiry({super.key});
 
   @override
-  State<GeneralEnquiry> createState() => _GeneralEnquiryState();
+  State<Enquiry> createState() => _EnquiryState();
 }
 
-class _GeneralEnquiryState extends State<GeneralEnquiry> {
+class _EnquiryState extends State<Enquiry> {
   Map<String, String?> appliedFilters = {};
   bool isSearchVisible = false;
   String searchQuery = '';
@@ -37,7 +37,7 @@ class _GeneralEnquiryState extends State<GeneralEnquiry> {
         ),
       );
     }
-    log("in general enquiry");
+    log("in  enquiry");
     return Scaffold(
       backgroundColor: const Color(0xFF070A1B),
       appBar: AppBar(
@@ -45,7 +45,7 @@ class _GeneralEnquiryState extends State<GeneralEnquiry> {
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          'General Enquiry',
+          'Enquiry Overview',
           style: GoogleFonts.figtree(
             color: Colors.white,
             fontSize: 18,

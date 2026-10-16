@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:c2w_management_app/features/sales_admin/dashboard/domain/usecase/calling.dart';
+import 'package:c2w_management_app/features/enquiry/domain/usecase/calling.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
