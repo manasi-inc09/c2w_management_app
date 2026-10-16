@@ -1,426 +1,448 @@
+import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
 import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/create_equiry.dart';
 import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/general_enquiry.dart';
 import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/manual_enquiry.dart';
 import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/widgets/enquiry_list.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(
-    const MaterialApp(debugShowCheckedModeBanner: false, home: DashboardView()),
-  );
+class DashboardView extends StatefulWidget {
+  String? isLogin;
+  DashboardView({super.key});
+
+  @override
+  State<DashboardView> createState() => _DashboardViewState();
 }
 
-class DashboardView extends StatelessWidget {
-  const DashboardView({super.key});
+class _DashboardViewState extends State<DashboardView> {
+  int currentIndex = 0;
+  
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2A1A55), Color(0xFF1B1340), Color(0xFF070A1B)],
-          stops: [0.0, 0.3, 0.6],
+    return Scaffold(
+      body: IndexedStack(
+        index: currentIndex,
+        children: [
+          Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF2A1A55), Color(0xFF1B1340), Color(0xFF070A1B)],
+            stops: [0.0, 0.3, 0.6],
+          ),
         ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
+        child:Scaffold(
           backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          iconTheme: const IconThemeData(color: Colors.white),
-          title: Row(
-            children: [
-              Image.asset(
-                "assets/images/sales_admin/core2web.png",
-                width: 36.68,
-                height: 30,
-                fit: BoxFit.cover,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Row(
+              children: [
+                Image.asset(
+                  "assets/images/sales_admin/core2web.png",
+                  width: 36.68,
+                  height: 30,
+                  fit: BoxFit.cover,
+                ),
+                Image.asset(
+                  "assets/images/sales_admin/c2wtext.png",
+                  width: 100,
+                  height: 60,
+                ),
+              ],
+            ),
+            actions: [
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.notifications_outlined, size: 32),
+                color: Colors.white,
               ),
-              Image.asset(
-                "assets/images/sales_admin/c2wtext.png",
-                width: 100,
-                height: 60,
+              ClipOval(
+                child: Image.asset(
+                  "assets/images/sales_admin/profile.png",
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.cover,
+                ),
               ),
+              const SizedBox(width: 12),
             ],
           ),
-          actions: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.notifications_outlined, size: 32),
-              color: Colors.white,
-            ),
-            ClipOval(
-              child: Image.asset(
-                "assets/images/sales_admin/profile.png",
-                width: 38,
-                height: 38,
-                fit: BoxFit.cover,
+          drawer: Drawer(
+            backgroundColor: const Color(0xFF1C2030), // solid color
+            shape: const RoundedRectangleBorder(),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          "assets/images/sales_admin/core2web.png",
+                          width: 36.68,
+                          height: 30,
+                        ),
+                        Image.asset("assets/images/sales_admin/c2wtext.png"),
+                      ],
+                    ),
+                  ),
+                  const Divider(color: Colors.white12, height: 1),
+                  const SizedBox(height: 16),
+      
+                  // selected item (Home)
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B2F42),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.home_outlined,
+                        color: Colors.white,
+                      ),
+                      title: Text(
+                        'Home',
+                        style: GoogleFonts.figtree(color: Colors.white),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+      
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: ListTile(
+                      leading: const Icon(Icons.filter_none, color: Colors.white),
+                      title: Text(
+                        'General Enquiry',
+                        style: GoogleFonts.figtree(color: Colors.white),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => GeneralEnquiry(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+      
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: ListTile(
+                      leading: const Icon(Icons.edit_note, color: Colors.white),
+                      title: Text(
+                        'Manual Enquiry',
+                        style: GoogleFonts.figtree(color: Colors.white),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ManualEnquiry(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+      
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.person_add_alt_outlined,
+                        color: Colors.white,
+                      ),
+                      title: Text(
+                        'New Signup',
+                        style: GoogleFonts.figtree(color: Colors.white),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 12),
-          ],
-        ),
-        drawer: Drawer(
-          backgroundColor: const Color(0xFF1C2030), // solid color
-          shape: const RoundedRectangleBorder(),
-          child: SafeArea(
+          ),
+          body: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+                Center(
+                  child: Column(
                     children: [
                       Image.asset(
-                        "assets/images/sales_admin/core2web.png",
-                        width: 36.68,
-                        height: 30,
+                        "assets/images/sales_admin/notes.png",
+                        width: 96.92,
+                        height: 94.94,
+                        fit: BoxFit.cover,
                       ),
-                      Image.asset("assets/images/sales_admin/c2wtext.png"),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Create New Enquiry",
+                        style: GoogleFonts.figtree(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Add student information to begin the course\nenquiry process.",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.figtree(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color.fromRGBO(110, 75, 239, 1),
+                              Color.fromRGBO(253, 85, 42, 1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => CreateEquiry(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: Text(
+                            "Add Student Details",
+                            style: GoogleFonts.figtree(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(
+                        color: Color.fromRGBO(255, 255, 255, 0.06),
+                        thickness: 1,
+                        height: 1,
+                      ),
                     ],
                   ),
                 ),
-                const Divider(color: Colors.white12, height: 1),
-                const SizedBox(height: 16),
-
-                // selected item (Home)
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2B2F42),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.home_outlined,
-                      color: Colors.white,
-                    ),
-                    title: Text(
-                      'Home',
-                      style: GoogleFonts.figtree(color: Colors.white),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white,
-                    ),
-                    onTap: () {},
-                  ),
-                ),
-
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: ListTile(
-                    leading: const Icon(Icons.filter_none, color: Colors.white),
-                    title: Text(
-                      'General Enquiry',
-                      style: GoogleFonts.figtree(color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => GeneralEnquiry(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            "Overview",
+                            style: GoogleFonts.figtree(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.calendar_month,
+                            color: Color.fromRGBO(5, 165, 255, 1),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "Today",
+                            style: GoogleFonts.figtree(
+                              color: const Color.fromRGBO(5, 165, 255, 1),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    '60',
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Total\nEnquiries',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const VerticalDivider(
+                              color: Colors.white24,
+                              width: 1,
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    '35',
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                    ),
+                                  ),
+                                  Text(
+                                    'General\nEnquiries',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const VerticalDivider(
+                              color: Colors.white24,
+                              width: 1,
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    '25',
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Manual\nEnquiries',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const VerticalDivider(
+                              color: Colors.white24,
+                              width: 1,
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    '10',
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                    ),
+                                  ),
+                                  Text(
+                                    'New\nSignup',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: ListTile(
-                    leading: const Icon(Icons.edit_note, color: Colors.white),
-                    title: Text(
-                      'Manual Enquiry',
-                      style: GoogleFonts.figtree(color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ManualEnquiry(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.person_add_alt_outlined,
-                      color: Colors.white,
-                    ),
-                    title: Text(
-                      'New Signup',
-                      style: GoogleFonts.figtree(color: Colors.white),
-                    ),
-                    onTap: () {},
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Text(
+                            "New Enquiry",
+                            style: GoogleFonts.figtree(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            "See all",
+                            style: GoogleFonts.figtree(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      EnquiryList(),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Image.asset(
-                      "assets/images/sales_admin/notes.png",
-                      width: 96.92,
-                      height: 94.94,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Create New Enquiry",
-                      style: GoogleFonts.figtree(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Add student information to begin the course\nenquiry process.",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.figtree(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color.fromRGBO(110, 75, 239, 1),
-                            Color.fromRGBO(253, 85, 42, 1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => CreateEquiry(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        label: Text(
-                          "Add Student Details",
-                          style: GoogleFonts.figtree(
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(
-                      color: Color.fromRGBO(255, 255, 255, 0.06),
-                      thickness: 1,
-                      height: 1,
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          "Overview",
-                          style: GoogleFonts.figtree(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.calendar_month,
-                          color: Color.fromRGBO(5, 165, 255, 1),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          "Today",
-                          style: GoogleFonts.figtree(
-                            color: const Color.fromRGBO(5, 165, 255, 1),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    IntrinsicHeight(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  '60',
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                                Text(
-                                  'Total\nEnquiries',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const VerticalDivider(
-                            color: Colors.white24,
-                            width: 1,
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  '35',
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                                Text(
-                                  'General\nEnquiries',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const VerticalDivider(
-                            color: Colors.white24,
-                            width: 1,
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  '25',
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                                Text(
-                                  'Manual\nEnquiries',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const VerticalDivider(
-                            color: Colors.white24,
-                            width: 1,
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  '10',
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                                Text(
-                                  'New\nSignup',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.figtree(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text(
-                          "New Enquiry",
-                          style: GoogleFonts.figtree(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "See all",
-                          style: GoogleFonts.figtree(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right, color: Colors.grey),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    EnquiryList(),
-                  ],
-                ),
-              ),
-            ],
           ),
-        ),
+          const ExpenseManager(),
+        ],
+      ),
+      bottomNavigationBar: CommonBottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/features/login_signup/presentation/screens/splash_screen.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,15 +11,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     return const MaterialApp(
-      home:ExpenseManager()
-=======
-    return 
-      MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen()
->>>>>>> a98197165f9a05d5d537894ae0bcbbd5754db411
+      home:SplashScreen()
     );
   }
 }
