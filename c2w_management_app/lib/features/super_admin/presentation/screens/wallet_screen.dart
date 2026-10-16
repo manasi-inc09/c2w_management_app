@@ -57,9 +57,14 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
+                  GestureDetector(
+                    onTap: (){
+                      Navigator.pop(context);
+                    },
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                    ),
                   ),
 
                   const Spacer(),

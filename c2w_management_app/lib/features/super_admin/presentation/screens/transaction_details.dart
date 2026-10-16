@@ -17,7 +17,11 @@ class _TransactionDetailsState extends State<TransactionDetails> {
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
-        leading: Icon(Icons.arrow_back, color: Colors.white),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Icon(Icons.arrow_back, color: Colors.white)),
         title: Text("Transactions Details",style:GoogleFonts.figtree(color: Colors.white,fontSize: 20,fontWeight: FontWeight(600))),
       ),
       
