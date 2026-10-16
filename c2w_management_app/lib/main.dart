@@ -1,3 +1,12 @@
+import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/individual_expenses.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/manage_categories.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/members_detail_list.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/memberslist.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/view_all_expenses.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/wallet_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,11 +19,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+      home:CreateNewTransaction ()
     );
   }
 }
