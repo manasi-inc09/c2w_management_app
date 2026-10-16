@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/manage_categories.dart';
@@ -467,6 +468,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
     );
   },
 ),
+//bottomNavigationBar: CommonBottomNavigationBar(currentIndex: , onTap: onTap),
     );
   }
 

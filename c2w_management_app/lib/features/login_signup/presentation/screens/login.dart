@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  String isLogin="Instructor";
 
   static const _bg = Color.fromRGBO(7, 10, 27, 1);
   static const _accent = Color(0xFF00A3FF);
@@ -163,6 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
           await Future.delayed(const Duration(seconds: 2));
           if (!mounted) return;
           setState(() => _loading = false);
+        
           Navigator.of(context).push(
             MaterialPageRoute(builder: (context) => DashboardView()),
           );
