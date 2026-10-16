@@ -69,8 +69,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
         ),
       ),
       body: SingleChildScrollView(
-        // physics: const NeverScrollableScrollPhysics(),
-        // scrollDirection: Axis.vertical,
+ 
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,

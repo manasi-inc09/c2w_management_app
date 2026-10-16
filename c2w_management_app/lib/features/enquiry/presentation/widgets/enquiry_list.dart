@@ -1,4 +1,4 @@
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/enquiry_person_profile.dart';
+import 'package:c2w_management_app/features/enquiry/enquiry_person_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
