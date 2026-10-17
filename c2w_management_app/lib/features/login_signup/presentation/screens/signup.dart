@@ -1,3 +1,4 @@
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:flutter/material.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -160,6 +161,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(context,MaterialPageRoute(builder: (context)=>LoginScreen()));
+                },
+                child: Text("Back to Login Page",style: TextStyle(color: Colors.blue,fontSize: 15,fontWeight: FontWeight(400)),)),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
