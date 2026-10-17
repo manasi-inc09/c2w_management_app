@@ -1,5 +1,4 @@
 import 'package:c2w_management_app/features/login_signup/presentation/screens/splash_screen.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:flutter/material.dart';
 
 void main() {
