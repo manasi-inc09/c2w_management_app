@@ -1,11 +1,9 @@
 import 'package:c2w_management_app/features/login_signup/presentation/screens/signup.dart';
-import 'package:c2w_management_app/features/enquiry/dashboard_view.dart';
+import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/dashboard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() => runApp(
-  const MaterialApp(debugShowCheckedModeBanner: false, home: LoginScreen()),
-);
+String loginAs="Teamlead";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
-  String isLogin="Instructor";
+  
 
   static const _bg = Color.fromRGBO(7, 10, 27, 1);
   static const _accent = Color(0xFF00A3FF);
