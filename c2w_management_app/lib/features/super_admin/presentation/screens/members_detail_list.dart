@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/individual_expenses.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/bottomsheet_settle.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_individual_listview.dart';
@@ -139,7 +140,7 @@ class _MembersDetailListState extends State<MembersDetailList> {
         ],
       ),
     ),
-    bottomNavigationBar: (isSettled==true)?null:SettleButton().getSettleButton(context,"Settle",container: BottomsheetSettle().getBottomSheetOpen()),
+    bottomNavigationBar: (isSettled==true)?null:SettleButton().getSettleButton(context,(loginAs=="Instructor")?"Settle":"Add Transaction",container: BottomsheetSettle().getBottomSheetOpen()),
     );
   }
 }
