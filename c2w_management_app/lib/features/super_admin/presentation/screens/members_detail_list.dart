@@ -140,7 +140,7 @@ class _MembersDetailListState extends State<MembersDetailList> {
         ],
       ),
     ),
-    bottomNavigationBar: (isSettled==true)?null:SettleButton().getSettleButton(context,(loginAs=="Instructor")?"Settle":"Add Transaction",container: BottomsheetSettle().getBottomSheetOpen()),
+    bottomNavigationBar: (isSettled==true)?null:SettleButton().getSettleButton(context,(loginAs=="INSTRUCTOR"||loginAs=="SUPERADMIN")?"Settle":"Add Transaction",container: BottomsheetSettle().getBottomSheetOpen()),
     );
   }
 }

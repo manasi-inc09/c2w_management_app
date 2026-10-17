@@ -1,5 +1,8 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/common_filters.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/widgets/floating_button.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +16,8 @@ class ViewAllExpenses extends StatefulWidget {
 class _ViewAllExpensesState extends State<ViewAllExpenses> {
 
 List<String> filterList=["Categories","Members","dd-mm-yyyy"];
+Map<String,String> appliedFilters={};
+
   @override
  Widget build(BuildContext context) {
   return Scaffold(
@@ -60,11 +65,12 @@ List<String> filterList=["Categories","Members","dd-mm-yyyy"];
         ),
       ],
 
-      bottom: CommonFilters().getCommonFilter(filterList),
+      bottom: CommonFilters().getCommonFilter(context, appliedFilters,filterList),
     ),
 
     body: MonthwiseExpenseListview()
         .getMonthwiseExpenseListview(MonthwiseExpenseListview().transactionData),
+   floatingActionButton:FloatingButton.getFloatingButton()
   );
 }
 }

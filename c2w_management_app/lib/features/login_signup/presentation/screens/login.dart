@@ -5,7 +5,7 @@ import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/s
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-String loginAs="Teamlead";
+String loginAs="INSTRUCTOR";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

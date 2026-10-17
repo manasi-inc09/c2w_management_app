@@ -236,7 +236,7 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          (loginAs == "Instructor") ? ExpenseManager() : IndividualExpenses(),
+          (loginAs == "INSTRUCTOR" || loginAs=="SUPERADMIN") ? ExpenseManager() : IndividualExpenses(),
         ],
       ),
 
