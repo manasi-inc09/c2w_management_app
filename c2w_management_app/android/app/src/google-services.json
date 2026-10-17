@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "268875323461",
+    "project_id": "c2w-erp",
+    "storage_bucket": "c2w-erp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268875323461:android:605b45eb088fcefb682b2c",
+        "android_client_info": {
+          "package_name": "com.example.c2w_management_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC31ncXICBwDavaVL7JkNYG4jegsCFXuNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
