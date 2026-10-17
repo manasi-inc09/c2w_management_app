@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class MonthwiseIndividualListview {
   Widget getMonthwiseExpenseListview(List<Map<String,dynamic>> transactionData){
     return ListView.builder(
-      physics: NeverScrollableScrollPhysics(),
+     // physics: NeverScrollableScrollPhysics(),
   shrinkWrap: true,
   itemCount: transactionData.length,
   itemBuilder: (context, groupIndex) {
@@ -59,7 +59,7 @@ class MonthwiseIndividualListview {
             ),
           ),
         ),
-
+    
         // items inside this month
         ...items.map((item) {
           return GestureDetector(

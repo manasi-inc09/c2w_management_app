@@ -1,6 +1,9 @@
 import 'dart:developer';
 
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_individual_listview.dart';
@@ -320,11 +323,24 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
         ],
       ),
       bottomNavigationBar: SettleButton().getSettleButton(
-        context,"Settle",
-        container: getBottomSheetOpen(),
+        context,(loginAs=="Instructor")?"Settle":"Add Transaction",
+        container: (loginAs=="Instructor")?getBottomSheetOpen():null,onTap: () {
+          if((loginAs=="Instructor")){
+
+          }else{
+            print("Inside else");
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>CreateNewTransaction()));
+          }
+        },
       ),
     );
   }
+
+  
+Widget getExpensePage() {
+  return const ExpenseManager();
+}
+
 
   void handleRadioChange(String? value) {
     if (value != null) {
@@ -550,7 +566,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                       ],
                     ),
                   ),
-                  SettleButton().getSettleButton(context,"Settle")
+                  SettleButton().getSettleButton(context,(loginAs=="Instructor")?"Settle":"Add Transaction")
                 ],
               ),
             );
