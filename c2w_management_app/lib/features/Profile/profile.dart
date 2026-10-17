@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() => runApp(const MyApp());
 
 const Color bgColor = Color(0xFF0A0F24);
 const Color cardColor = Color(0xFF141B34);
@@ -11,27 +10,16 @@ const Color accentColor = Color(0xFFEF4565);
 const Color blueColor = Color(0xFF3B82F6);
 const Color greyText = Color(0xFF8A90A6);
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final base = ThemeData.dark();
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: base.copyWith(
-        scaffoldBackgroundColor: bgColor,
-        // textTheme: GoogleFonts.figtreeTextTheme(base.textTheme),
-        // primaryTextTheme: GoogleFonts.figtreeTextTheme(base.primaryTextTheme),
-      ),
-      home: const ProfileScreen(),
-    );
-  }
-}
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   void showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -44,15 +32,15 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                 Text(
                   'Logout Account?',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.figtree(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                 Text(
                   'Are you sure you want to logout this account?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: greyText),
+                  style: GoogleFonts.figtree(fontSize: 14, color: greyText),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -67,15 +55,15 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Logout', style: TextStyle(fontSize: 16)),
+                    child:  Text('Logout', style: GoogleFonts.figtree(fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
+                  child:  Text(
                     'Cancel',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    style: GoogleFonts.figtree(color: Colors.white, fontSize: 16),
                   ),
                 ),
               ],
@@ -89,11 +77,14 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:const Color(0xFF070A1B) ,
       appBar: AppBar(
         backgroundColor: bgColor,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back),
-        title: const Text('Profile', style: TextStyle(fontSize: 18)),
+        leading: IconButton(onPressed: (){
+          Navigator.of(context).pop();
+        }, icon: Icon(Icons.arrow_back,color: Colors.white)),
+        title:  Text('Profile', style: GoogleFonts.figtree(fontSize: 18,color: Colors.white)),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -105,11 +96,11 @@ class ProfileScreen extends StatelessWidget {
               backgroundImage: AssetImage('assets/images/sales_admin/profile.png'),
             ),
             const SizedBox(height: 10),
-            const Text(
+             Text(
               'Manasi Jadhav',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.figtree(fontSize: 18, fontWeight: FontWeight.bold,color: Colors.white),
             ),
-            const Text('Admin', style: TextStyle(fontSize: 14, color: greyText)),
+             Text('Admin', style: GoogleFonts.figtree(fontSize: 14, color: greyText)),
             const SizedBox(height: 20),
             Container(
               color: cardColor,
@@ -162,12 +153,12 @@ class ProfileScreen extends StatelessWidget {
                 color: cardColor,
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  children: const [
+                  children:  [
                     Icon(Icons.logout, color: accentColor, size: 20),
                     SizedBox(width: 10),
                     Text(
                       'Log Out',
-                      style: TextStyle(color: accentColor, fontSize: 16),
+                      style: GoogleFonts.figtree(color: accentColor, fontSize: 16),
                     ),
                   ],
                 ),
@@ -193,13 +184,13 @@ class StatItem extends StatelessWidget {
         children: [
           Text(
             number,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style:  GoogleFonts.figtree(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: greyText),
+            style:  GoogleFonts.figtree(fontSize: 11, color: greyText),
           ),
         ],
       ),
@@ -247,22 +238,22 @@ class ProfileTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (header != null) ...[
-              Text(header!, style: const TextStyle(fontSize: 14, color: greyText)),
+              Text(header!, style:  GoogleFonts.figtree(fontSize: 14,color: Colors.grey)),
               const SizedBox(height: 12),
             ],
             Row(
               children: [
-                Icon(icon, size: 22),
+                Icon(icon, size: 22,color: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 15)),
+                      Text(title, style:  GoogleFonts.figtree(fontSize: 15,color: Colors.white)),
                       if (subtitle != null)
                         Text(
                           subtitle!,
-                          style: const TextStyle(fontSize: 11, color: greyText),
+                          style:  GoogleFonts.figtree(fontSize: 13, color: greyText),
                         ),
                     ],
                   ),
@@ -322,7 +313,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   void showMessage(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text, style: const TextStyle(fontSize: 14))),
+      SnackBar(content: Text(text, style:  GoogleFonts.figtree(fontSize: 14))),
     );
   }
 
@@ -361,18 +352,19 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:const Color(0xFF070A1B) ,
       appBar: AppBar(
         backgroundColor: bgColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back,color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Personal Information', style: TextStyle(fontSize: 17)),
+        title:  Text('Personal Information', style: GoogleFonts.figtree(fontSize: 17,color: Colors.white),),
         actions: [
           IconButton(
-            icon: Icon(isEditing ? Icons.close : Icons.edit_outlined),
+            icon: Icon(isEditing ? Icons.close : Icons.edit_outlined,color: Colors.white),
             onPressed: isEditing ? cancelEditing : startEditing,
           ),
         ],
@@ -403,7 +395,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       ),
                     ),
                     onPressed: saveChanges,
-                    child: const Text('Save', style: TextStyle(fontSize: 16)),
+                    child:  Text('Save', style: GoogleFonts.figtree(fontSize: 16)),
                   ),
                 ),
               ),
@@ -442,14 +434,14 @@ class InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(field.label, style: const TextStyle(fontSize: 12, color: greyText)),
+                Text(field.label, style:  GoogleFonts.figtree(fontSize: 14, color: greyText)),
                 const SizedBox(height: 4),
                 if (isEditing)
                   TextField(
                     controller: field.controller,
                     keyboardType: field.keyboardType,
                     maxLines: null,
-                    style: const TextStyle(fontSize: 14),
+                    style:  GoogleFonts.figtree(fontSize: 14,color: Colors.white),
                     decoration: const InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(vertical: 6),
@@ -462,7 +454,7 @@ class InfoRow extends StatelessWidget {
                     ),
                   )
                 else
-                  Text(field.value, style: const TextStyle(fontSize: 14)),
+                  Text(field.value, style:  GoogleFonts.figtree(fontSize: 14,color: Colors.white)),
               ],
             ),
           ),
@@ -514,7 +506,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(
+            style: GoogleFonts.figtree(
               fontSize: 13,
               color: done ? Colors.green : Colors.white,
             ),
@@ -527,6 +519,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:const Color(0xFF070A1B) ,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -538,24 +531,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 child: const CircleAvatar(
                   radius: 18,
                   backgroundColor: cardColor,
-                  child: Icon(Icons.arrow_back, size: 18),
+                  child: Icon(Icons.arrow_back, size: 18,color: Colors.white),
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+               Text(
                 'Change Password',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: GoogleFonts.figtree(fontSize: 28, fontWeight: FontWeight.bold,color: Colors.white),
               ),
               const SizedBox(height: 24),
-              const Text('New Password', style: TextStyle(fontSize: 13, color: greyText)),
+               Text('New Password', style: GoogleFonts.figtree(fontSize: 13, color: greyText)),
               TextField(
                 controller: newPassController,
+                
                 obscureText: true,
                 onChanged: (_) => setState(() {}),
-                style: const TextStyle(fontSize: 15),
-                decoration: const InputDecoration(
+                style:  GoogleFonts.figtree(fontSize: 15,color: Colors.white),
+                decoration:  InputDecoration(
                   hintText: 'Enter your new password',
-                  hintStyle: TextStyle(fontSize: 14, color: greyText),
+                  hintStyle: GoogleFonts.figtree(fontSize: 14, color: greyText),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: blueColor),
                   ),
@@ -571,15 +565,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ruleText('At least one number', hasNumber),
               ruleText('At least one special symbol (!@#\$&*)', hasSymbol),
               const SizedBox(height: 14),
-              const Text('Confirm Password', style: TextStyle(fontSize: 13, color: greyText)),
+               Text('Confirm Password', style: GoogleFonts.figtree(fontSize: 13, color: greyText)),
               TextField(
                 controller: confirmPassController,
                 obscureText: true,
                 onChanged: (_) => setState(() {}),
-                style: const TextStyle(fontSize: 15),
-                decoration: const InputDecoration(
+                style:  GoogleFonts.figtree(fontSize: 15,color: Colors.white),
+                decoration:  InputDecoration(
                   hintText: 'Re-enter your password to confirm',
-                  hintStyle: TextStyle(fontSize: 14, color: greyText),
+                  hintStyle: GoogleFonts.figtree(fontSize: 14, color: greyText),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: lineColor),
                   ),
@@ -603,7 +597,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                   ),
                   onPressed: canSubmit ? () => Navigator.pop(context) : null,
-                  child: const Text('Submit', style: TextStyle(fontSize: 16)),
+                  child:  Text('Submit', style: GoogleFonts.figtree(fontSize: 16)),
                 ),
               ),
             ],

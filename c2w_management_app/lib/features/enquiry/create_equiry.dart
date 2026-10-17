@@ -47,9 +47,9 @@ class _CreateEquiryState extends State<CreateEquiry> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor:const Color(0xFF070A1B) ,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor:const Color(0xFF070A1B) ,
         leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();
