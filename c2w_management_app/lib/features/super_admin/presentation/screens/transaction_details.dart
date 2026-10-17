@@ -1,4 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
+import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/widgets/settle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -118,7 +120,16 @@ class _TransactionDetailsState extends State<TransactionDetails> {
             SizedBox(
                     height: 20,
                   ),
-            SettleButton().getSettleButton(context,"Settle")
+            SettleButton().getSettleButton(context,(["MENTOR", "TEAMLEAD"].contains(loginAs))?"Edit":"Settle",
+            onTap: () {
+          if((loginAs=="INSTRUCTOR")){
+
+          }else{
+            print("Inside else");
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>CreateNewTransaction()));
+          }
+        },
+            )
           ],
         ),
       )

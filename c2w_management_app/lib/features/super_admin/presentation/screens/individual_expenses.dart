@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/enquiry/presentation/widgets/filters.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
@@ -109,7 +110,9 @@ class IndividualExpenses extends StatefulWidget {
 
 class _IndividualExpensesState extends State<IndividualExpenses> {
   String selectedOption = "Option 1";
-  List individual_FilterList = ["Event |  dsdsCPL event", "Subodh"];
+  List<String> individual_FilterList = ["Event |  dsdsCPL event", "Subodh"];
+  //List<String> filterList=["Categories","Members","dd-mm-yyyy"];
+Map<String,String> appliedFilters={};
 
 
   @override
@@ -151,100 +154,114 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
             child: const Icon(Icons.search_outlined, color: Colors.white),
           ),
         ],
+          bottom: CommonFilters().getCommonFilter(context, appliedFilters,individual_FilterList),
+        // bottom: PreferredSize(
+        //   preferredSize: const Size.fromHeight(60),
 
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+        //   child: Padding(
+        //     padding: const EdgeInsets.only(bottom: 10),
 
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+        //     child: Row(
+        //       children: [
+        //         const SizedBox(width: 20),
 
-            child: Row(
-              children: [
-                const SizedBox(width: 20),
+        //         Stack(
+        //           children: [
+        //             GestureDetector(
+        //               onTap: () async {
+        //                 final result = await showFilterSheet(
+        //                   context,
+        //                   initialFilters: appliedFilters,
+        //                 );
 
-                Stack(
-                  children: [
-                    const Icon(
-                      Icons.filter_alt_outlined,
-                      color: Colors.white,
-                      size: 35,
-                    ),
-                    Positioned(
-                      right: 0,
+        //                 if (result != null) {
+        //                   setState(() {
+        //                     appliedFilters = result; // page rebuilds after this
+        //                   });
+        //                 }
+        //               },
+        //               child: const Icon(
+        //                 Icons.filter_alt_outlined,
+        //                 color: Colors.white,
+        //                 size: 35,
+        //               ),
+        //             ),
+        //             Positioned(
+        //               right: 0,
 
-                      child: Container(
-                        height: 18,
-                        width: 18,
+        //               child: Container(
+        //                 height: 18,
+        //                 width: 18,
 
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.blue,
-                        ),
-                        child: Center(
-                          child: Text(
-                            "2",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight(600),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+        //                 decoration: BoxDecoration(
+        //                   shape: BoxShape.circle,
+        //                   color: Colors.blue,
+        //                 ),
+        //                 child: Center(
+        //                   child: Text(
+        //                     "2",
+        //                     style: TextStyle(
+        //                       color: Colors.white,
+        //                       fontSize: 12,
+        //                       fontWeight: FontWeight(600),
+        //                     ),
+        //                   ),
+        //                 ),
+        //               ),
+        //             ),
+        //           ],
+        //         ),
 
-                const SizedBox(width: 10),
+        //         const SizedBox(width: 10),
 
-                // Important correction
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
+        //         // Important correction
+        //         Expanded(
+        //           child: SizedBox(
+        //             height: 40,
 
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
+        //             child: ListView.builder(
+        //               scrollDirection: Axis.horizontal,
 
-                      itemCount: individual_FilterList.length,
+        //               itemCount: individual_FilterList.length,
 
-                      itemBuilder: (context, index) {
-                        return Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 8,
-                          ),
+        //               itemBuilder: (context, index) {
+        //                 return Container(
+        //                   height: 40,
+        //                   padding: const EdgeInsets.symmetric(
+        //                     horizontal: 18,
+        //                     vertical: 8,
+        //                   ),
 
-                          margin: const EdgeInsets.only(right: 10),
+        //                   margin: const EdgeInsets.only(right: 10),
 
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              width: 1,
-                              color: Color.fromRGBO(255, 255, 255, 0.1),
-                            ),
-                            color: const Color.fromRGBO(255, 255, 255, 0.06),
-                          ),
+        //                   decoration: BoxDecoration(
+        //                     borderRadius: BorderRadius.circular(30),
+        //                     border: Border.all(
+        //                       width: 1,
+        //                       color: Color.fromRGBO(255, 255, 255, 0.1),
+        //                     ),
+        //                     color: const Color.fromRGBO(255, 255, 255, 0.06),
+        //                   ),
 
-                          child: Center(
-                            child: Text(
-                              individual_FilterList[index],
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        //                   child: Center(
+        //                     child: Text(
+        //                       individual_FilterList[index],
+        //                       style: TextStyle(
+        //                         fontSize: 14,
+        //                         fontWeight: FontWeight.w400,
+        //                         color: Colors.white,
+        //                       ),
+        //                     ),
+        //                   ),
+        //                 );
+        //               },
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ),
       body: Column(
         children: [
@@ -323,9 +340,9 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
         ],
       ),
       bottomNavigationBar: SettleButton().getSettleButton(
-        context,(loginAs=="Instructor")?"Settle":"Add Transaction",
+        context,(loginAs=="INSTRUCTOR"||loginAs=="SUPERADMIN")?"Settle":"Add Transaction",
         container: (loginAs=="Instructor")?getBottomSheetOpen():null,onTap: () {
-          if((loginAs=="Instructor")){
+          if((loginAs=="INSTRUCTOR")){
 
           }else{
             print("Inside else");
