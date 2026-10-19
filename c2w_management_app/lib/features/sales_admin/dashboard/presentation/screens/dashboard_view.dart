@@ -3,6 +3,7 @@ import 'package:c2w_management_app/features/Profile/profile.dart';
 import 'package:c2w_management_app/features/enquiry/create_equiry.dart';
 import 'package:c2w_management_app/features/enquiry/enquiry_overview.dart';
 import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/super_admin/presentation/screens/individual_expenses.dart';
@@ -198,13 +199,13 @@ class _DashboardViewState extends State<DashboardView> {
                                 },
                                 child: Visibility(
                                   visible:
-                                      !(LoginScreen.authEmail!.contains(
+                                      !(AuthRepository.authEmail!.contains(
                                             "_instructor",
                                           ) ||
-                                          LoginScreen.authEmail!.contains(
+                                          AuthRepository.authEmail!.contains(
                                             "_mentor",
                                           ) ||
-                                          LoginScreen.authEmail!.contains(
+                                          AuthRepository.authEmail!.contains(
                                             "_teamlead",
                                           )),
                                   child: Row(
@@ -240,7 +241,7 @@ class _DashboardViewState extends State<DashboardView> {
         ],
       ),
 
-      bottomNavigationBar: LoginScreen.authEmail!.contains("_salesadmin")
+      bottomNavigationBar: AuthRepository.authEmail!.contains("_salesadmin")
           ? null
           : CommonBottomNavigationBar(
               currentIndex: currentIndex,
