@@ -3,6 +3,7 @@ import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Re
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
@@ -26,6 +27,7 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
         print(e.message);
       }
       log("Login emitted");
+      //return userCredential;
     });
 
     on<SignupAuthEvent>((event, emit) {

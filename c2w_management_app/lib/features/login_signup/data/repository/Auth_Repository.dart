@@ -24,8 +24,11 @@ class AuthRepository {
       log("login email : _$role$email");
        userCredential = await  _firebaseAuth
                   .signInWithEmailAndPassword(email:email,password: pass);
+
+      log("UserCredentials : ${userCredential}");
     }on FirebaseAuthException catch (err){
-      log("${err.message}");
+
+      log(" error message ${err.message}");
     }
     return userCredential!;
   }

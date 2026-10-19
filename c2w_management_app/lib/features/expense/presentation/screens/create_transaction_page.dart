@@ -1,8 +1,14 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
+import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_bloc.dart';
+import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_event.dart';
+import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_state.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:date_picker_plus/date_picker_plus.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -58,6 +64,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   String selectedOption = "Option 1";
 
   String? selectedCategory;
+  String? selectedSubCategory;
 
   final List<String> categories = [
     "Food",
@@ -68,6 +75,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
     "Other",
   ];
   TextEditingController dateController=TextEditingController();
+  TextEditingController amountController=TextEditingController();
+  TextEditingController detailsController=TextEditingController();
+  //TextEditingController selectedSubCategory=TextEditingController();
+  //TextEditingController selectedSubCategory=TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,6 +154,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               TextField(
+                controller: amountController,
                 cursorColor: Colors.white,
                 style: TextStyle(color: Colors.white),
         
@@ -177,7 +189,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
                   const SizedBox(width: 12),
-                  buildRadioBox(title: "Wallet", value: "Option 2"),
+                  (loginAs=="Instructor".toUpperCase())?buildRadioBox(title: "Wallet", value: "Option 2"):SizedBox(),
                 ],
               ),
               const SizedBox(height: 5),
@@ -193,6 +205,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               TextField(
+                controller: detailsController,
                 cursorColor: Colors.white,
                 style: TextStyle(color: Colors.white),
         
@@ -224,6 +237,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               DropdownButtonFormField<String>(
+                
                 initialValue: selectedCategory,
         
                 dropdownColor: Color(0xFF0B0D1C),
@@ -346,7 +360,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
         
                 onChanged: (value) {
                   setState(() {
-                    selectedCategory = value;
+                    selectedSubCategory = value;
                   });
                 },
               ),
@@ -439,7 +453,40 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
         ),
         
       ),
-      bottomNavigationBar: SettleButton().getSettleButton(context, "Create"),
+      bottomNavigationBar:
+    BlocConsumer<CreateExpenseBloc, CreateExpenseState>(
+  listener: (context, state) {
+    if (state is CreateExpenseSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Expense created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    }
+
+    if (state is CreateExpenseFailure) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  },
+  builder: (context, state) {
+    return SettleButton().getSettleButton(
+      context,
+      'Create',
+      isLoading: state is CreateExpenseLoading,
+      onTap: state is CreateExpenseLoading
+          ? null
+          : submitExpense,
+    );
+  },
+),
     );
   }
 
@@ -548,4 +595,61 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
       ),
     );
   }
+
+  void submitExpense() {
+  // 1. Validate expense date
+  if (selectedDate == null) {
+    showMessage('Please select an expense date.');
+    return;
+  }
+
+  // 2. Validate amount
+  final double? amount =
+      double.tryParse(amountController.text.trim());
+
+  if (amount == null || amount <= 0) {
+    showMessage('Please enter a valid amount.');
+    return;
+  }
+
+  // 3. Validate transaction details
+  if (detailsController.text.trim().isEmpty) {
+    showMessage('Please enter transaction details.');
+    return;
+  }
+
+  // 4. Validate category
+  if (selectedCategory == null) {
+    showMessage('Please select a category.');
+    return;
+  }
+
+  // 6. Determine expense source
+  final String source =
+      selectedOption == 'Option 2' ? 'Wallet' : 'Self Paid';
+
+  // 7. Create the Expense object
+  final expense = Expense(
+    expenseDate: selectedDate!,
+    amount: amount,
+    source: source,
+    description: detailsController.text.trim(),
+    category: selectedCategory!,
+    subCategory: selectedSubCategory!,
+    receiptLocalPath: file?.path,
+  );
+
+  // 8. Send the expense to the BLoC
+  context.read<CreateExpenseBloc>().add(
+        SubmitExpenseEvent(expense),
+      );
 }
+
+void showMessage(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
+
+}
+

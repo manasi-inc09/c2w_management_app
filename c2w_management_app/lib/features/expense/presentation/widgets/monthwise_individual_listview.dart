@@ -1,5 +1,5 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
 import 'package:flutter/material.dart';
 
 class MonthwiseIndividualListview {

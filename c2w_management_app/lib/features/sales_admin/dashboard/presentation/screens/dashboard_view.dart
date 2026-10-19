@@ -3,10 +3,10 @@ import 'package:c2w_management_app/features/Profile/profile.dart';
 import 'package:c2w_management_app/features/enquiry/create_equiry.dart';
 import 'package:c2w_management_app/features/enquiry/enquiry_overview.dart';
 import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/individual_expenses.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/expense_manager.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/individual_expenses.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

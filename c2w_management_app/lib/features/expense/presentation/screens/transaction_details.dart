@@ -1,7 +1,7 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

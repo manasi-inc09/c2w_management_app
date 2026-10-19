@@ -1,3 +1,4 @@
+
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,46 +9,53 @@ class SettleButton {
     String text, {
     Widget? container,
     VoidCallback? onTap,
+    bool isLoading = false,
   }) {
     return Container(
       height: 120,
-      width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
-        color: AppTheme().appBarBackgroundColor,
-        //border: Border.all(width: 0.5,color: Colors.grey)
-      ),
+      width: double.infinity,
+      color: AppTheme().appBarBackgroundColor,
       child: Column(
         children: [
           GestureDetector(
-            onTap: () {
-              if (onTap != null) {
-                onTap();
-              } else if (container != null) {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) {
-                    return container;
+            onTap: isLoading
+                ? null
+                : () {
+                    if (onTap != null) {
+                      onTap();
+                    } else if (container != null) {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (_) => container,
+                      );
+                    }
                   },
-                );
-              }
-            },
             child: Container(
-              margin: EdgeInsets.all(20),
+              margin: const EdgeInsets.all(20),
               height: 55,
-              width: 400,
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: isLoading ? Colors.grey : Colors.blue,
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
-                child: Text(
-                  "$text",
-                  style: GoogleFonts.figtree(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight(600),
-                  ),
-                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        text,
+                        style: GoogleFonts.figtree(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ),

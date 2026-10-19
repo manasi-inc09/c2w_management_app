@@ -1,6 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
 import 'package:flutter/material.dart';
 
 class FloatingButton {
