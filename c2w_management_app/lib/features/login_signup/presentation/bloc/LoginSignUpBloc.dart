@@ -1,8 +1,10 @@
-import 'package:bloc/bloc.dart';
+import 'dart:developer';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
 
@@ -16,17 +18,19 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
       emit(LoginSignupState(
         email: event.email,
         pass: event.pass,
+        role: event.role,
       ));
       try{
         
-      _authRepository.loginUser(email: event.email,pass: event.pass);
+      _authRepository.loginUser(email: event.email,pass: event.pass,role: event.role);
       }on FirebaseException catch(e){
         print(e.message);
       }
-      print("Login emitted");
+      log("Login emitted");
+      //return userCredential;
     });
 
-    on<SignUpAuthEvent>((event, emit) {
+    on<SignupAuthEvent>((event, emit) {
       print("SignUp auth Event Called");
     print("Email: ${event.email}");
       emit(LoginSignupState(
@@ -42,23 +46,25 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
       print("SignUp Auth emitted");
     });
 
-    on<SignupEvent>((event, emit) {
+    on<SignupDataEvent>((event, emit) {
       print("Signup Event Called");
       print("Name: ${event.name}");
       emit(LoginSignupState(
-
         name: event.name,
-        mobno: event.mobno,
         email: event.email,
+        mob: event.mob,
+        upi: event.upi,
+        dob: event.dob,        
         pass: event.pass,
+        role: event.role
       ));
       try{
-      _authRepository.signupdata(email:event.email ,pass: event.pass,name: event.name,mobno: event.mobno);
+      _authRepository.signupdata(name: event.name,email:event.email ,mobno: event.mob,upi: event.upi,dob: event.dob,pass: event.pass,role: event.role);
       }
       on FirebaseException catch(e){
         print(e.message);
       }
-      print("SignUp emitted");
+      log("SignUp emitted");
     });
   }
 }

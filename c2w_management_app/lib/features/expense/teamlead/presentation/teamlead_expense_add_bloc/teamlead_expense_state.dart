@@ -1,12 +1,14 @@
-abstract class TeamleadExpenseState {}
 
-class InitialState extends TeamleadExpenseState{
+abstract class CreateExpenseState {}
 
-}
-class LoadingState extends TeamleadExpenseState{
+class CreateExpenseInitial extends CreateExpenseState {}
 
-}
+class CreateExpenseLoading extends CreateExpenseState {}
 
-class LoadedState extends TeamleadExpenseState{
-  
+class CreateExpenseSuccess extends CreateExpenseState {}
+
+class CreateExpenseFailure extends CreateExpenseState {
+  final String message;
+
+  CreateExpenseFailure(this.message);
 }
