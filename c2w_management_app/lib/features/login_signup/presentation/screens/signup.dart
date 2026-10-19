@@ -1,5 +1,11 @@
+import 'dart:developer';
+
+import 'package:c2w_management_app/features/enquiry/dashboard_view.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -10,16 +16,19 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final fullNameCtrl = TextEditingController();
-  final userCtrl = TextEditingController();
+  final emailCtrl = TextEditingController();
+  final mobCtrl = TextEditingController();
+  final upiCtrl = TextEditingController();
   final dobCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool obscure = true;
+
 
   @override
   Widget build(BuildContext context) {
     final canContinue =
         fullNameCtrl.text.trim().isNotEmpty &&
-        userCtrl.text.trim().isNotEmpty &&
+        emailCtrl.text.trim().isNotEmpty &&
         dobCtrl.text.isNotEmpty &&
         passCtrl.text.isNotEmpty;
 
@@ -63,16 +72,60 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'User Name',
+                'Email',
                 style: TextStyle(color: Color(0xFF9A9DB5), fontSize: 12),
               ),
               TextField(
-                controller: userCtrl,
+                controller: emailCtrl,
                 onChanged: (_) => setState(() {}),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 cursorColor: Colors.white,
                 decoration: const InputDecoration(
-                  hintText: 'Enter your registered username',
+                  hintText: 'Enter your email',
+                  hintStyle: TextStyle(color: Color(0xFF5C6078), fontSize: 14),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A2D45)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF1E6FB5)),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20,),
+              const Text(
+                'Mobile No.',
+                style: TextStyle(color: Color(0xFF9A9DB5), fontSize: 12),
+              ),
+              TextField(
+                controller: mobCtrl,
+                onChanged: (_) => setState(() {}),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your mobile no. (+91)',
+                  hintStyle: TextStyle(color: Color(0xFF5C6078), fontSize: 14),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A2D45)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF1E6FB5)),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20,),
+              const Text(
+                'UPI ID',
+                style: TextStyle(color: Color(0xFF9A9DB5), fontSize: 12),
+              ),
+              TextField(
+                controller: upiCtrl,
+                onChanged: (_) => setState(() {}),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your UPI ID',
                   hintStyle: TextStyle(color: Color(0xFF5C6078), fontSize: 14),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF2A2D45)),
@@ -161,11 +214,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context,MaterialPageRoute(builder: (context)=>LoginScreen()));
-                },
-                child: Text("Back to Login Page",style: TextStyle(color: Colors.blue,fontSize: 15,fontWeight: FontWeight(400)),)),
+              
               const Spacer(),
               SizedBox(
                 width: double.infinity,
@@ -175,7 +224,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ? () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => const SelectRoleScreen(),
+                              builder: (context) =>  SelectRoleScreen(
+                                fullName: fullNameCtrl.text.trim(),
+                                email: emailCtrl.text.trim(),
+                                mobile: mobCtrl.text.trim(),
+                                upi: upiCtrl.text.trim(),
+                                dob: dobCtrl.text.trim(),
+                                password: passCtrl.text,
+                              ),
                             ),
                           );
                         }
@@ -199,6 +255,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: Center(child: Text("Back to Login Page",style: TextStyle(color: Colors.blue,fontSize: 15,fontWeight: FontWeight(400)),))),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -208,7 +270,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
 }
 
 class SelectRoleScreen extends StatefulWidget {
-  const SelectRoleScreen({super.key});
+
+  final String fullName;
+  final String email;
+  final String mobile;
+  final String upi;
+  final String dob;
+  final String password;
+
+  const SelectRoleScreen({
+    super.key,
+    required this.fullName,
+    required this.email,
+    required this.mobile,
+    required this.upi,
+    required this.dob,
+    required this.password,
+  });
 
   @override
   State<SelectRoleScreen> createState() => _SelectRoleScreenState();
@@ -216,10 +294,18 @@ class SelectRoleScreen extends StatefulWidget {
 
 class _SelectRoleScreenState extends State<SelectRoleScreen> {
   String? selectedRole;
+  void showSignupData() {
+    String name = widget.fullName;
+    String email = widget.email;
+    String mobile = widget.mobile;
+    String upi = widget.upi;
+    String dob = widget.dob;
+  }
+  
 
   @override
   Widget build(BuildContext context) {
-    final roles = ['Instructor', 'Mentor', 'Team Lead'];
+    final roles = ['Instructor', 'Mentor', 'TeamLead','SalesAdmin'];
 
     return Scaffold(
       backgroundColor: const Color(0xFF070A1B),
@@ -235,6 +321,10 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
               ),
               child: Row(
                 children: [
+                  IconButton(onPressed: (){
+                    Navigator.of(context).pop();
+                  }, icon: Icon(Icons.arrow_back,color: Colors.white,)),
+                 
                   Image.asset(
                     "assets/images/sales_admin/logo.png",
                     height: 50,
@@ -326,7 +416,12 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
                       child: ElevatedButton(
                         onPressed: selectedRole != null
                             ? () {
-                                Navigator.of(context).pop();
+                                context.read<Loginsignupbloc>().add(SignupDataEvent(widget.fullName,widget.email,widget.mobile, widget.upi, widget.dob, widget.password,selectedRole!));
+                                context.read<Loginsignupbloc>().add(SignupAuthEvent(widget.email, widget.password));
+                                log(widget.email);
+                                
+                                
+                                Navigator.of(context).push(MaterialPageRoute(builder: (context)=>LoginScreen()));
                               }
                             : null,
                         style: ElevatedButton.styleFrom(

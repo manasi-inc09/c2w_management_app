@@ -1,6 +1,8 @@
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
   
@@ -20,9 +22,12 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return 
-      MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen()
-    );
+      BlocProvider(
+        create: (context) => Loginsignupbloc(),
+        child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: SplashScreen()
+            ),
+      );
   }
 }
