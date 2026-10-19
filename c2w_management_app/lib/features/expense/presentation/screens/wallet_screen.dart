@@ -1,8 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
-//import 'package:c2w_management_app/features/super_admin/presentation/screens/individual_expenses.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_expense_listview.dart';
-//import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_individual_listview.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -42,10 +40,7 @@ class _WalletScreenState extends State<WalletScreen> {
             colors: [
             Color.fromRGBO(32, 34, 58, 1),Color.fromRGBO(32, 34, 58, 1)
           ])
-          // image: DecorationImage(
-          //   image: AssetImage("assets/Mask group.png"),
-          //   fit: BoxFit.cover,
-          // ),
+          
         ),
 
         child: Column(

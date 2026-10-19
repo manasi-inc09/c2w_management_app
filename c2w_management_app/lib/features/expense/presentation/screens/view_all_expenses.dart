@@ -1,9 +1,9 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/common_filters.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/floating_button.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/monthwise_expense_listview.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/common_filters.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/floating_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:flutter/material.dart';
 
 class ViewAllExpenses extends StatefulWidget {

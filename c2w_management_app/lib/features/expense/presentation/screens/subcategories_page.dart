@@ -1,6 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/edit_category.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/colorlist.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/edit_category.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

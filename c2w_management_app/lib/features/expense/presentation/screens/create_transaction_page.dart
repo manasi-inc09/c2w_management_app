@@ -1,5 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:date_picker_plus/date_picker_plus.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -177,7 +178,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
                   const SizedBox(width: 12),
-                  buildRadioBox(title: "Wallet", value: "Option 2"),
+                  (loginAs=="Instructor".toUpperCase())?buildRadioBox(title: "Wallet", value: "Option 2"):SizedBox(),
                 ],
               ),
               const SizedBox(height: 5),

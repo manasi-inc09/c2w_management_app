@@ -1,6 +1,8 @@
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
   
@@ -11,7 +13,7 @@ void main() {
     messagingSenderId:"268875323461", 
     projectId: "c2w-erp"));
     print("firebase initiallized");
-  runApp(const MainApp());
+    runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -20,9 +22,12 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return 
-      MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen()
-    );
+      MultiBlocProvider(
+        providers: [BlocProvider<Loginsignupbloc>(create: (context)=>Loginsignupbloc())],
+        child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: SplashScreen()
+            ),
+      );
   }
 }

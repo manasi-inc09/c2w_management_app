@@ -1,13 +1,13 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/add_new_category.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/manage_categories.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/memberslist.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/transaction_details.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/view_all_expenses.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/screens/wallet_screen.dart';
-import 'package:c2w_management_app/features/super_admin/presentation/widgets/floating_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/manage_categories.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/memberslist.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/view_all_expenses.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/wallet_screen.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/floating_button.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseManager extends StatefulWidget {
