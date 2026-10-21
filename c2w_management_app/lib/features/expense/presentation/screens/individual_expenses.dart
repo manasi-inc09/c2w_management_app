@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/enquiry/presentation/widgets/filters.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';
@@ -340,9 +341,9 @@ Map<String,String> appliedFilters={};
         ],
       ),
       bottomNavigationBar: SettleButton().getSettleButton(
-        context,(loginAs=="INSTRUCTOR"||loginAs=="SUPERADMIN")?"Settle":"Add Transaction",
-        container: (loginAs=="Instructor")?getBottomSheetOpen():null,onTap: () {
-          if((loginAs=="INSTRUCTOR")){
+        context,(AuthRepository.authEmail!.contains("_instructor")||AuthRepository.authEmail!.contains("_superadmin"))?"Settle":"Add Transaction",
+        container: (AuthRepository.authEmail!.contains("_instructor"))?getBottomSheetOpen():null,onTap: () {
+          if((AuthRepository.authEmail!.contains("_instructor"))){
 
           }else{
             print("Inside else");
@@ -583,7 +584,7 @@ Widget getExpensePage() {
                       ],
                     ),
                   ),
-                  SettleButton().getSettleButton(context,(loginAs=="Instructor")?"Settle":"Add Transaction")
+                  SettleButton().getSettleButton(context,(AuthRepository.authEmail!.contains("_instructor"))?"Settle":"Add Transaction")
                 ],
               ),
             );

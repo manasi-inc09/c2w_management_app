@@ -30,27 +30,20 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Cloudinary data source
     final cloudinaryDataSource = CloudinaryDataSource();
 
-    // 2. Expense remote data source
     final expenseRemoteDataSource = ExpenseRemoteDataSource(
       firestore: FirebaseFirestore.instance,
       auth: FirebaseAuth.instance,
       cloudinaryDataSource: cloudinaryDataSource,
     );
-
-    // 3. Repository implementation
     final expenseRepository = ExpenseRepositoryImpl(
       remoteDataSource: expenseRemoteDataSource,
     );
 
-    // 4. Use case
     final createExpenseUseCase = CreateExpenseUseCase(
       expenseRepository,
     );
-
-    // 5. Provide BLoCs to the application
     return MultiBlocProvider(
       providers: [
         BlocProvider<Loginsignupbloc>(

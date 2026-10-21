@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-String loginAs = "INSTRUCTOR";
+//String loginAs = "instructor";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
