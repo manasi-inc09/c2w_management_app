@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +66,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   const Spacer(),
 
-                  (loginAs=="SUPERADMIN")?ElevatedButton.icon(
+                  (AuthRepository.authEmail!.contains("_superadmin"))?ElevatedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.add,color: Colors.white,),
                     label: Text("Top-up",style: GoogleFonts.figtree(color: Colors.white,fontSize: 15),),

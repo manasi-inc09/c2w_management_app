@@ -24,10 +24,13 @@ class ExpenseRemoteDataSource {
       throw Exception('Please log in before submitting an expense.');
     }
 
-    final userDocument = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    final email = user.email;
+    if (email == null || email.isEmpty) {
+      throw Exception('Your account does not have an email address.');
+    }
+
+    final userDocument =
+        await _firestore.collection('UserData').doc(email).get();
 
     if (!userDocument.exists) {
       throw Exception('User profile was not found.');
@@ -40,7 +43,7 @@ class ExpenseRemoteDataSource {
     }
 
     final claimantName =
-        (userData['name'] as String?) ?? user.displayName ?? 'Unknown User';
+        (userData['Name'] as String?) ?? user.displayName ?? 'Unknown User';
 
     final claimantRole = userData['role'] as String?;
 

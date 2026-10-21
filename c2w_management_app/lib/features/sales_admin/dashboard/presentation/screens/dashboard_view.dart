@@ -237,7 +237,7 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          (loginAs == "INSTRUCTOR" || loginAs=="SUPERADMIN") ? ExpenseManager() : IndividualExpenses(),
+          (AuthRepository.authEmail!.contains("_instructor")|| AuthRepository.authEmail!.contains("_superadmin")) ? ExpenseManager() : IndividualExpenses(),
         ],
       ),
 
