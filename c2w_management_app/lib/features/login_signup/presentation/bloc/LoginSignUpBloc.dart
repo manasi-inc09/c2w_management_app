@@ -2,69 +2,92 @@ import 'dart:developer';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
+// import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
-
   final AuthRepository _authRepository = AuthRepository();
 
-  Loginsignupbloc() : super( LoginSignupState()) {
-
-    on<LoginEvent>((event, emit) {
+  Loginsignupbloc() : super(LoginSignupState()) {
+    on<LoginEvent>((event, emit) async {
       print("Login Event Called");
-    print("Bloc Email: ${event.email}");
-      emit(LoginSignupState(
-        email: event.email,
-        pass: event.pass,
-        role: event.role,
-      ));
-      try{
-        
-      _authRepository.loginUser(email: event.email,pass: event.pass,role: event.role);
-      }on FirebaseException catch(e){
-        print(e.message);
+      print("Bloc Email: ${event.email}");
+      emit(
+        LoginSignupState(
+          email: event.email,
+          pass: event.pass,
+          role: event.role,
+        ),
+      );
+      try {
+        await _authRepository.loginUser(
+          email: event.email,
+          pass: event.pass,
+          role: event.role,
+        );
+        emit(LoginSuccessful());
+      } on FirebaseException catch (e) {
+        if (e.code == 'invalid-credential' ||
+            e.code == 'wrong-password' ||
+            e.code == 'user-not-found') {
+          emit(LoginInvalidCredentials());
+        } else {
+          emit(LoginFailure(e.message ?? 'Login failed'));
+        }
+      } catch (e) {
+        emit(LoginFailure('Something went wrong'));
       }
-      log("Login emitted");
-      //return userCredential;
     });
 
-    on<SignupAuthEvent>((event, emit) {
+    on<SignupAuthEvent>((event, emit) async {
       print("SignUp auth Event Called");
-    print("Email: ${event.email}");
-      emit(LoginSignupState(
-        email: event.email,
-        pass: event.pass,
-      ));
-      try{
-    _authRepository.signupUser(email: event.email,pass: event.pass);
-      }
-      on FirebaseException catch(e){
+      print("Email: ${event.email}");
+      emit(LoginSignupState(email: event.email, pass: event.pass,role: event.role));
+      try {
+        await _authRepository.signupUser(email: event.email, pass: event.pass,role: event.role);
+      } on FirebaseException catch (e) {
         print(e.message);
       }
       print("SignUp Auth emitted");
     });
 
-    on<SignupDataEvent>((event, emit) {
+    on<SignupDataEvent>((event, emit) async {
       print("Signup Event Called");
       print("Name: ${event.name}");
-      emit(LoginSignupState(
-        name: event.name,
-        email: event.email,
-        mob: event.mob,
-        upi: event.upi,
-        dob: event.dob,        
-        pass: event.pass,
-        role: event.role
-      ));
-      try{
-      _authRepository.signupdata(name: event.name,email:event.email ,mobno: event.mob,upi: event.upi,dob: event.dob,pass: event.pass,role: event.role);
+
+      emit(SignupLoading());
+
+      try {
+        await _authRepository.signupdata(
+          name: event.name,
+          email: event.email,
+          mobno: event.mob,
+          upi: event.upi,
+          dob: event.dob,
+          pass: event.pass,
+          role: event.role,
+        );
+
+        emit(SignupSuccessful());
+        log("Signup Successful");
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          emit(SignupInvalidCredentials());
+        } else {
+          emit(SignupFailure(e.message ?? 'Signup failed'));
+        }
+
+        log("Signup Error: ${e.message}");
+      } on FirebaseException catch (e) {
+        emit(SignupFailure(e.message ?? 'Failed to save signup data'));
+        log("Firebase Error: ${e.message}");
+      } catch (e) {
+        emit(SignupFailure('Something went wrong'));
+        log("Signup Error: $e");
       }
-      on FirebaseException catch(e){
-        print(e.message);
-      }
-      log("SignUp emitted");
     });
   }
 }

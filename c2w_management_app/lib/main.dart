@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_expense_remote_data_source.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/repositories/teamlead_expense_repository_impl.dart';
@@ -19,7 +21,7 @@ void main() async {
     appId: "1:268875323461:android:605b45eb088fcefb682b2c", 
     messagingSenderId:"268875323461", 
     projectId: "c2w-erp"));
-    print("firebase initiallized");
+    log("firebase initiallized");
     runApp(const MainApp());
 }
 

@@ -25,11 +25,12 @@ class LoginEvent extends LoginSignupEvent {
 class SignupAuthEvent extends LoginSignupEvent {
   final String email;
   final String pass;
+   final String role;
 
-  const SignupAuthEvent(this.email, this.pass);
+  const SignupAuthEvent(this.email, this.pass,this.role);
 
   @override
-  List<Object?> get props => [email, pass];
+  List<Object?> get props => [email, pass,role];
 }
 
 class SignupDataEvent extends LoginSignupEvent {
