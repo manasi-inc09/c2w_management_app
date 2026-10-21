@@ -20,10 +20,10 @@ class AuthRepository {
   }) async{
     role=role.toLowerCase();
     try{
-      authEmail = "_$role$email";
-      log("login email : _$role$email");
+      authEmail = "${role}_$email";
+      log("login email : ${role}_$email");
        userCredential = await  _firebaseAuth
-                  .signInWithEmailAndPassword(email:email,password: pass);
+                  .signInWithEmailAndPassword(email:authEmail!,password: pass);
 
       log("UserCredentials : ${userCredential}");
     }on FirebaseAuthException catch (err){
@@ -36,12 +36,20 @@ class AuthRepository {
   Future<UserCredential> signupUser({
     required String email,
     required String pass,
-  })async{
+    required String role,
+
+  }) async{
+    role=role.toLowerCase();
     try{
+      authEmail = "${role}_$email";
+      log("login email : ${role}_$email");
        userCredential = await  _firebaseAuth
-                  .createUserWithEmailAndPassword(email:email,password: pass);
+                  .createUserWithEmailAndPassword(email:authEmail!,password: pass);
+
+      // log("UserCredentials : ${userCredential}");
     }on FirebaseAuthException catch (err){
-      log("${err.message}");
+
+      log(" error message ${err.message}");
     }
     return userCredential!;
   }
@@ -58,11 +66,11 @@ class AuthRepository {
     role=role.toLowerCase();
     try{
       print("in repo email: ${email}");
-      log("_${role}${email}");
+      log("${role}_${email}");
      obj = {
                   "Name":name,
-                  "Email":"_$role$email",
-                  "Mobile no.:":mobno,
+                  "Email":email,
+                  "Mobile no.":mobno,
                   "UPI ID":upi,
                   "DOB":dob,
                   "Password":pass,

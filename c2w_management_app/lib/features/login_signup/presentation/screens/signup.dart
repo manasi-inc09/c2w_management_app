@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:c2w_management_app/features/enquiry/dashboard_view.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -277,6 +278,7 @@ class SelectRoleScreen extends StatefulWidget {
   final String upi;
   final String dob;
   final String password;
+  
 
   const SelectRoleScreen({
     super.key,
@@ -306,6 +308,40 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
   @override
   Widget build(BuildContext context) {
     final roles = ['Instructor', 'Mentor', 'TeamLead','SalesAdmin'];
+
+    return BlocConsumer<Loginsignupbloc, LoginSignupState>(
+    listener: (context, state) {
+      if (state is SignupSuccessful) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signup successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => LoginScreen(),
+          ),
+        );
+      } else if (state is SignupInvalidCredentials) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This email is already registered.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else if (state is SignupFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    },
+    builder: (context, state) {
+      final isLoading = state is SignupLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFF070A1B),
@@ -417,7 +453,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
                         onPressed: selectedRole != null
                             ? () {
                                 context.read<Loginsignupbloc>().add(SignupDataEvent(widget.fullName,widget.email,widget.mobile, widget.upi, widget.dob, widget.password,selectedRole!));
-                                context.read<Loginsignupbloc>().add(SignupAuthEvent(widget.email, widget.password));
+                                context.read<Loginsignupbloc>().add(SignupAuthEvent(widget.email, widget.password,selectedRole!));
                                 log(widget.email);
                                 
                                 
@@ -450,6 +486,8 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
           ],
         ),
       ),
+    );
+    }
     );
   }
 }

@@ -200,13 +200,13 @@ class _DashboardViewState extends State<DashboardView> {
                                 child: Visibility(
                                   visible:
                                       !(AuthRepository.authEmail!.contains(
-                                            "_instructor",
+                                            "instructor_",
                                           ) ||
                                           AuthRepository.authEmail!.contains(
-                                            "_mentor",
+                                            "mentor_",
                                           ) ||
                                           AuthRepository.authEmail!.contains(
-                                            "_teamlead",
+                                            "teamlead_",
                                           )),
                                   child: Row(
                                     children: [
@@ -241,7 +241,7 @@ class _DashboardViewState extends State<DashboardView> {
         ],
       ),
 
-      bottomNavigationBar: AuthRepository.authEmail!.contains("_salesadmin")
+      bottomNavigationBar: AuthRepository.authEmail!.contains("salesadmin_")
           ? null
           : CommonBottomNavigationBar(
               currentIndex: currentIndex,
