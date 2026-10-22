@@ -207,6 +207,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           value: 'salesadmin',
                           child: Text('Sales Admin'),
                         ),
+                        DropdownMenuItem(
+                          value: 'superadmin',
+                          child: Text('Super Admin'),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() {

@@ -1,6 +1,7 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/presentation/screens/individual_expenses.dart';
 import 'package:flutter/material.dart';
 
 class FloatingButton {
@@ -57,6 +58,20 @@ class FloatingButton {
                       },
                       child: const Text(
                         'New Categories',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Divider(),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=>IndividualExpenses()));
+                      },
+                      child: const Text(
+                        'My Transactions',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

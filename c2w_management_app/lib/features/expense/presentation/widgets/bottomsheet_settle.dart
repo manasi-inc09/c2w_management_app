@@ -1,6 +1,7 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class BottomsheetSettle {
@@ -133,31 +134,47 @@ class BottomsheetSettle {
                     ],
                   ),
                   const SizedBox(height: 15),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        Text(
-                          "Total Amount",
-                          style: GoogleFonts.roboto(
-                            fontSize: 20,
-                            fontWeight: FontWeight(500),
-                            color: Colors.white,
-                          ),
+                  (selectedOption=="Option 1")?
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              "Total Amount",
+                              style: GoogleFonts.roboto(
+                                fontSize: 20,
+                                fontWeight: FontWeight(500),
+                                color: Colors.white,
+                              ),
+                            ),
+                            Spacer(),
+                            Text(
+                              "8590",
+                              style: GoogleFonts.roboto(
+                                fontSize: 20,
+                                fontWeight: FontWeight(500),
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
-                        Spacer(),
-                        Text(
-                          "8590",
-                          style: GoogleFonts.roboto(
-                            fontSize: 20,
-                            fontWeight: FontWeight(500),
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                      ),
+                      Divider(),
+                    ],
+                  ):TextField(
+                    style: TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelStyle: TextStyle(color: Colors.white),
+                      hintText: "Enter your Amount",
+                      hintStyle: TextStyle(color: Colors.white),
                     ),
                   ),
-                  Divider(),
+                  
                   const SizedBox(height: 10),
                   Container(
                     height: 60,

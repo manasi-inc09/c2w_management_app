@@ -6,7 +6,6 @@ import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry
 import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/individual_expenses.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -237,7 +236,11 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          (AuthRepository.authEmail!.contains("_instructor")|| AuthRepository.authEmail!.contains("_superadmin")) ? ExpenseManager() : IndividualExpenses(),
+          (AuthRepository.authEmail!.contains("superadmin_") ||
+                  AuthRepository.authEmail!.contains("instructor_") ||
+                  AuthRepository.authEmail!.contains("salesadmin_"))
+              ? ExpenseManager()
+              : IndividualExpenses(),
         ],
       ),
 

@@ -5,8 +5,6 @@ import 'package:c2w_management_app/features/expense/teamlead/presentation/teamle
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_event.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_state.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
-import 'package:date_picker_plus/date_picker_plus.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -190,7 +188,9 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
                   const SizedBox(width: 12),
-                  (AuthRepository.authEmail!.contains("_instructor"))?buildRadioBox(title: "Wallet", value: "Option 2"):SizedBox(),
+                  (AuthRepository.authEmail?.startsWith("instructor_") ?? false)
+                      ? buildRadioBox(title: "Wallet", value: "Option 2")
+                      : const SizedBox(),
                 ],
               ),
               const SizedBox(height: 5),
@@ -653,4 +653,3 @@ void showMessage(String message) {
 }
 
 }
-
