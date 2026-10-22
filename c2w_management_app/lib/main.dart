@@ -1,5 +1,8 @@
 import 'dart:developer';
 
+import 'package:c2w_management_app/features/Profile/data/repository/GetUserdata.dart';
+import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileBloc.dart';
+import 'package:c2w_management_app/features/Profile/presentation/screens/profile.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_expense_remote_data_source.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/repositories/teamlead_expense_repository_impl.dart';
@@ -14,15 +17,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
-  
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: FirebaseOptions(
-    apiKey: "AIzaSyC31ncXICBwDavaVL7JkNYG4jegsCFXuNg", 
-    appId: "1:268875323461:android:605b45eb088fcefb682b2c", 
-    messagingSenderId:"268875323461", 
-    projectId: "c2w-erp"));
-    log("firebase initiallized");
-    runApp(const MainApp());
+  await Firebase.initializeApp(
+    options: FirebaseOptions(
+      apiKey: "AIzaSyC31ncXICBwDavaVL7JkNYG4jegsCFXuNg",
+      appId: "1:268875323461:android:605b45eb088fcefb682b2c",
+      messagingSenderId: "268875323461",
+      projectId: "c2w-erp",
+    ),
+  );
+  log("firebase initiallized");
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -41,18 +46,17 @@ class MainApp extends StatelessWidget {
       remoteDataSource: expenseRemoteDataSource,
     );
 
-    final createExpenseUseCase = CreateExpenseUseCase(
-      expenseRepository,
-    );
+    final createExpenseUseCase = CreateExpenseUseCase(expenseRepository);
     return MultiBlocProvider(
       providers: [
-        BlocProvider<Loginsignupbloc>(
-          create: (context) => Loginsignupbloc(),
-        ),
+        BlocProvider<Loginsignupbloc>(create: (context) => Loginsignupbloc()),
         BlocProvider<CreateExpenseBloc>(
-          create: (context) => CreateExpenseBloc(
-            createExpenseUseCase: createExpenseUseCase,
-          ),
+          create: (context) =>
+              CreateExpenseBloc(createExpenseUseCase: createExpenseUseCase),
+        ),
+        BlocProvider(
+          create: (context) => ProfileBloc(GetUserData()),
+          child: const ProfileScreen(),
         ),
       ],
       child: MaterialApp(
