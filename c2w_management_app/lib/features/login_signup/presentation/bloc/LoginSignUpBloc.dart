@@ -38,7 +38,7 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
           emit(LoginFailure(e.message ?? 'Login failed'));
         }
       } catch (e) {
-        emit(LoginFailure('Something went wrong'));
+        emit(LoginFailure('Please enter valid credentials.'));
       }
     });
 

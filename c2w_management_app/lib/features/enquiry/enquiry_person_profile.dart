@@ -331,7 +331,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
             children: [
               const Icon(Icons.phone_outlined, color: Colors.white54),
               const SizedBox(width: 12),
-              Expanded(child: _field("Mobile No.", "+91 80798 17713")),
+              Expanded(child: _field("Mobile No", "+91 80798 17713")),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(25, 229, 122, 1),

@@ -70,11 +70,11 @@ class AuthRepository {
      obj = {
                   "Name":name,
                   "Email":email,
-                  "Mobile no.":mobno,
+                  "Mobile No":mobno,
                   "UPI ID":upi,
                   "DOB":dob,
                   "Password":pass,
-                  "role":role
+                  "Role":role
                  
                 };
                 log("data adding in firebase.................");
