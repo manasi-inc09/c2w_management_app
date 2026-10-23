@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/Profile/data/models/UserModel.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileBloc.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileEvent.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileState.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -84,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder:(context) => LoginScreen(),)),
                     child: Text(
                       'Logout',
                       style: GoogleFonts.figtree(fontSize: 16),
@@ -502,7 +503,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       'Name': fields[0].controller.text.trim(),
       'DOB': fields[1].controller.text.trim(),
       'Mobile No': fields[2].controller.text.trim(),
-      'UPI ID': fields[3].controller.text.trim(),
+      'UPI ID': fields[4].controller.text.trim(),
     };
 
     FocusScope.of(context).unfocus();

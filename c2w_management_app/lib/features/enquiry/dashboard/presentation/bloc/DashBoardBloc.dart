@@ -1,0 +1,55 @@
+import 'dart:developer';
+
+import 'package:c2w_management_app/features/enquiry/dashboard/data/repository/GetEnquiryData.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardEvent.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardState.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
+  final GetEnquiryData repository;
+
+  DashBoardBloc({GetEnquiryData? repository})
+      : repository = repository ?? GetEnquiryData(),
+        super(const DashBoardInitial()) {
+    on<FetchEnquiriesEvent>(_onFetchEnquiries);
+    on<RefreshEnquiriesEvent>(_onRefreshEnquiries);
+  }
+
+  Future<void> _onFetchEnquiries(
+    FetchEnquiriesEvent event,
+    Emitter<DashBoardState> emit,
+  ) async {
+    emit(const DashBoardLoading());
+    try {
+      final enquiries = await repository.fetchEnquiries();
+      if (enquiries.isEmpty) {
+        emit(const DashBoardEmpty());
+      } else {
+        emit(DashBoardLoaded(enquiries));
+      }
+    } catch (e) {
+      log('DashBoardBloc: Failed to fetch enquiries: $e');
+      emit(DashBoardError('Failed to fetch enquiries: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onRefreshEnquiries(
+    RefreshEnquiriesEvent event,
+    Emitter<DashBoardState> emit,
+  ) async {
+    try {
+      final enquiries = await repository.fetchEnquiries();
+      if (enquiries.isEmpty) {
+        emit(const DashBoardEmpty());
+      } else {
+        emit(DashBoardLoaded(enquiries));
+      }
+    } catch (e) {
+      log('DashBoardBloc: Failed to refresh enquiries: $e');
+      emit(DashBoardError('Failed to refresh enquiries: ${e.toString()}'));
+    }
+  }
+}
+
+/// Typedef matching the file name 'DashBoardBoc.dart' for backwards compatibility
+typedef DashBoardBoc = DashBoardBloc;

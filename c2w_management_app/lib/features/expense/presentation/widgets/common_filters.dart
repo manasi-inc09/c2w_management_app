@@ -1,4 +1,4 @@
-import 'package:c2w_management_app/features/enquiry/presentation/widgets/filters.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/widgets/filters.dart';
 import 'package:flutter/material.dart';
 
 class CommonFilters {
