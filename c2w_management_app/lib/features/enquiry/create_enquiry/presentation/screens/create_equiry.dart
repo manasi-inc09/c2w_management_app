@@ -27,11 +27,19 @@ class _CreateEquiryState extends State<CreateEquiry> {
   TextEditingController sourceController = TextEditingController();
 
   final List<String> colleges = [
-    'College of Engineering Pune',
-    'MIT Pune',
-    'VIT Pune',
-    'Symbiosis',
-    'Other',
+    "Abhinav College of Engineering",
+    "Bharati Vidyapeeth Deemed University College of Engineering",
+    "Dr. D. Y. Patil Institute of Technology",
+    "JSPM's Bhivarabai Sawant Institute of Technology and Research",
+    "JSPM's Narhe Technical Campus (NTC)",
+    "Sinhgad Institute of Technology and Science (SITS)",
+    "Sinhgad Institute of Management and Computer Application (SIMCA)",
+    "SKN Sinhgad Institute of Technology and Science, Lonavala",
+    "Zeal College of Engineering and Research (ZCOER)",
+    "MIT Pune",
+    "VIT Pune",
+    "Symbiosis",
+    "Other",
   ];
   final List<String> sources = ['Website', 'YouTube', 'Instagram'];
   String? selectedCollege;
@@ -207,14 +215,20 @@ class _CreateEquiryState extends State<CreateEquiry> {
               SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: selectedCollege,
+                isExpanded: true, // Prevents horizontal overflow
                 dropdownColor: const Color(0xFF161B2E),
                 iconEnabledColor: Colors.white,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 hint: const Text(
                   'Select college',
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.white54),
                 ),
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Colors.white),
@@ -227,14 +241,28 @@ class _CreateEquiryState extends State<CreateEquiry> {
                     ),
                   ),
                 ),
-                items: colleges
-                    .map(
-                      (college) => DropdownMenuItem(
-                        value: college,
-                        child: Text(college),
+                items: colleges.map((college) {
+                  return DropdownMenuItem<String>(
+                    value: college,
+                    child: Text(
+                      college,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                selectedItemBuilder: (context) {
+                  return colleges.map((college) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        college,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                    .toList(),
+                    );
+                  }).toList();
+                },
                 onChanged: (value) {
                   setState(() {
                     selectedCollege = value;
@@ -510,6 +538,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                               referenceBy: refController.text.trim(),
                               enquirySource: selectedSource!,
                               enquiryAddedBy: AuthRepository.authEmail!,
+                              enquiryType: "General",
                             ),
                           );
                         },

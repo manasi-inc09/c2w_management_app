@@ -10,6 +10,7 @@ class CreateEnquiryEvent extends AddEnquiryEvent {
   final String referenceBy;
   final String enquirySource;
   final String enquiryAddedBy;
+  final String enquiryType;
 
   CreateEnquiryEvent({
     required this.studentName,
@@ -21,5 +22,6 @@ class CreateEnquiryEvent extends AddEnquiryEvent {
     required this.referenceBy,
     required this.enquirySource,
     required this.enquiryAddedBy,
+    required this.enquiryType,
   });
 }

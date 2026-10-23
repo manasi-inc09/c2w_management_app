@@ -16,6 +16,7 @@ class AddEnquiryRepository {
     required String referenceBy,
     required String enquirySource,
     required String enquiryAddedBy,
+    required String enquiryType,              /// for dashboard only (i.e General)
   }) async {
     final collection = firestore.collection('Enquiries');
     final docs = (await collection.get()).docs.where((doc) {
@@ -42,6 +43,7 @@ class AddEnquiryRepository {
       'Call Status Updated At': null,
       'Admission Status Updated At': null,
       'enquiryAddedBy': enquiryAddedBy,
+      'Enquiry Type':enquiryType
     };
 
     if (docs.isEmpty) {

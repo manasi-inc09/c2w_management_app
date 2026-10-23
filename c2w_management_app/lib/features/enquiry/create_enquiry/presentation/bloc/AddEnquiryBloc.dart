@@ -26,7 +26,8 @@ class AddEnquiryBloc extends Bloc<AddEnquiryEvent, AddEnquiryState> {
         studentFeedback: event.studentFeedback,
         referenceBy: event.referenceBy,
         enquirySource: event.enquirySource,
-        enquiryAddedBy: event.enquiryAddedBy
+        enquiryAddedBy: event.enquiryAddedBy,
+        enquiryType: event.enquiryType
       );
 
       emit(AddEnquirySuccess(wasRepeatEnquiry: wasRepeatEnquiry));
