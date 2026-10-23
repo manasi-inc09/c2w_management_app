@@ -1,5 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -7,6 +8,7 @@ class MonthwiseIndividualListview {
   Widget getExpenseHistoryListview(
     List<Map<String, dynamic>> transactions, {
     bool shrinkWrap = false,
+    ValueChanged<Map<String, dynamic>>? onTransactionTap,
   }) {
     final grouped = <DateTime?, List<Map<String, dynamic>>>{};
 
@@ -40,6 +42,10 @@ class MonthwiseIndividualListview {
       itemBuilder: (context, groupIndex) {
         final month = months[groupIndex];
         final monthTransactions = grouped[month]!;
+        final colorOffset = months
+            .take(groupIndex)
+            .fold<int>(0, (total, key) => total + grouped[key]!.length);
+        final avatarColors = ColorList().colorList;
         final monthTotal = monthTransactions.fold<double>(
           0,
           (runningTotal, transaction) =>
@@ -90,7 +96,8 @@ class MonthwiseIndividualListview {
                 ],
               ),
             ),
-            ...monthTransactions.map((transaction) {
+            ...monthTransactions.asMap().entries.map((entry) {
+              final transaction = entry.value;
               final settled =
                   transaction['status']?.toString().toLowerCase() == 'settled';
               final description =
@@ -99,6 +106,11 @@ class MonthwiseIndividualListview {
               final source = transaction['source']?.toString() ?? '';
               final date = _transactionDate(transaction);
               final title = description.isEmpty ? category : description;
+              final initial = title.trim().isEmpty
+                  ? 'T'
+                  : title.trim()[0].toUpperCase();
+              final avatarColor =
+                  avatarColors[(colorOffset + entry.key) % avatarColors.length];
               final subtitle = [
                 category,
                 source,
@@ -106,12 +118,16 @@ class MonthwiseIndividualListview {
 
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TransactionDetails(),
-                    ),
-                  );
+                  if (onTransactionTap != null) {
+                    onTransactionTap(transaction);
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TransactionDetails(transaction),
+                      ),
+                    );
+                  }
                 },
                 child: Opacity(
                   opacity: settled ? 0.42 : 1,
@@ -125,11 +141,11 @@ class MonthwiseIndividualListview {
                       children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: const Color(0xFF2196F3),
+                          backgroundColor: avatarColor,
                           child: Text(
-                            title.isEmpty ? 'T' : title[0].toUpperCase(),
+                            initial,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFF202435),
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -328,7 +344,7 @@ class MonthwiseIndividualListview {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => TransactionDetails(),
+                      builder: (context) => TransactionDetails(group),
                     ),
                   );
                 },

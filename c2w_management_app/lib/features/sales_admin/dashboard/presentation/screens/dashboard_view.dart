@@ -1,6 +1,6 @@
 import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
-import 'package:c2w_management_app/features/Profile/profile.dart';
-import 'package:c2w_management_app/features/enquiry/create_equiry.dart';
+import 'package:c2w_management_app/features/Profile/presentation/screens/profile.dart';
+import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/screens/create_equiry.dart';
 import 'package:c2w_management_app/features/enquiry/enquiry_overview.dart';
 import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';

@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/expense/presentation/bloc/expense_fi
 import 'package:c2w_management_app/features/expense/presentation/widgets/bottomsheet_settle.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_individual_listview.dart';
+import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +22,16 @@ class MembersDetailList extends StatefulWidget {
 }
 
 class _MembersDetailListState extends State<MembersDetailList> {
+  Future<void> _refreshMemberDetails() {
+    final bloc = context.read<MemberDetailsBloc>();
+    return reloadAfterEvent(
+      states: bloc.stream,
+      dispatch: () => bloc.add(LoadMemberDetails(widget.member)),
+      isComplete: (state) =>
+          state is MemberDetailsLoaded || state is MemberDetailsFailure,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -226,24 +237,28 @@ class _MembersDetailListState extends State<MembersDetailList> {
             currentEmail: authEmail,
           );
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                CommonFilters().getCategoryDateChips(context),
-                const SizedBox(height: 10),
-                expenses.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'No transactions for this member.',
-                          style: TextStyle(color: Colors.white70),
+          return RefreshIndicator(
+            onRefresh: _refreshMemberDetails,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  CommonFilters().getCategoryDateChips(context),
+                  const SizedBox(height: 10),
+                  expenses.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'No transactions for this member.',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : MonthwiseIndividualListview().getExpenseHistoryListview(
+                          expenses,
+                          shrinkWrap: true,
                         ),
-                      )
-                    : MonthwiseIndividualListview().getExpenseHistoryListview(
-                        expenses,
-                        shrinkWrap: true,
-                      ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -251,7 +266,7 @@ class _MembersDetailListState extends State<MembersDetailList> {
       bottomNavigationBar: SettleButton().getSettleButton(
         context,
         canSettle ? "Settle" : "Add Transaction",
-        container: BottomsheetSettle().getBottomSheetOpen(),
+        container: BottomsheetSettle().getBottomSheetOpen(widget.member),
       ),
     );
   }

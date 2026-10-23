@@ -1,8 +1,11 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/subcategories_page.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ManageCategories extends StatefulWidget {
@@ -13,40 +16,54 @@ class ManageCategories extends StatefulWidget {
 }
 
 class _ManageCategoriesState extends State<ManageCategories> {
-  List<Map> categoryList=[{"categoryName":"Food",
-                            "subcategories_count":1,
-                            "subCategories":["marriage","CPL",]
-                            },
-                            {
-                              "categoryName":"Events",
-                            "subcategories_count":0,
-                            "subCategories":[]
-                            },
-                            {"categoryName":"Food",
-                            "subcategories_count":1,
-                            "subCategories":["marriage"]
-                            },
-                            {
-                              "categoryName":"Events",
-                            "subcategories_count":0,
-                            "subCategories":[]
-                            }];
+  final _searchController = TextEditingController();
+  String _query = '';
 
+  @override
+  void initState() {
+    super.initState();
+    context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
+    _searchController.addListener(() {
+      setState(() => _query = _searchController.text.trim().toLowerCase());
+    });
+  }
 
-  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openAddCategory() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const AddNewCategory()),
+    );
+    if (saved == true && mounted) {
+      context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
+      context.read<ExpenseFilterBloc>().add(LoadExpenseFilterOptions());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!canManageExpenseCategories()) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Only SuperAdmin or Instructor can manage categories.'),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
         titleSpacing: 0,
         leading: GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Icon(Icons.arrow_back, color: Colors.white)),
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: Text(
           "Manage Categories",
           style: GoogleFonts.figtree(
@@ -57,15 +74,13 @@ class _ManageCategoriesState extends State<ManageCategories> {
         ),
         actions: [
           ElevatedButton(
-            style: ButtonStyle(
+            style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(Colors.blue),
             ),
-            onPressed: () {
-              Navigator.push(context,MaterialPageRoute(builder: (context)=>AddNewCategory()));
-            },
+            onPressed: _openAddCategory,
             child: Row(
               children: [
-                Icon(Icons.add, color: Colors.white),
+                const Icon(Icons.add, color: Colors.white),
                 Text(
                   "Add",
                   style: GoogleFonts.figtree(
@@ -83,10 +98,10 @@ class _ManageCategoriesState extends State<ManageCategories> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(15.0),
+            padding: const EdgeInsets.all(15),
             child: TextField(
-              style: TextStyle(color: Colors.white),
-
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppTheme().appBarBackgroundColor,
@@ -94,10 +109,8 @@ class _ManageCategoriesState extends State<ManageCategories> {
                   Icons.search_outlined,
                   color: Colors.white,
                 ),
-
                 hintText: "Search by name",
                 hintStyle: const TextStyle(color: Colors.white54),
-
                 enabledBorder: OutlineInputBorder(
                   borderSide: const BorderSide(
                     width: 1,
@@ -105,7 +118,6 @@ class _ManageCategoriesState extends State<ManageCategories> {
                   ),
                   borderRadius: BorderRadius.circular(30),
                 ),
-
                 focusedBorder: OutlineInputBorder(
                   borderSide: const BorderSide(
                     width: 1,
@@ -116,66 +128,169 @@ class _ManageCategoriesState extends State<ManageCategories> {
               ),
             ),
           ),
-          
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: categoryList.length,
-            itemBuilder: (context,index){
-            return Padding(
-              padding: const EdgeInsets.only(left:15.0,right: 15,top: 10,),
-              child: Container(
-                height: 80,
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                  color: AppTheme().appBarBackgroundColor,
-                  border: Border.all(width: 1,color:Color.fromARGB(255, 34, 34, 34)),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                child:Row(
-                    children: [
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Container(
-                        height: 60,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+          Expanded(
+            child: BlocBuilder<ExpenseCategoryBloc, ExpenseCategoryState>(
+              builder: (context, state) {
+                if (state is ExpenseCategoryInitial ||
+                    state is ExpenseCategoryLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.blue),
+                  );
+                }
+                if (state is ExpenseCategoryFailure) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Could not load categories: ${state.message}',
+                          style: const TextStyle(color: Colors.white70),
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: CircleAvatar(
-                          backgroundColor: ColorList().colorList[index % ColorList().colorList.length],
-                          child:Text(categoryList[index]['categoryName'][0].toUpperCase(),style: GoogleFonts.figtree(fontSize: 30,fontWeight: FontWeight(600)),)
-                        )
+                        TextButton(
+                          onPressed: () => context
+                              .read<ExpenseCategoryBloc>()
+                              .add(LoadExpenseCategories()),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                if (state is! ExpenseCategoryLoaded) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.blue),
+                  );
+                }
+
+                final categories = state.categories.where((category) {
+                  final name = category['name']?.toString().toLowerCase() ?? '';
+                  return name.contains(_query);
+                }).toList();
+                if (categories.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _query.isEmpty
+                          ? 'No categories added yet.'
+                          : 'No matching categories.',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final name = category['name']?.toString() ?? '';
+                    final subCategories =
+                        (category['subCategories'] as List?)
+                            ?.map((value) => value.toString())
+                            .toList() ??
+                        <String>[];
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        left: 15,
+                        right: 15,
+                        top: 10,
                       ),
-                      const SizedBox(
-                        width: 10,
+                      child: Container(
+                        height: 80,
+                        width: MediaQuery.sizeOf(context).width,
+                        decoration: BoxDecoration(
+                          color: AppTheme().appBarBackgroundColor,
+                          border: Border.all(
+                            width: 1,
+                            color: const Color.fromARGB(255, 34, 34, 34),
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 10),
+                            Container(
+                              height: 60,
+                              width: 60,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircleAvatar(
+                                backgroundColor:
+                                    ColorList().colorList[index %
+                                        ColorList().colorList.length],
+                                child: Text(
+                                  name.isEmpty ? '?' : name[0].toUpperCase(),
+                                  style: GoogleFonts.figtree(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight(600),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: GoogleFonts.figtree(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight(600),
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  "${subCategories.length} Sub-Categories",
+                                  style: GoogleFonts.figtree(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight(400),
+                                    color: const Color.fromRGBO(
+                                      255,
+                                      255,
+                                      255,
+                                      0.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () async {
+                                await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SubcategoriesPage(
+                                      category: category,
+                                      categoryIndex: index,
+                                    ),
+                                  ),
+                                );
+                                if (context.mounted) {
+                                  context.read<ExpenseCategoryBloc>().add(
+                                    LoadExpenseCategories(),
+                                  );
+                                  context.read<ExpenseFilterBloc>().add(
+                                    LoadExpenseFilterOptions(),
+                                  );
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.arrow_forward,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                        ),
                       ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(categoryList[index]['categoryName'],style:GoogleFonts.figtree(fontSize: 20,fontWeight: FontWeight(600),color: Colors.white)),
-                      Text("${categoryList[index]['subcategories_count']} Sub-Categories",style:GoogleFonts.figtree(fontSize: 15,fontWeight: FontWeight(400),color: Color.fromRGBO(255, 255, 255, 0.6)))
-                    ],
-                  ),
-                  Spacer(),
-                  GestureDetector(
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>SubcategoriesPage(index,categoryList,categoryList[index]['subCategories'].length)));
-                      setState(() {
-                        
-                      });
-                    },
-                    child: Icon(Icons.arrow_forward,color: Colors.white,)),
-                  const SizedBox(
-                    width: 10,
-                  )
-                    ],
-                  ),
-              ),
-            );
-          })
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

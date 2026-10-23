@@ -29,6 +29,34 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   @override
+  Future<double> getWalletBalance() {
+    return _remoteDataSource.getWalletBalance();
+  }
+
+  @override
+  Stream<double> watchWalletBalance() {
+    return _remoteDataSource.watchWalletBalance();
+  }
+
+  @override
+  Future<void> addWalletTopUp(double amount) {
+    return _remoteDataSource.addWalletTopUp(amount);
+  }
+
+  @override
+  Future<void> settleWalletExpense({
+    required String expenseId,
+    required double amount,
+    required bool fromWallet,
+  }) {
+    return _remoteDataSource.settleWalletExpense(
+      expenseId: expenseId,
+      amount: amount,
+      fromWallet: fromWallet,
+    );
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getMembers() {
     return _remoteDataSource.getMembers();
   }
@@ -36,5 +64,39 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<List<Map<String, dynamic>>> getExpensesByEmail(String email) {
     return _remoteDataSource.getExpensesByEmail(email);
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchExpenseCategories() {
+    return _remoteDataSource.watchExpenseCategories();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getExpenseCategories() {
+    return _remoteDataSource.getExpenseCategories();
+  }
+
+  @override
+  Future<void> addExpenseCategory({
+    required String name,
+    required List<String> subCategories,
+  }) {
+    return _remoteDataSource.addExpenseCategory(
+      name: name,
+      subCategories: subCategories,
+    );
+  }
+
+  @override
+  Future<void> updateExpenseCategory({
+    required String id,
+    required String name,
+    required List<String> subCategories,
+  }) {
+    return _remoteDataSource.updateExpenseCategory(
+      id: id,
+      name: name,
+      subCategories: subCategories,
+    );
   }
 }

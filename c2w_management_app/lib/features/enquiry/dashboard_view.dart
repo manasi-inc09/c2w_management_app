@@ -1,4 +1,4 @@
-import 'package:c2w_management_app/features/enquiry/create_equiry.dart';
+import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/screens/create_equiry.dart';
 import 'package:c2w_management_app/features/enquiry/enquiry_overview.dart';
 import 'package:c2w_management_app/features/enquiry/presentation/widgets/enquiry_list.dart';
 import 'package:flutter/material.dart';

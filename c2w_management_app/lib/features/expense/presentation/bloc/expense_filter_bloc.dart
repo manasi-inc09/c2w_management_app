@@ -120,41 +120,28 @@ class ExpenseFilterBloc extends Bloc<Object, ExpenseFilterInitial> {
     emit(ExpenseFilterLoading(selection: state.selection));
     try {
       final results = await Future.wait([
-        _expenseUseCase.getAllExpenses(),
+        _expenseUseCase.getExpenseCategories(),
         _expenseUseCase.getMembers(),
       ]);
-      final expenses = results[0];
+      final categoryDocuments = results[0];
       final members = results[1];
-      final subCategories = <String, Set<String>>{};
-      final categories = <String>{
-        'Food',
-        'Shopping',
-        'Travel',
-        'Education',
-        'Health',
-        'Other',
-        'Events',
-      };
+      final categories = <String>[];
+      final subCategories = <String, List<String>>{};
 
-      for (final expense in expenses) {
-        final category = expense['category']?.toString().trim() ?? '';
-        final subCategory = expense['subCategory']?.toString().trim() ?? '';
-        if (category.isEmpty) continue;
-        categories.add(category);
-        if (subCategory.isNotEmpty) {
-          subCategories
-              .putIfAbsent(category, () => <String>{})
-              .add(subCategory);
-        }
+      for (final document in categoryDocuments) {
+        final name = document['name']?.toString().trim() ?? '';
+        if (name.isEmpty) continue;
+        categories.add(name);
+        final values = document['subCategories'];
+        subCategories[name] = values is List
+            ? values.map((value) => value.toString()).toList()
+            : <String>[];
       }
 
       emit(
         ExpenseFilterLoaded(
-          categories: categories.toList()..sort(),
-          subCategories: {
-            for (final entry in subCategories.entries)
-              entry.key: entry.value.toList()..sort(),
-          },
+          categories: categories,
+          subCategories: subCategories,
           members: members,
           selection: state.selection,
         ),

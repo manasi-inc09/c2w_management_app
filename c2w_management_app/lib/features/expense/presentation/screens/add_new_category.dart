@@ -1,6 +1,9 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddNewCategory extends StatefulWidget {
@@ -11,207 +14,193 @@ class AddNewCategory extends StatefulWidget {
 }
 
 class _AddNewCategoryState extends State<AddNewCategory> {
-   TextEditingController? categoryController;
+  final _categoryController = TextEditingController();
+  final List<TextEditingController> _subCategoryControllers = [];
 
-  List<TextEditingController> subCategoryControllers = [];
-
-  @override
-  void initState() {
-    super.initState();
-
-   
+  void _addSubCategory() {
+    setState(() => _subCategoryControllers.add(TextEditingController()));
   }
 
-  // Add new TextField
-  void addSubCategory() {
-    setState(() {
-      subCategoryControllers.add(TextEditingController());
-    });
+  void _save() {
+    if (!canManageExpenseCategories()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only SuperAdmin or Instructor can manage categories.'),
+        ),
+      );
+      return;
+    }
+    final name = _categoryController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a category name.')));
+      return;
+    }
+    context.read<ExpenseCategoryBloc>().add(
+      SaveExpenseCategory(
+        name: name,
+        subCategories: _subCategoryControllers
+            .map((controller) => controller.text.trim())
+            .where((value) => value.isNotEmpty)
+            .toList(),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    //categoryController.dispose();
-
-    for (var controller in subCategoryControllers) {
+    _categoryController.dispose();
+    for (final controller in _subCategoryControllers) {
       controller.dispose();
     }
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme().bodyBackgroundColor,
-
-      appBar: AppBar(
-        backgroundColor: AppTheme().appBarBackgroundColor,
-
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back, color: Colors.white),
+    if (!canManageExpenseCategories()) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Only SuperAdmin or Instructor can manage categories.'),
         ),
+      );
+    }
 
-        title: Text(
-          "New Category",
-          style: GoogleFonts.figtree(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+    return BlocListener<ExpenseCategoryBloc, ExpenseCategoryState>(
+      listener: (context, state) {
+        if (state is ExpenseCategorySaved) {
+          context.read<ExpenseFilterBloc>().add(LoadExpenseFilterOptions());
+          Navigator.pop(context, true);
+        } else if (state is ExpenseCategoryFailure) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme().bodyBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme().appBarBackgroundColor,
+          leading: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
+          title: Text(
+            "New Category",
+            style: GoogleFonts.figtree(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
         ),
-
-        centerTitle: true,
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-              // CATEGORY TITLE
-
-              Text(
-                "Category Title",
-                style: GoogleFonts.figtree(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color.fromRGBO(255, 255, 255, 0.6),
+        body: Padding(
+          padding: const EdgeInsets.all(10),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionTitle('Category Title'),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _categoryController,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight(400),
+                  ),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight(400),
-                ),
-                controller: categoryController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      width: 1,
-                      color: Color.fromRGBO(31, 34, 49, 1),
+                const SizedBox(height: 20),
+                _sectionTitle('Sub-Categories'),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _subCategoryControllers.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: TextField(
+                      controller: _subCategoryControllers[index],
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      decoration: InputDecoration(
+                        prefixText: "${index + 1}. ",
+                        prefixStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        hintText: "Enter Sub-Category ${index + 1}",
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // SUBCATEGORIES
-              Text(
-                "Sub-Categories",
-                style: GoogleFonts.figtree(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color.fromRGBO(255, 255, 255, 0.6),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-
-                itemCount: subCategoryControllers.length,
-
-                itemBuilder: (context, index) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-                      TextField(
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight(400),
-                        ),
-                        
-                        controller: subCategoryControllers[index],
-
-                        decoration: InputDecoration(
-                          prefixText: "${index + 1}. ",
-                          prefixStyle:TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight(400),
-                        ) ,
-                          hintText: "Enter Sub-Category ${index + 1}",
-                          border: OutlineInputBorder(),
-                        ),
+                GestureDetector(
+                  onTap: _addSubCategory,
+                  child: Container(
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        width: 1,
+                        color: const Color.fromRGBO(5, 165, 255, 1),
                       ),
-
-                      SizedBox(height: 10),
-                    ],
-                  );
-                },
-              ),
-
-              // ADD SUBCATEGORY BUTTON
-              GestureDetector(
-                onTap: addSubCategory,
-
-                child: Container(
-                  height: 50,
-                  width: double.infinity,
-
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 1,
-                      color: Color.fromRGBO(5, 165, 255, 1),
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color.fromRGBO(5, 165, 255, 0.1),
                     ),
-
-                    borderRadius: BorderRadius.circular(10),
-
-                    color: Color.fromRGBO(5, 165, 255, 0.1),
-                  ),
-
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-
-                    children: [
-                      Container(
-                        height: 25,
-                        width: 25,
-
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(5, 165, 255, 1),
-                          shape: BoxShape.circle,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 25,
+                          width: 25,
+                          decoration: const BoxDecoration(
+                            color: Color.fromRGBO(5, 165, 255, 1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add),
                         ),
-
-                        child: Icon(Icons.add),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      Text(
-                        "Add Sub-Category",
-                        style: GoogleFonts.figtree(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color.fromRGBO(5, 165, 255, 1),
+                        const SizedBox(width: 10),
+                        Text(
+                          "Add Sub-Category",
+                          style: GoogleFonts.figtree(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: const Color.fromRGBO(5, 165, 255, 1),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 25),
-
-            ],
+                const SizedBox(height: 25),
+              ],
+            ),
           ),
         ),
+        bottomNavigationBar:
+            BlocBuilder<ExpenseCategoryBloc, ExpenseCategoryState>(
+              builder: (context, state) => SettleButton().getSettleButton(
+                context,
+                "Add Category",
+                isLoading: state is ExpenseCategorySaving,
+                onTap: state is ExpenseCategorySaving ? null : _save,
+              ),
+            ),
       ),
-    bottomNavigationBar: SettleButton().getSettleButton(context,"Add Category"),  
     );
   }
+
+  Widget _sectionTitle(String value) => Text(
+    value,
+    style: GoogleFonts.figtree(
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      color: const Color.fromRGBO(255, 255, 255, 0.6),
+    ),
+  );
 }

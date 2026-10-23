@@ -7,6 +7,7 @@ import 'package:c2w_management_app/features/expense/presentation/widgets/monthwi
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:c2w_management_app/features/expense/presentation/bloc/expense_history_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -110,7 +111,10 @@ class IndividualExpenses extends StatefulWidget {
 
 class _IndividualExpensesState extends State<IndividualExpenses> {
   String selectedOption = "Option 1";
-  List<String> individualFilterList = ["Event |  dsdsCPL event", "Subodh"];
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+  //List<String> individualFilterList = ["Event |  dsdsCPL event", "Subodh"];
   //List<String> filterList=["Categories","Members","dd-mm-yyyy"];
   Map<String, String> appliedFilters = {};
 
@@ -132,6 +136,55 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
     if (email == null || email.isEmpty) return null;
     if (role == null) return email;
     return email.substring(role.length + 1);
+  }
+
+  Future<void> _refreshHistory() {
+    final bloc = context.read<ExpenseHistoryBloc>();
+    final role = _authRole;
+    if (role == 'superadmin') {
+      return reloadAfterEvent(
+        states: bloc.stream,
+        dispatch: () => bloc.add(LoadAllExpenses()),
+        isComplete: (state) =>
+            state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
+      );
+    }
+    final email = _profileEmail;
+    if (email == null || email.isEmpty) return Future.value();
+    return reloadAfterEvent(
+      states: bloc.stream,
+      dispatch: () => bloc.add(LoadExpensesByEmail(email)),
+      isComplete: (state) =>
+          state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
+  bool _matchesExpenseSearch(Map<String, dynamic> expense) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return [
+      expense['claimantName'],
+      expense['description'],
+      expense['category'],
+      expense['subCategory'],
+      expense['source'],
+      expense['amount'],
+      expense['email'],
+    ].any((value) => value?.toString().toLowerCase().contains(query) ?? false);
   }
 
   @override
@@ -168,37 +221,56 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
 
-        leading: (role=='instructor'||role=='superadmin')?IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ):SizedBox(),
+        leading: (role == 'instructor' || role == 'superadmin')
+            ? IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+              )
+            : SizedBox(),
 
-        title: const Text(
-          "Transactions",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Search transactions',
+                  hintStyle: TextStyle(color: Colors.white54),
+                  border: InputBorder.none,
+                ),
+              )
+            : const Text(
+                "Transactions",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
 
         actions: [
-          Container(
-            height: 40,
-            width: 40,
-            margin: const EdgeInsets.only(right: 15),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                width: 1,
-                color: Color.fromRGBO(255, 255, 255, 0.1),
-              ),
-              color: Color.fromRGBO(255, 255, 255, 0.06),
+          IconButton(
+            onPressed: _isSearching
+                ? _toggleSearch
+                : () => setState(() => _isSearching = true),
+            icon: Icon(
+              _isSearching ? Icons.close : Icons.search_outlined,
+              color: Colors.white,
             ),
-            child: const Icon(Icons.search_outlined, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.06),
+              shape: const CircleBorder(
+                side: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.1)),
+              ),
+            ),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           ),
+          const SizedBox(width: 15),
         ],
         bottom: CommonFilters().getCommonFilter(context),
       ),
@@ -215,7 +287,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                       ? context.watch<ExpenseFilterBloc>().state.selection
                       : const ExpenseFilterSelection(),
                   currentEmail: _authenticatedEmail,
-                );
+                ).where(_matchesExpenseSearch).toList();
                 total = expenses.fold<double>(
                   0,
                   (sum, expense) => sum + _expenseAmount(expense),
@@ -289,17 +361,31 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                                     .selection
                               : const ExpenseFilterSelection(),
                           currentEmail: _authenticatedEmail,
-                        );
+                        ).where(_matchesExpenseSearch).toList();
                         if (expenses.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'No transactions yet.',
-                              style: TextStyle(color: Colors.white70),
+                          return RefreshIndicator(
+                            onRefresh: _refreshHistory,
+                            child: ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: const [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text(
+                                      'No transactions yet.',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }
-                        return MonthwiseIndividualListview()
-                            .getExpenseHistoryListview(expenses);
+                        return RefreshIndicator(
+                          onRefresh: _refreshHistory,
+                          child: MonthwiseIndividualListview()
+                              .getExpenseHistoryListview(expenses),
+                        );
                       }
                       return const SizedBox.shrink();
                     },

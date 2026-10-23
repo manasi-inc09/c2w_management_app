@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/expense/presentation/bloc/expense_fi
 import 'package:c2w_management_app/features/expense/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/floating_button.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_individual_listview.dart';
+import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
@@ -17,6 +18,48 @@ class ViewAllExpenses extends StatefulWidget {
 }
 
 class _ViewAllExpensesState extends State<ViewAllExpenses> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
+  bool _matchesExpenseSearch(Map<String, dynamic> expense) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return [
+      expense['claimantName'],
+      expense['description'],
+      expense['category'],
+      expense['subCategory'],
+      expense['source'],
+      expense['amount'],
+      expense['email'],
+    ].any((value) => value?.toString().toLowerCase().contains(query) ?? false);
+  }
+
+  Future<void> _refreshExpenses() {
+    final bloc = context.read<ExpenseHistoryBloc>();
+    return reloadAfterEvent(
+      states: bloc.stream,
+      dispatch: () => bloc.add(LoadAllExpenses()),
+      isComplete: (state) =>
+          state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -33,29 +76,46 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        title: const Text(
-          "Transactions",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          Container(
-            height: 40,
-            width: 40,
-            margin: const EdgeInsets.only(right: 15),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                width: 1,
-                color: const Color.fromRGBO(255, 255, 255, 0.1),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Search transactions',
+                  hintStyle: TextStyle(color: Colors.white54),
+                  border: InputBorder.none,
+                ),
+              )
+            : const Text(
+                "Transactions",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              color: const Color.fromRGBO(255, 255, 255, 0.06),
+        actions: [
+          IconButton(
+            onPressed: _isSearching
+                ? _toggleSearch
+                : () => setState(() => _isSearching = true),
+            icon: Icon(
+              _isSearching ? Icons.close : Icons.search_outlined,
+              color: Colors.white,
             ),
-            child: const Icon(Icons.search_outlined, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.06),
+              shape: const CircleBorder(
+                side: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.1)),
+              ),
+            ),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           ),
+          const SizedBox(width: 15),
         ],
         bottom: CommonFilters().getCommonFilter(context),
       ),
@@ -89,17 +149,31 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
               currentEmail:
                   FirebaseAuth.instance.currentUser?.email ??
                   AuthRepository.authEmail,
-            );
+            ).where(_matchesExpenseSearch).toList();
             if (filteredExpenses.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No transactions yet.',
-                  style: TextStyle(color: Colors.white70),
+              return RefreshIndicator(
+                onRefresh: _refreshExpenses,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(
+                      height: 300,
+                      child: Center(
+                        child: Text(
+                          'No transactions yet.',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
-            return MonthwiseIndividualListview().getExpenseHistoryListview(
-              filteredExpenses,
+            return RefreshIndicator(
+              onRefresh: _refreshExpenses,
+              child: MonthwiseIndividualListview().getExpenseHistoryListview(
+                filteredExpenses,
+              ),
             );
           }
           return const SizedBox.shrink();

@@ -1,10 +1,13 @@
 import 'package:c2w_management_app/features/expense/presentation/bloc/expense_admin_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/manage_categories.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/memberslist.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/view_all_expenses.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/wallet_screen.dart';
+import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/floating_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,16 +23,28 @@ class _ExpenseManagerState extends State<ExpenseManager> {
   int _selectedFilterIndex = 0;
   final List<String> _filters = ['This Week', 'This Month', 'This Year'];
 
+  Future<void> _refreshExpenses() {
+    final bloc = context.read<ExpenseManagerBloc>();
+    return reloadAfterEvent(
+      states: bloc.stream,
+      dispatch: () => bloc.add(LoadExpenseManagerData()),
+      isComplete: (state) =>
+          state is ExpenseManagerDataLoaded || state is ExpenseManagerFailure,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     context.read<ExpenseManagerBloc>().add(LoadExpenseManagerData());
+    context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
   }
 
   @override
   Widget build(BuildContext context) {
     const backgroundColor = Color(0xFF0F1424);
     const cardColor = Color(0xFF1E2638);
+    final categoryState = context.watch<ExpenseCategoryBloc>().state;
 
     return BlocBuilder<ExpenseManagerBloc, Object>(
       builder: (context, state) {
@@ -92,6 +107,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
             );
         final unpaidAmount = totalAmount - paidAmount;
         final recentExpenses = expenses.take(5).toList();
+        final avatarColors = ColorList().colorList;
 
         return Scaffold(
           backgroundColor: backgroundColor,
@@ -120,381 +136,430 @@ class _ExpenseManagerState extends State<ExpenseManager> {
               const SizedBox(width: 10),
             ],
           ),
-          body: Stack(
-            children: [
-              Column(
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        height: 300,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(31, 34, 49, 1),
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(30),
-                            bottomRight: Radius.circular(30),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 60),
-                      Positioned(
-                        top: 30,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Container(
-                            height: 50,
-                            width: 360,
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(53, 56, 69, 1),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    _selectedFilterIndex = _filters.indexOf(
-                                      "This Week",
-                                    );
-                                    setState(() {});
-                                  },
-
-                                  child: Container(
-                                    height: 50,
-                                    width: 120,
-                                    decoration: BoxDecoration(
-                                      color: (_selectedFilterIndex == 0)
-                                          ? Colors.blue
-                                          : Color.fromRGBO(53, 56, 69, 1),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "This Week",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight(600),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    _selectedFilterIndex = _filters.indexOf(
-                                      "This Month",
-                                    );
-                                    setState(() {});
-                                  },
-                                  child: Container(
-                                    height: 50,
-                                    width: 120,
-                                    decoration: BoxDecoration(
-                                      color: (_selectedFilterIndex == 1)
-                                          ? Colors.blue
-                                          : Color.fromRGBO(53, 56, 69, 1),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "This Month",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight(600),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    _selectedFilterIndex = _filters.indexOf(
-                                      "This Year",
-                                    );
-                                    setState(() {});
-                                  },
-                                  child: Container(
-                                    height: 50,
-                                    width: 120,
-                                    decoration: BoxDecoration(
-                                      color: (_selectedFilterIndex == 2)
-                                          ? Colors.blue
-                                          : Color.fromRGBO(53, 56, 69, 1),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "This Year",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight(600),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      Positioned(
-                        top: 100,
-                        left: 16,
-                        right: 16,
-                        child: Row(
+          body: RefreshIndicator(
+            onRefresh: _refreshExpenses,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height,
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        Stack(
                           children: [
-                            Expanded(
-                              child: _buildMetricCard(
-                                title: 'Paid Amount',
-                                value: _formatAmount(paidAmount),
-                                icon: Icons.trending_up,
-                                iconColor: const Color(0xFF00D09C),
-                                iconBgColor: const Color(0xFF0D3838),
-                                cardBg: cardColor,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {},
-                                child: _buildMetricCard(
-                                  title: 'Unpaid Amount',
-                                  value: _formatAmount(unpaidAmount),
-                                  icon: Icons.trending_down,
-                                  iconColor: const Color(0xFFFF5271),
-                                  iconBgColor: const Color(0xFF3E1D2D),
-                                  cardBg: cardColor,
+                            Container(
+                              height: 300,
+                              decoration: BoxDecoration(
+                                color: Color.fromRGBO(31, 34, 49, 1),
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(30),
+                                  bottomRight: Radius.circular(30),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Positioned(
-                        top: 200,
-                        left: 16,
-                        right: 16,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ManageCategories(),
-                                    ),
-                                  );
-                                },
-                                child: _buildMetricCard(
-                                  title: 'Categories',
-                                  value: '12',
-                                  icon: Icons.check_circle_outline,
-                                  iconColor: Color.fromRGBO(252, 174, 16, 1),
-
-                                  iconBgColor: Color.fromRGBO(
-                                    252,
-                                    174,
-                                    16,
-                                    0.2,
+                            const SizedBox(height: 60),
+                            Positioned(
+                              top: 30,
+                              left: 0,
+                              right: 0,
+                              child: Center(
+                                child: Container(
+                                  height: 50,
+                                  width: 360,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(53, 56, 69, 1),
+                                    borderRadius: BorderRadius.circular(30),
                                   ),
-                                  cardBg: cardColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MembersList(),
-                                    ),
-                                  );
-                                },
-                                child: _buildMetricCard(
-                                  title: 'Members',
-                                  value: state.memberCount.toString(),
-                                  icon: Icons.person_outline,
-                                  iconColor: Color.fromRGBO(5, 165, 255, 1),
-                                  iconBgColor: const Color(0xFF143048),
-                                  cardBg: cardColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const SizedBox(width: 10),
-                      Text(
-                        "Recent Transactions",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight(500),
-                        ),
-                      ),
-                      Spacer(),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ViewAllExpenses(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "See all >",
-                          style: TextStyle(
-                            color: Color.fromRGBO(5, 165, 255, 1),
-                            fontSize: 14,
-                            fontWeight: FontWeight(500),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  ListView.builder(
-                    itemCount: recentExpenses.length,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      final expense = recentExpenses[index];
-                      final name =
-                          expense['claimantName']?.toString() ??
-                          'Unknown member';
-                      final description =
-                          expense['description']?.toString().trim() ?? '';
-                      final category = expense['category']?.toString() ?? '';
-                      final date = _expenseDate(expense);
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TransactionDetails(),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          color: const Color.fromRGBO(15, 20, 36, 1),
-                          child: Row(
-                            children: [
-                              // avatar circle
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: const BoxDecoration(
-                                  color: Color.fromRGBO(255, 179, 167, 1),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  'A',
-                                  style: TextStyle(
-                                    color: Color.fromRGBO(158, 54, 42, 1),
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
+                                  child: Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          _selectedFilterIndex = _filters
+                                              .indexOf("This Week");
+                                          setState(() {});
+                                        },
+
+                                        child: Container(
+                                          height: 50,
+                                          width: 120,
+                                          decoration: BoxDecoration(
+                                            color: (_selectedFilterIndex == 0)
+                                                ? Colors.blue
+                                                : Color.fromRGBO(53, 56, 69, 1),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              "This Week",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight(600),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          _selectedFilterIndex = _filters
+                                              .indexOf("This Month");
+                                          setState(() {});
+                                        },
+                                        child: Container(
+                                          height: 50,
+                                          width: 120,
+                                          decoration: BoxDecoration(
+                                            color: (_selectedFilterIndex == 1)
+                                                ? Colors.blue
+                                                : Color.fromRGBO(53, 56, 69, 1),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              "This Month",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight(600),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          _selectedFilterIndex = _filters
+                                              .indexOf("This Year");
+                                          setState(() {});
+                                        },
+                                        child: Container(
+                                          height: 50,
+                                          width: 120,
+                                          decoration: BoxDecoration(
+                                            color: (_selectedFilterIndex == 2)
+                                                ? Colors.blue
+                                                : Color.fromRGBO(53, 56, 69, 1),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              "This Year",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight(600),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 14),
+                            ),
 
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      name,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      description.isEmpty
-                                          ? category
-                                          : description,
-                                      style: TextStyle(
-                                        color: Color.fromRGBO(126, 139, 155, 1),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                            Positioned(
+                              top: 100,
+                              left: 16,
+                              right: 16,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    _formatAmount(
-                                      _expenseAmount(expense['amount']),
-                                    ),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
+                                  Expanded(
+                                    child: _buildMetricCard(
+                                      title: 'Paid Amount',
+                                      value: _formatAmount(paidAmount),
+                                      icon: Icons.trending_up,
+                                      iconColor: const Color(0xFF00D09C),
+                                      iconBgColor: const Color(0xFF0D3838),
+                                      cardBg: cardColor,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    date == null
-                                        ? '—'
-                                        : '${date.day} ${_shortMonthName(date.month)}',
-                                    style: TextStyle(
-                                      color: Color.fromRGBO(126, 139, 155, 1),
-                                      fontSize: 12,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {},
+                                      child: _buildMetricCard(
+                                        title: 'Unpaid Amount',
+                                        value: _formatAmount(unpaidAmount),
+                                        icon: Icons.trending_down,
+                                        iconColor: const Color(0xFFFF5271),
+                                        iconBgColor: const Color(0xFF3E1D2D),
+                                        cardBg: cardColor,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 12),
+                            Positioned(
+                              top: 200,
+                              left: 16,
+                              right: 16,
+                              child: Row(
+                                children: [
+                                  if (canManageExpenseCategories()) ...[
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const ManageCategories(),
+                                            ),
+                                          );
+                                        },
+                                        child: _buildMetricCard(
+                                          title: 'Categories',
+                                          value:
+                                              categoryState
+                                                  is ExpenseCategoryLoaded
+                                              ? categoryState.categories.length
+                                                    .toString()
+                                              : '—',
+                                          icon: Icons.check_circle_outline,
+                                          iconColor: Color.fromRGBO(
+                                            252,
+                                            174,
+                                            16,
+                                            1,
+                                          ),
+                                          iconBgColor: Color.fromRGBO(
+                                            252,
+                                            174,
+                                            16,
+                                            0.2,
+                                          ),
+                                          cardBg: cardColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                  ],
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MembersList(),
+                                          ),
+                                        );
+                                      },
+                                      child: _buildMetricCard(
+                                        title: 'Members',
+                                        value: state.memberCount.toString(),
+                                        icon: Icons.person_outline,
+                                        iconColor: Color.fromRGBO(
+                                          5,
+                                          165,
+                                          255,
+                                          1,
+                                        ),
+                                        iconBgColor: const Color(0xFF143048),
+                                        cardBg: cardColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
-                ],
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            const SizedBox(width: 10),
+                            Text(
+                              "Recent Transactions",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight(500),
+                              ),
+                            ),
+                            Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ViewAllExpenses(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "See all >",
+                                style: TextStyle(
+                                  color: Color.fromRGBO(5, 165, 255, 1),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight(500),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        ListView.builder(
+                          itemCount: recentExpenses.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final expense = recentExpenses[index];
+                            final name =
+                                expense['claimantName']?.toString() ??
+                                'Unknown member';
+                            final trimmedName = name.trim();
+                            final initial = trimmedName.isEmpty
+                                ? 'M'
+                                : trimmedName[0].toUpperCase();
+                            final description =
+                                expense['description']?.toString().trim() ?? '';
+                            final category =
+                                expense['category']?.toString() ?? '';
+                            final date = _expenseDate(expense);
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TransactionDetails(expense),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                color: const Color.fromRGBO(15, 20, 36, 1),
+                                child: Row(
+                                  children: [
+                                    // avatar circle
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            avatarColors[index %
+                                                avatarColors.length],
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        initial,
+                                        style: const TextStyle(
+                                          color: Color(0xFF202435),
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            name,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            description.isEmpty
+                                                ? category
+                                                : description,
+                                            style: TextStyle(
+                                              color: Color.fromRGBO(
+                                                126,
+                                                139,
+                                                155,
+                                                1,
+                                              ),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          _formatAmount(
+                                            _expenseAmount(expense['amount']),
+                                          ),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          date == null
+                                              ? '—'
+                                              : '${date.day} ${_shortMonthName(date.month)}',
+                                          style: TextStyle(
+                                            color: Color.fromRGBO(
+                                              126,
+                                              139,
+                                              155,
+                                              1,
+                                            ),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    //   Positioned(
+                    //           right: 20,
+                    //           bottom: 34,
+                    //           child: GestureDetector(
+                    //             onTap: () {},
+                    //             child: Container(
+                    //               width: 56,
+                    //               height: 56,
+                    //               decoration: const BoxDecoration(
+                    //                 color: Color(0xFF0091FF),
+                    //                 shape: BoxShape.circle,
+                    //               ),
+                    //               child: const Icon(Icons.add, color: Colors.white, size: 28),
+                    //             ),
+                    //           ),
+                    //         ),
+                  ],
+                ),
               ),
-              //   Positioned(
-              //           right: 20,
-              //           bottom: 34,
-              //           child: GestureDetector(
-              //             onTap: () {},
-              //             child: Container(
-              //               width: 56,
-              //               height: 56,
-              //               decoration: const BoxDecoration(
-              //                 color: Color(0xFF0091FF),
-              //                 shape: BoxShape.circle,
-              //               ),
-              //               child: const Icon(Icons.add, color: Colors.white, size: 28),
-              //             ),
-              //           ),
-              //         ),
-            ],
+            ),
           ),
           floatingActionButton: FloatingButton.getFloatingButton(),
           //bottomNavigationBar: CommonBottomNavigationBar(currentIndex: , onTap: onTap),
