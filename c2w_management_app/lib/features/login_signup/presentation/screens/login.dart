@@ -4,7 +4,7 @@ import 'package:c2w_management_app/features/login_signup/presentation/bloc/Login
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/signup.dart';
-import 'package:c2w_management_app/features/sales_admin/dashboard/presentation/screens/dashboard_view.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';

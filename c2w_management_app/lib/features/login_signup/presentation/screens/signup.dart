@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:c2w_management_app/features/enquiry/dashboard_view.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
@@ -102,6 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: mobCtrl,
                 onChanged: (_) => setState(() {}),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
+                keyboardType: TextInputType.number,
                 cursorColor: Colors.white,
                 decoration: const InputDecoration(
                   hintText: 'Enter your mobile no. (+91)',
@@ -222,21 +222,52 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: canContinue
-                      ? () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>  SelectRoleScreen(
-                                fullName: fullNameCtrl.text.trim(),
-                                email: emailCtrl.text.trim(),
-                                mobile: mobCtrl.text.trim(),
-                                upi: upiCtrl.text.trim(),
-                                dob: dobCtrl.text.trim(),
-                                password: passCtrl.text,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
+    ? () {
+        final fullName = fullNameCtrl.text.trim();
+        final email = emailCtrl.text.trim();
+        final mobile = mobCtrl.text.trim();
+
+        // Validate email
+        final emailRegex = RegExp(
+  r"^[\w.!#$%&'*+/=?^`{|}~-]+@[\w-]+(\.[\w-]+)+$",
+);
+
+        if (!emailRegex.hasMatch(email)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid email address'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Validate mobile number
+        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid 10-digit mobile number'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Navigate only if validations pass
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => SelectRoleScreen(
+              fullName: fullName,
+              email: email,
+              mobile: mobile,
+              upi: upiCtrl.text.trim(),
+              dob: dobCtrl.text.trim(),
+              password: passCtrl.text,
+            ),
+          ),
+        );
+      }
+    : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00A3FF),
                     disabledBackgroundColor: const Color(0xFF2A2D45),
@@ -258,6 +289,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () {
+                  
                   Navigator.of(context).pop();
                 },
                 child: Center(child: Text("Back to Login Page",style: TextStyle(color: Colors.blue,fontSize: 15,fontWeight: FontWeight(400)),))),
