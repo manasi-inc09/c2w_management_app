@@ -3,6 +3,10 @@ import 'dart:developer';
 import 'package:c2w_management_app/features/Profile/data/repository/GetUserdata.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileBloc.dart';
 import 'package:c2w_management_app/features/Profile/presentation/screens/profile.dart';
+import 'package:c2w_management_app/features/enquiry/create_enquiry/data/repository/AddEnquiry.dart';
+import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/bloc/AddEnquiryBloc.dart';
+import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/screens/create_equiry.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardBloc.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_expense_remote_data_source.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/repositories/teamlead_expense_repository_impl.dart';
@@ -10,6 +14,7 @@ import 'package:c2w_management_app/features/expense/teamlead/domain/usescases/te
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_bloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/splash_screen.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -54,10 +59,20 @@ class MainApp extends StatelessWidget {
           create: (context) =>
               CreateExpenseBloc(createExpenseUseCase: createExpenseUseCase),
         ),
-        BlocProvider(
+        BlocProvider<ProfileBloc>(
           create: (context) => ProfileBloc(GetUserData()),
           child: const ProfileScreen(),
         ),
+        BlocProvider<AddEnquiryBloc>(
+        create: (_) => AddEnquiryBloc(
+          repository: AddEnquiryRepository(),
+        ),
+        child: const CreateEquiry(),
+        ),
+        BlocProvider<DashBoardBloc>(
+        create: (context) => DashBoardBloc(),
+        child:  DashboardView(),
+      )
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
