@@ -7,6 +7,7 @@ class CloudinaryConfig {
   static const String uploadPreset = 'expense_receipts_unsigned';
 
   static const String uploadFolder = 'expense_receipts';
+  static const String profileImagesFolder = 'profile_images';
 
   static const int maxFileSizeInBytes = 10 * 1024 * 1024;
 

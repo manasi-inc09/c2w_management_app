@@ -1,10 +1,15 @@
 import 'dart:developer';
 
+import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/Profile/data/models/UserModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GetUserData {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
+  final CloudinaryDataSource cloudinaryDataSource;
+
+  GetUserData({CloudinaryDataSource? cloudinaryDataSource})
+    : cloudinaryDataSource = cloudinaryDataSource ?? CloudinaryDataSource();
 
   Future<UserModel?> getData(String email) async {
     try {
@@ -17,6 +22,27 @@ class GetUserData {
 
       if (document.exists && document.data() != null) {
         final data = document.data()!;
+        final expenseSnapshot = await firebaseFirestore
+            .collection('expenses')
+            .where('email', isEqualTo: email)
+            .get();
+        var totalExpense = 0.0;
+        var paidExpense = 0.0;
+
+        for (final expense in expenseSnapshot.docs) {
+          final expenseData = expense.data();
+          final amount = _toAmount(expenseData['amount']);
+          totalExpense += amount;
+
+          if (expenseData['status']?.toString().trim().toLowerCase() ==
+              'settled') {
+            final settledAmount = _toAmount(
+              expenseData['settledAmount'],
+              fallback: amount,
+            );
+            paidExpense += settledAmount.clamp(0, amount);
+          }
+        }
 
         UserModel userModel = UserModel(
           fullName: data["Name"] ?? '',
@@ -27,6 +53,9 @@ class GetUserData {
           upiId: data["UPI ID"] ?? '',
 
           profileImage: data["profileImage"] ?? '',
+          totalExpense: totalExpense,
+          paidExpense: paidExpense,
+          pendingExpense: totalExpense - paidExpense,
         );
 
         log("User data fetched successfully");
@@ -39,6 +68,11 @@ class GetUserData {
       log("Error fetching user data: $e");
       rethrow;
     }
+  }
+
+  double _toAmount(dynamic value, {double fallback = 0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   Future<void> updateData({
@@ -55,5 +89,16 @@ class GetUserData {
         .collection('UserData')
         .doc(email)
         .update(updatedData);
+  }
+
+  Future<void> updateProfileImage({
+    required String email,
+    required String filePath,
+  }) async {
+    final imageUrl = await cloudinaryDataSource.uploadProfileImage(
+      filePath: filePath,
+      email: email,
+    );
+    await updateData(email: email, updatedData: {'profileImage': imageUrl});
   }
 }

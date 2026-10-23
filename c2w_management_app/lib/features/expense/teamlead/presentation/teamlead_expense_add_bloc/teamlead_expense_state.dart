@@ -1,4 +1,3 @@
-
 abstract class CreateExpenseState {}
 
 class CreateExpenseInitial extends CreateExpenseState {}

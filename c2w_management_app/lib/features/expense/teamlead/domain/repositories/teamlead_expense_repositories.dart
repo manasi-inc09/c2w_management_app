@@ -1,6 +1,42 @@
-
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
 
 abstract class ExpenseRepository {
   Future<String> createExpense(Expense expense);
+
+  Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email);
+
+  Stream<List<Map<String, dynamic>>> watchAllExpenses();
+
+  Future<List<Map<String, dynamic>>> getAllExpenses();
+
+  Future<double> getWalletBalance();
+
+  Stream<double> watchWalletBalance();
+
+  Future<void> addWalletTopUp(double amount);
+
+  Future<void> settleWalletExpense({
+    required String expenseId,
+    required double amount,
+    required bool fromWallet,
+  });
+
+  Future<List<Map<String, dynamic>>> getMembers();
+
+  Future<List<Map<String, dynamic>>> getExpensesByEmail(String email);
+
+  Stream<List<Map<String, dynamic>>> watchExpenseCategories();
+
+  Future<List<Map<String, dynamic>>> getExpenseCategories();
+
+  Future<void> addExpenseCategory({
+    required String name,
+    required List<String> subCategories,
+  });
+
+  Future<void> updateExpenseCategory({
+    required String id,
+    required String name,
+    required List<String> subCategories,
+  });
 }

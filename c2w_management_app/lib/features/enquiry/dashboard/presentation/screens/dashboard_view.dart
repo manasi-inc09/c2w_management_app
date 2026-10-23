@@ -892,7 +892,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   /// Instructor / super admin get the ExpenseManager, everyone else gets
   /// their own IndividualExpenses screen.
   bool get _isExpenseManagerRole =>
-      _email.contains("_instructor") || _email.contains("_superadmin");
+      _email.contains("instructor") || _email.contains("superadmin");
 
   Color _modeColor(String mode) {
     switch (mode.toLowerCase()) {

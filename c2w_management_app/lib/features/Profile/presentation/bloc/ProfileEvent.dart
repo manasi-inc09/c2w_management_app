@@ -20,12 +20,18 @@ class UpdateUserDataEvent extends ProfileEvent {
   final String email;
   final Map<String, dynamic> updatedData;
 
-  const UpdateUserDataEvent({
-    required this.email,
-    required this.updatedData,
-    
-  });
-  
+  const UpdateUserDataEvent({required this.email, required this.updatedData});
+
   @override
   List<Object?> get props => [email, updatedData];
+}
+
+class UploadProfileImageEvent extends ProfileEvent {
+  final String email;
+  final String filePath;
+
+  const UploadProfileImageEvent({required this.email, required this.filePath});
+
+  @override
+  List<Object?> get props => [email, filePath];
 }
