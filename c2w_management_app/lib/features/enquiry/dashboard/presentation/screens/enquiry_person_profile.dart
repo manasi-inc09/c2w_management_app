@@ -285,6 +285,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                   ),
                 ),
                 const Spacer(),
+
                 if (_enquiry?.admissionStatusUpdatedAt != null)
                   Text(
                     _formatStatusDate(_enquiry!.admissionStatusUpdatedAt!),
@@ -293,15 +294,20 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                       color: Colors.white54,
                     ),
                   ),
+
                 const SizedBox(width: 8),
+
                 _statusDropdown(
                   value: _enquiry?.admissionStatus ?? 'Not Yet',
                   options: EnquiryModel.admissionStatuses,
-                  onSelected: (status) =>
-                      _saveEnquiryField('Admission Status', status),
-                  color: _enquiry?.admissionCompleted == true
-                      ? const Color(0xFF19D18A)
-                      : const Color(0xFFFFB21A),
+                  onSelected: (status) {
+                    _saveEnquiryField('Admission Status', status);
+                  },
+                  color: _enquiry?.admissionStatus == 'Cancel'
+                      ? const Color(0xFFE53935) // Red
+                      : _enquiry?.admissionStatus == 'Completed'
+                      ? const Color(0xFF19D18A) // Green
+                      : const Color(0xFFFFB21A), // Orange for Not Yet
                 ),
               ],
             ),
@@ -517,11 +523,10 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         ],
       );
     } else {
-
       final chronologicalHistory = enquiryHistory;
       return Column(
         children: [
-          for (var index = 0; index < chronologicalHistory.length-1; index++)
+          for (var index = 0; index < chronologicalHistory.length - 1; index++)
             _historyCard(
               title: '${_ordinal(index + 1)} Enquiry',
               item: chronologicalHistory[index],
@@ -551,7 +556,9 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
     required EnquiryHistoryItem item,
   }) {
     final isCompleted = item.admissionStatus.toLowerCase() == 'completed';
-    final admissionColor = isCompleted ? const Color(0xFF13CE8B) : Colors.redAccent;
+    final admissionColor = isCompleted
+        ? const Color(0xFF13CE8B)
+        : Colors.redAccent;
 
     return Container(
       width: double.infinity,
@@ -598,7 +605,10 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                   ],
                 ),
                 const SizedBox(height: 7),
-                _historyRow('Interested for', item.interestedBatches.join(', ')),
+                _historyRow(
+                  'Interested for',
+                  item.interestedBatches.join(', '),
+                ),
                 _historyDivider(),
                 _historyRow(
                   'Admission status',
@@ -653,7 +663,10 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
           Container(
             width: 4,
             height: 4,
-            decoration: BoxDecoration(color: valueColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: valueColor,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -665,11 +678,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
     );
   }
 
-  Widget _historyDivider() => const Divider(
-        color: Colors.white10,
-        height: 12,
-        thickness: 0.5,
-      );
+  Widget _historyDivider() =>
+      const Divider(color: Colors.white10, height: 12, thickness: 0.5);
 
   Widget _card(String title, List<Widget> children, {String? date}) {
     return Container(
@@ -727,5 +737,4 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       ],
     );
   }
-
 }

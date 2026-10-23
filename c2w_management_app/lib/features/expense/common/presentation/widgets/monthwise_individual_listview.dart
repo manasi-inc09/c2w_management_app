@@ -1,6 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 

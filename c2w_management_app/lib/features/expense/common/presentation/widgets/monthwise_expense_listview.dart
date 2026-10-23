@@ -1,4 +1,4 @@
-import 'package:c2w_management_app/features/expense/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
 import 'package:flutter/material.dart';
 
 class MonthwiseExpenseListview {

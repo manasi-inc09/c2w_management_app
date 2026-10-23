@@ -113,7 +113,7 @@ class EnquiryModel extends Equatable {
   final DateTime? createdAt;
 
   static const callStatuses = ['Done', 'Pending', 'Not Recieved'];
-  static const admissionStatuses = ['Not Yet', 'Completed'];
+  static const admissionStatuses = ['Not Yet', 'Completed','Cancel'];
 
   bool get admissionCompleted => admissionStatus == 'Completed';
 

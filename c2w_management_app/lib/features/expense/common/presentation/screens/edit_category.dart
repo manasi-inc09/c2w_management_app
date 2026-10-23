@@ -1,7 +1,8 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';

@@ -187,11 +187,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     _label('Role'),
                     DropdownButtonFormField<String>(
                       value: _roleCtrl.text.isEmpty ? null : _roleCtrl.text,
+                      hint: const Text(
+                        'Select your role',
+                        style: TextStyle(
+                          color: Color(0xFF9A9DB5),
+                          fontSize: 14,
+                        ),
+                      ),
                       dropdownColor: const Color(0xFF12142A),
                       style: const TextStyle(color: Colors.white, fontSize: 16),
                       decoration: const InputDecoration(
-                        hintText: 'Select your registered role',
-                        hintStyle: TextStyle(color: Colors.white, fontSize: 14),
+                        hintText: 'Select your role',
+                        hintStyle: TextStyle(
+                          color: Color(0xFF9A9DB5),
+                          fontSize: 14,
+                        ),
                       ),
                       items: const [
                         DropdownMenuItem(

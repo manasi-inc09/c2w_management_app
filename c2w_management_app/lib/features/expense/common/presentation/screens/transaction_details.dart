@@ -1,10 +1,10 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/wallet_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/bottomsheet_settle.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/wallet_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/bottomsheet_settle.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
