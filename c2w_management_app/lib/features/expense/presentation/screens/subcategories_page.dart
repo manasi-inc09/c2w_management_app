@@ -1,148 +1,206 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/edit_category.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class SubcategoriesPage extends StatelessWidget {
+  final Map<String, dynamic> category;
+  final int categoryIndex;
 
-class SubcategoriesPage extends StatefulWidget {
-  final int? categoryIndex;
-  final List<Map<dynamic,dynamic>>? categoryList;
-  final int? subitemCount;
-  const SubcategoriesPage( this.categoryIndex, this.categoryList,this.subitemCount,{super.key});
+  const SubcategoriesPage({
+    super.key,
+    required this.category,
+    required this.categoryIndex,
+  });
 
-  @override
-  State<SubcategoriesPage> createState() => _SubcategoriesPageState();
-}
+  List<String> get _subCategories {
+    final values = category['subCategories'];
+    return values is List
+        ? values.map((value) => value.toString()).toList()
+        : [];
+  }
 
-class _SubcategoriesPageState extends State<SubcategoriesPage> {
-  
+  Future<void> _edit(BuildContext context) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => EditCategory(category: category)),
+    );
+    if (saved == true && context.mounted) {
+      context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
+      context.read<ExpenseFilterBloc>().add(LoadExpenseFilterOptions());
+      Navigator.pop(context, true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final name = category['name']?.toString() ?? '';
+    final subCategories = _subCategories;
+
     return Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         titleSpacing: 0,
         backgroundColor: AppTheme().appBarBackgroundColor,
         leading: GestureDetector(
-          onTap: ()=>Navigator.pop(context),
-          child: Icon(Icons.arrow_back,color:Colors.white)),
-        title:Row(
-            children: [
-              
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+        title: Row(
+          children: [
+            Container(
+              height: 50,
+              width: 50,
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: CircleAvatar(
+                backgroundColor: ColorList()
+                    .colorList[categoryIndex % ColorList().colorList.length],
+                child: Text(
+                  name.isEmpty ? '?' : name[0].toUpperCase(),
+                  style: GoogleFonts.figtree(
+                    fontSize: 30,
+                    fontWeight: FontWeight(600),
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: CircleAvatar(
-                  backgroundColor: ColorList().colorList[widget.categoryIndex! % ColorList().colorList.length],
-                  child:Text(widget.categoryList![widget.categoryIndex!]['categoryName'][0].toUpperCase(),style: GoogleFonts.figtree(fontSize: 30,fontWeight: FontWeight(600)),)
-                )
               ),
-              const SizedBox(
-                width: 10,
-              ),
-              Column(
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.categoryList![widget.categoryIndex!]['categoryName'],style:GoogleFonts.figtree(fontSize: 20,fontWeight: FontWeight(600),color: Colors.white)),
-              Text("${widget.categoryList![widget.categoryIndex!]['subcategories_count']} Sub-Categories",style:GoogleFonts.figtree(fontSize: 15,fontWeight: FontWeight(400),color: Color.fromRGBO(255, 255, 255, 0.6)))
-            ],
-          ),
-          Spacer(),
-          GestureDetector(
-            onTap: (){
-              Navigator.push(context,MaterialPageRoute(builder: (context)=>EditCategory()));
-            },
-            child: Text("Edit",style:GoogleFonts.figtree(color: Colors.blue,fontSize: 18,fontWeight: FontWeight(500)))),
-          const SizedBox(
-            width: 20,
-          )
-            ],
-          ),
-      ),
-      body:Column(
-        children: [
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: widget.subitemCount,
-            itemBuilder: (context,index){
-          
-            return Padding(
-              padding: const EdgeInsets.only(left: 10,right: 10,top:30),
-              child: Column(
                 children: [
-                  Container(
-                    height: 50,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(
-                          width: 20,
-                        ),
-                        Container(
-                          height: 50,
-                          width: 50,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.rectangle,
-                            borderRadius: BorderRadius.circular(10),
-                            color:ColorList().colorList[index % ColorList().colorList.length]
-                          ),
-                          child: Center(child: Text(widget.categoryList![widget.categoryIndex!]['subCategories'][index][0],style: GoogleFonts.figtree(color:Colors.black,fontSize: 25,fontWeight: FontWeight(600)),)),
-                        ),
-                        const SizedBox(
-                          width: 20,
-                        ),
-                        Text(widget.categoryList![widget.categoryIndex!]['subCategories'][index],style: GoogleFonts.figtree(color:Colors.white,fontSize: 20,fontWeight: FontWeight(600)),),
-                      ],
+                  Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.figtree(
+                      fontSize: 20,
+                      fontWeight: FontWeight(600),
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(
-                    height: 20,
+                  Text(
+                    "${subCategories.length} Sub-Categories",
+                    style: GoogleFonts.figtree(
+                      fontSize: 15,
+                      fontWeight: FontWeight(400),
+                      color: const Color.fromRGBO(255, 255, 255, 0.6),
+                    ),
                   ),
-                  Divider(color: Color.fromRGBO(226, 228, 229, 0.1),),
-                  
                 ],
               ),
-            );
-          }),
-          Container(
-            height: 50,
-            width: 400,
-            decoration: BoxDecoration(
-              border: Border.all(width: 1,color: Color.fromRGBO(5, 165, 255, 1)),
-              borderRadius: BorderRadius.circular(10),
-              color: Color.fromRGBO(5, 165, 255, 0.1)
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  height: 25,
-                  width: 25,
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(5, 165, 255, 1),
-
-                    shape: BoxShape.circle
-                  ),
-                  child: Icon(Icons.add)),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Text("Add Sub-Category",style: GoogleFonts.figtree(fontSize:16,fontWeight: FontWeight(700),color: Color.fromRGBO(5, 165, 255, 1), ),)
-
-              ],
+            TextButton(
+              onPressed: canManageExpenseCategories()
+                  ? () => _edit(context)
+                  : null,
+              child: Text(
+                "Edit",
+                style: GoogleFonts.figtree(
+                  color: Colors.blue,
+                  fontSize: 18,
+                  fontWeight: FontWeight(500),
+                ),
+              ),
             ),
-          )
+            const SizedBox(width: 8),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: subCategories.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No sub-categories.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: subCategories.length,
+                    itemBuilder: (context, index) {
+                      final value = subCategories[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          left: 10,
+                          right: 10,
+                          top: 30,
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: 50,
+                              width: MediaQuery.sizeOf(context).width,
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 20),
+                                  Container(
+                                    height: 50,
+                                    width: 50,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color:
+                                          ColorList().colorList[index %
+                                              ColorList().colorList.length],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        value.isEmpty
+                                            ? '?'
+                                            : value[0].toUpperCase(),
+                                        style: GoogleFonts.figtree(
+                                          color: Colors.black,
+                                          fontSize: 25,
+                                          fontWeight: FontWeight(600),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Text(
+                                      value,
+                                      style: GoogleFonts.figtree(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight(600),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const Divider(
+                              color: Color.fromRGBO(226, 228, 229, 0.1),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          if (canManageExpenseCategories())
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                height: 50,
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _edit(context),
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Add Sub-Category"),
+                ),
+              ),
+            ),
         ],
-      )
+      ),
     );
   }
 }

@@ -1,106 +1,107 @@
-import 'dart:developer';
-
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/widgets/filters.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/common_filters.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_expense_listview.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_history_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-  final List<Map<String, dynamic>> transactionData = [
-    {
-      'year': '2025',
-      'month': 'December',
-      'totalAmount': '₹5835',
-      'transactions': [
-        {
-          'initial': 'S',
-          'avatarBg': const Color.fromRGBO(255, 179, 167, 1),
-          'avatarTextColor': const Color.fromRGBO(158, 54, 42, 1),
-          'title': 'Stationery, Notebook, Pen',
-          'category': 'Event • SuperX Flutter',
-          'amount': '₹86',
-          'date': '14 Dec',
-        },
-        {
-          'initial': 'S',
-          'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
-          'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
-          'title': 'Breakfast',
-          'category': 'Event • SuperX Flutter',
-          'amount': '₹350',
-          'date': '14 Dec',
-        },
-        {
-          'initial': 'K',
-          'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
-          'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
-          'title': 'New Mobile Sim',
-          'category': 'Electronic Gadgets',
-          'amount': '₹899',
-          'date': '14 Dec',
-        },
-        {
-          'initial': 'A',
-          'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
-          'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
-          'title': 'Hard Drive 1TB',
-          'category': 'Electronic Gadgets',
-          'amount': '₹4500',
-          'date': '14 Dec',
-        },
-      ],
-    },
-    {
-      'year': '2025',
-      'month': 'November',
-      'totalAmount': '₹2755',
-      'transactions': [
-        {
-          'initial': 'N',
-          'avatarBg': const Color.fromRGBO(255, 236, 179, 1),
-          'avatarTextColor': const Color.fromRGBO(191, 54, 12, 1),
-          'title': 'November Expense',
-          'category': 'Event • SuperX Flutter',
-          'amount': '₹2755',
-          'date': '28 Nov',
-        },
-        {
-          'initial': 'S',
-          'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
-          'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
-          'title': 'Breakfast',
-          'category': 'Event • SuperX Flutter',
-          'amount': '₹350',
-          'date': '14 Dec',
-        },
-        {
-          'initial': 'K',
-          'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
-          'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
-          'title': 'New Mobile Sim',
-          'category': 'Electronic Gadgets',
-          'amount': '₹899',
-          'date': '14 Dec',
-        },
-        {
-          'initial': 'A',
-          'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
-          'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
-          'title': 'Hard Drive 1TB',
-          'category': 'Electronic Gadgets',
-          'amount': '₹4500',
-          'date': '14 Dec',
-        },
-      ],
-    },
-  ];
+final List<Map<String, dynamic>> transactionData = [
+  {
+    'year': '2025',
+    'month': 'December',
+    'totalAmount': '₹5835',
+    'transactions': [
+      {
+        'initial': 'S',
+        'avatarBg': const Color.fromRGBO(255, 179, 167, 1),
+        'avatarTextColor': const Color.fromRGBO(158, 54, 42, 1),
+        'title': 'Stationery, Notebook, Pen',
+        'category': 'Event • SuperX Flutter',
+        'amount': '₹86',
+        'date': '14 Dec',
+      },
+      {
+        'initial': 'S',
+        'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
+        'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
+        'title': 'Breakfast',
+        'category': 'Event • SuperX Flutter',
+        'amount': '₹350',
+        'date': '14 Dec',
+      },
+      {
+        'initial': 'K',
+        'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
+        'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
+        'title': 'New Mobile Sim',
+        'category': 'Electronic Gadgets',
+        'amount': '₹899',
+        'date': '14 Dec',
+      },
+      {
+        'initial': 'A',
+        'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
+        'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
+        'title': 'Hard Drive 1TB',
+        'category': 'Electronic Gadgets',
+        'amount': '₹4500',
+        'date': '14 Dec',
+      },
+    ],
+  },
+  {
+    'year': '2025',
+    'month': 'November',
+    'totalAmount': '₹2755',
+    'transactions': [
+      {
+        'initial': 'N',
+        'avatarBg': const Color.fromRGBO(255, 236, 179, 1),
+        'avatarTextColor': const Color.fromRGBO(191, 54, 12, 1),
+        'title': 'November Expense',
+        'category': 'Event • SuperX Flutter',
+        'amount': '₹2755',
+        'date': '28 Nov',
+      },
+      {
+        'initial': 'S',
+        'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
+        'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
+        'title': 'Breakfast',
+        'category': 'Event • SuperX Flutter',
+        'amount': '₹350',
+        'date': '14 Dec',
+      },
+      {
+        'initial': 'K',
+        'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
+        'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
+        'title': 'New Mobile Sim',
+        'category': 'Electronic Gadgets',
+        'amount': '₹899',
+        'date': '14 Dec',
+      },
+      {
+        'initial': 'A',
+        'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
+        'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
+        'title': 'Hard Drive 1TB',
+        'category': 'Electronic Gadgets',
+        'amount': '₹4500',
+        'date': '14 Dec',
+      },
+    ],
+  },
+];
 
 class IndividualExpenses extends StatefulWidget {
   const IndividualExpenses({super.key});
@@ -111,254 +112,355 @@ class IndividualExpenses extends StatefulWidget {
 
 class _IndividualExpensesState extends State<IndividualExpenses> {
   String selectedOption = "Option 1";
-  List<String> individual_FilterList = ["Event |  dsdsCPL event", "Subodh"];
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+  //List<String> individualFilterList = ["Event |  dsdsCPL event", "Subodh"];
   //List<String> filterList=["Categories","Members","dd-mm-yyyy"];
-Map<String,String> appliedFilters={};
+  Map<String, String> appliedFilters = {};
 
+  String? get _authenticatedEmail =>
+      FirebaseAuth.instance.currentUser?.email ?? AuthRepository.authEmail;
+
+  String? get _authRole {
+    final email = _authenticatedEmail;
+    if (email == null) return null;
+    for (final role in ['teamlead', 'mentor', 'instructor', 'superadmin']) {
+      if (email.startsWith('${role}_')) return role;
+    }
+    return null;
+  }
+
+  String? get _profileEmail {
+    final email = _authenticatedEmail;
+    final role = _authRole;
+    if (email == null || email.isEmpty) return null;
+    if (role == null) return email;
+    return email.substring(role.length + 1);
+  }
+
+  Future<void> _refreshHistory() {
+    final bloc = context.read<ExpenseHistoryBloc>();
+    final role = _authRole;
+    if (role == 'superadmin') {
+      return reloadAfterEvent(
+        states: bloc.stream,
+        dispatch: () => bloc.add(LoadAllExpenses()),
+        isComplete: (state) =>
+            state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
+      );
+    }
+    final email = _profileEmail;
+    if (email == null || email.isEmpty) return Future.value();
+    return reloadAfterEvent(
+      states: bloc.stream,
+      dispatch: () => bloc.add(LoadExpensesByEmail(email)),
+      isComplete: (state) =>
+          state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
+  bool _matchesExpenseSearch(Map<String, dynamic> expense) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return [
+      expense['claimantName'],
+      expense['description'],
+      expense['category'],
+      expense['subCategory'],
+      expense['source'],
+      expense['amount'],
+      expense['email'],
+    ].any((value) => value?.toString().toLowerCase().contains(query) ?? false);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final role = _authRole;
+    if (role == 'superadmin') {
+      context.read<ExpenseHistoryBloc>().add(LoadAllExpenses());
+    } else if (['teamlead', 'mentor', 'instructor'].contains(role)) {
+      final email = _profileEmail;
+      if (email != null && email.isNotEmpty) {
+        context.read<ExpenseHistoryBloc>().add(LoadExpensesByEmail(email));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final role = _authRole;
+    final hasLiveHistory = [
+      'teamlead',
+      'mentor',
+      'instructor',
+      'superadmin',
+    ].contains(role);
+    final canCreateExpense = [
+      'teamlead',
+      'mentor',
+      'instructor',
+    ].contains(role);
+
     return Scaffold(
       backgroundColor: AppTheme().appBarBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
 
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        leading: (role == 'instructor' || role == 'superadmin')
+            ? IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+              )
+            : SizedBox(),
 
-        title: const Text(
-          "Transactions",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Search transactions',
+                  hintStyle: TextStyle(color: Colors.white54),
+                  border: InputBorder.none,
+                ),
+              )
+            : const Text(
+                "Transactions",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
 
         actions: [
-          Container(
-            height: 40,
-            width: 40,
-            margin: const EdgeInsets.only(right: 15),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                width: 1,
-                color: Color.fromRGBO(255, 255, 255, 0.1),
-              ),
-              color: Color.fromRGBO(255, 255, 255, 0.06),
+          IconButton(
+            onPressed: _isSearching
+                ? _toggleSearch
+                : () => setState(() => _isSearching = true),
+            icon: Icon(
+              _isSearching ? Icons.close : Icons.search_outlined,
+              color: Colors.white,
             ),
-            child: const Icon(Icons.search_outlined, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.06),
+              shape: const CircleBorder(
+                side: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.1)),
+              ),
+            ),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           ),
+          const SizedBox(width: 15),
         ],
-          bottom: CommonFilters().getCommonFilter(context, appliedFilters,individual_FilterList),
-        // bottom: PreferredSize(
-        //   preferredSize: const Size.fromHeight(60),
-
-        //   child: Padding(
-        //     padding: const EdgeInsets.only(bottom: 10),
-
-        //     child: Row(
-        //       children: [
-        //         const SizedBox(width: 20),
-
-        //         Stack(
-        //           children: [
-        //             GestureDetector(
-        //               onTap: () async {
-        //                 final result = await showFilterSheet(
-        //                   context,
-        //                   initialFilters: appliedFilters,
-        //                 );
-
-        //                 if (result != null) {
-        //                   setState(() {
-        //                     appliedFilters = result; // page rebuilds after this
-        //                   });
-        //                 }
-        //               },
-        //               child: const Icon(
-        //                 Icons.filter_alt_outlined,
-        //                 color: Colors.white,
-        //                 size: 35,
-        //               ),
-        //             ),
-        //             Positioned(
-        //               right: 0,
-
-        //               child: Container(
-        //                 height: 18,
-        //                 width: 18,
-
-        //                 decoration: BoxDecoration(
-        //                   shape: BoxShape.circle,
-        //                   color: Colors.blue,
-        //                 ),
-        //                 child: Center(
-        //                   child: Text(
-        //                     "2",
-        //                     style: TextStyle(
-        //                       color: Colors.white,
-        //                       fontSize: 12,
-        //                       fontWeight: FontWeight(600),
-        //                     ),
-        //                   ),
-        //                 ),
-        //               ),
-        //             ),
-        //           ],
-        //         ),
-
-        //         const SizedBox(width: 10),
-
-        //         // Important correction
-        //         Expanded(
-        //           child: SizedBox(
-        //             height: 40,
-
-        //             child: ListView.builder(
-        //               scrollDirection: Axis.horizontal,
-
-        //               itemCount: individual_FilterList.length,
-
-        //               itemBuilder: (context, index) {
-        //                 return Container(
-        //                   height: 40,
-        //                   padding: const EdgeInsets.symmetric(
-        //                     horizontal: 18,
-        //                     vertical: 8,
-        //                   ),
-
-        //                   margin: const EdgeInsets.only(right: 10),
-
-        //                   decoration: BoxDecoration(
-        //                     borderRadius: BorderRadius.circular(30),
-        //                     border: Border.all(
-        //                       width: 1,
-        //                       color: Color.fromRGBO(255, 255, 255, 0.1),
-        //                     ),
-        //                     color: const Color.fromRGBO(255, 255, 255, 0.06),
-        //                   ),
-
-        //                   child: Center(
-        //                     child: Text(
-        //                       individual_FilterList[index],
-        //                       style: TextStyle(
-        //                         fontSize: 14,
-        //                         fontWeight: FontWeight.w400,
-        //                         color: Colors.white,
-        //                       ),
-        //                     ),
-        //                   ),
-        //                 );
-        //               },
-        //             ),
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
+        bottom: CommonFilters().getCommonFilter(context),
       ),
       body: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 100,
-                  //width: screenWidth*0.5,
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(7, 10, 27, 1),
+          BlocBuilder<ExpenseHistoryBloc, ExpenseHistoryState>(
+            builder: (context, state) {
+              var total = hasLiveHistory ? 0.0 : 8590.0;
+              var settled = 0.0;
+              if (state is ExpenseHistoryLoaded) {
+                final expenses = filterExpenses(
+                  state.expenses,
+                  canUseExpenseFilters()
+                      ? context.watch<ExpenseFilterBloc>().state.selection
+                      : const ExpenseFilterSelection(),
+                  currentEmail: _authenticatedEmail,
+                ).where(_matchesExpenseSearch).toList();
+                total = expenses.fold<double>(
+                  0,
+                  (sum, expense) => sum + _expenseAmount(expense),
+                );
+                settled = expenses
+                    .where(
+                      (expense) =>
+                          expense['status']?.toString().toLowerCase() ==
+                          'settled',
+                    )
+                    .fold<double>(
+                      0,
+                      (sum, expense) => sum + _expenseAmount(expense),
+                    );
+              }
+              return Row(
+                children: [
+                  _buildHistorySummary('Total', total),
+                  Container(height: 65, width: 1, color: Colors.white24),
+                  _buildHistorySummary(
+                    'Settled',
+                    settled,
+                    amountColor: const Color.fromRGBO(28, 205, 128, 1),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "₹8590",
-                        style: GoogleFonts.poppins(
-                          fontSize: 26,
-                          fontWeight: FontWeight(500),
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        "Total",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight(400),
-                          color: Color.fromRGBO(255, 255, 255, 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              Container(height: 65, width: 1, color: Colors.white24),
-
-              Expanded(
-                child: Container(
-                  height: 100,
-                  //width: screenWidth*0.5,
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(7, 10, 27, 1),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "₹0",
-                        style: GoogleFonts.poppins(
-                          fontSize: 26,
-                          fontWeight: FontWeight(500),
-                          color: Color.fromRGBO(28, 205, 128, 1),
-                        ),
-                      ),
-                      Text(
-                        "Settled",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight(400),
-                          color: Color.fromRGBO(255, 255, 255, 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
           Expanded(
-            child: MonthwiseIndividualListview().getMonthwiseExpenseListview(
-              transactionData,
-            ),
+            child: !hasLiveHistory
+                ? MonthwiseIndividualListview().getMonthwiseExpenseListview(
+                    transactionData,
+                  )
+                : role != 'superadmin' &&
+                      (_profileEmail == null || _profileEmail!.isEmpty)
+                ? const Center(
+                    child: Text(
+                      'Could not determine the account email.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  )
+                : BlocBuilder<ExpenseHistoryBloc, ExpenseHistoryState>(
+                    builder: (context, state) {
+                      if (state is ExpenseHistoryInitial ||
+                          state is ExpenseHistoryLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF2196F3),
+                          ),
+                        );
+                      }
+                      if (state is ExpenseHistoryFailure) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'Could not load transactions: ${state.message}',
+                              style: const TextStyle(color: Colors.white70),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      }
+                      if (state is ExpenseHistoryLoaded) {
+                        final expenses = filterExpenses(
+                          state.expenses,
+                          canUseExpenseFilters()
+                              ? context
+                                    .watch<ExpenseFilterBloc>()
+                                    .state
+                                    .selection
+                              : const ExpenseFilterSelection(),
+                          currentEmail: _authenticatedEmail,
+                        ).where(_matchesExpenseSearch).toList();
+                        if (expenses.isEmpty) {
+                          return RefreshIndicator(
+                            onRefresh: _refreshHistory,
+                            child: ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: const [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text(
+                                      'No transactions yet.',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return RefreshIndicator(
+                          onRefresh: _refreshHistory,
+                          child: MonthwiseIndividualListview()
+                              .getExpenseHistoryListview(expenses),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
           ),
         ],
       ),
       bottomNavigationBar: SettleButton().getSettleButton(
-        context,(AuthRepository.authEmail!.contains("_instructor")||AuthRepository.authEmail!.contains("_superadmin"))?"Settle":"Add Transaction",
-        container: (AuthRepository.authEmail!.contains("_instructor"))?getBottomSheetOpen():null,onTap: () {
-          if((AuthRepository.authEmail!.contains("_instructor"))){
-
-          }else{
-            print("Inside else");
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>CreateNewTransaction()));
-          }
-        },
+        context,
+        canCreateExpense ? 'Add Transaction' : 'Settle',
+        container: !canCreateExpense && role == 'instructor'
+            ? getBottomSheetOpen()
+            : null,
+        onTap: canCreateExpense
+            ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateNewTransaction(),
+                  ),
+                );
+              }
+            : null,
       ),
     );
   }
 
-  
-Widget getExpensePage() {
-  return const ExpenseManager();
-}
+  double _expenseAmount(Map<String, dynamic> expense) {
+    final amount = expense['amount'];
+    if (amount is num) return amount.toDouble();
+    return double.tryParse(amount?.toString() ?? '') ?? 0;
+  }
 
+  Widget _buildHistorySummary(
+    String label,
+    double amount, {
+    Color amountColor = Colors.white,
+  }) {
+    final formatted = amount == amount.roundToDouble()
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+
+    return Expanded(
+      child: Container(
+        height: 100,
+        color: const Color.fromRGBO(7, 10, 27, 1),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '₹$formatted',
+              style: GoogleFonts.poppins(
+                fontSize: 26,
+                fontWeight: FontWeight.w500,
+                color: amountColor,
+              ),
+            ),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: const Color.fromRGBO(255, 255, 255, 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget getExpensePage() {
+    return const ExpenseManager();
+  }
 
   void handleRadioChange(String? value) {
     if (value != null) {
@@ -584,7 +686,12 @@ Widget getExpensePage() {
                       ],
                     ),
                   ),
-                  SettleButton().getSettleButton(context,(AuthRepository.authEmail!.contains("_instructor"))?"Settle":"Add Transaction")
+                  SettleButton().getSettleButton(
+                    context,
+                    (AuthRepository.authEmail!.contains("_instructor"))
+                        ? "Settle"
+                        : "Add Transaction",
+                  ),
                 ],
               ),
             );

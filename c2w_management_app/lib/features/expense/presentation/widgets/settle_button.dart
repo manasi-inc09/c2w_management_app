@@ -1,4 +1,3 @@
-
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +26,14 @@ class SettleButton {
                       showModalBottomSheet(
                         context: context,
                         builder: (_) => container,
+                        isScrollControlled: true,
+                        backgroundColor: AppTheme().appBarBackgroundColor,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
                       );
                     }
                   },

@@ -1,12 +1,11 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_bloc.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_event.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_state.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
-import 'package:date_picker_plus/date_picker_plus.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,64 +23,98 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   XFile? file;
   String? url;
   DateTime? selectedDate;
-  Future<void> getdate()async{
-    DateTime? showDate=await showDatePicker(context: context, initialDate: selectedDate??DateTime.now(),firstDate: DateTime(2020), lastDate: DateTime(2030));
-    if(showDate!=null){
+  Future<void> getdate() async {
+    DateTime? showDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (showDate != null) {
       setState(() {
-        selectedDate=showDate;
+        selectedDate = showDate;
       });
     }
   }
-  Future<void> getImage()async{
-    ImagePicker imagePicker=ImagePicker();
-    final XFile? image =await imagePicker.pickImage(source: ImageSource.gallery);
+
+  Future<void> getImage() async {
+    ImagePicker imagePicker = ImagePicker();
+    final XFile? image = await imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
     int fileSize = await image!.length();
 
     if (fileSize > 60 * 1024 * 1024) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Image size must be less than 60 MB"),
-        ),
+        const SnackBar(content: Text("Image size must be less than 60 MB")),
       );
       return;
-    }else{
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.green,
-          content: Text("Image successfully uploaded",style: TextStyle(color: Colors.white),),
+          content: Text(
+            "Image successfully uploaded",
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
 
     if (!mounted) return;
     setState(() {
-      
-      file=image;
-    
+      file = image;
     });
   }
+
   String selectedOption = "Option 1";
 
   String? selectedCategory;
   String? selectedSubCategory;
 
-  final List<String> categories = [
-    "Food",
-    "Shopping",
-    "Travel",
-    "Education",
-    "Health",
-    "Other",
-  ];
-  TextEditingController dateController=TextEditingController();
-  TextEditingController amountController=TextEditingController();
-  TextEditingController detailsController=TextEditingController();
+  TextEditingController dateController = TextEditingController();
+  TextEditingController amountController = TextEditingController();
+  TextEditingController detailsController = TextEditingController();
   //TextEditingController selectedSubCategory=TextEditingController();
   //TextEditingController selectedSubCategory=TextEditingController();
   @override
+  void initState() {
+    super.initState();
+    context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final categoryState = context.watch<ExpenseCategoryBloc>().state;
+    final availableCategories = categoryState is ExpenseCategoryLoaded
+        ? categoryState.categories
+        : <Map<String, dynamic>>[];
+    final categoryNames = availableCategories
+        .map((category) => category['name']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
+    final selectedCategoryValue = categoryNames.contains(selectedCategory)
+        ? selectedCategory
+        : null;
+    Map<String, dynamic>? selectedCategoryData;
+    for (final category in availableCategories) {
+      if (category['name'] == selectedCategoryValue) {
+        selectedCategoryData = category;
+        break;
+      }
+    }
+    final subCategoryValues = selectedCategoryData?['subCategories'] is List
+        ? (selectedCategoryData!['subCategories'] as List)
+              .map((value) => value.toString())
+              .toList()
+        : <String>[];
+    final selectedSubCategoryValue =
+        subCategoryValues.contains(selectedSubCategory)
+        ? selectedSubCategory
+        : null;
+
     return Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
@@ -90,7 +123,8 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
           onTap: () {
             Navigator.pop(context);
           },
-          child: Icon(Icons.arrow_back, color: Colors.white)),
+          child: Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: Text(
           "Transactions Details",
           style: GoogleFonts.figtree(
@@ -120,15 +154,22 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               TextField(
                 controller: dateController,
                 cursorColor: Colors.white,
-                style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.6),fontSize: 20,fontWeight: FontWeight(400)),
-        
+                style: TextStyle(
+                  color: Color.fromRGBO(255, 255, 255, 0.6),
+                  fontSize: 20,
+                  fontWeight: FontWeight(400),
+                ),
+
                 decoration: InputDecoration(
-                  hintText: (selectedDate==null)?"Select Date":"${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                  hintText: (selectedDate == null)
+                      ? "Select Date"
+                      : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
                   suffixIcon: GestureDetector(
-                    onTap: (){
+                    onTap: () {
                       getdate();
                     },
-                    child: Icon(Icons.calendar_month_outlined)),
+                    child: Icon(Icons.calendar_month_outlined),
+                  ),
                   suffixIconColor: Colors.white,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -137,7 +178,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                       width: 1,
                     ),
                   ),
-        
+
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Colors.blue, width: 2),
@@ -158,10 +199,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 controller: amountController,
                 cursorColor: Colors.white,
                 style: TextStyle(color: Colors.white),
-        
+
                 decoration: InputDecoration(
                   hintText: "Type here your Expense Amount",
-        
+
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
@@ -169,7 +210,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                       width: 1,
                     ),
                   ),
-        
+
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Colors.blue, width: 2),
@@ -190,7 +231,9 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
                   const SizedBox(width: 12),
-                  (AuthRepository.authEmail!.contains("_instructor"))?buildRadioBox(title: "Wallet", value: "Option 2"):SizedBox(),
+                  (AuthRepository.authEmail?.startsWith("instructor_") ?? false)
+                      ? buildRadioBox(title: "Wallet", value: "Option 2")
+                      : const SizedBox(),
                 ],
               ),
               const SizedBox(height: 5),
@@ -209,10 +252,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 controller: detailsController,
                 cursorColor: Colors.white,
                 style: TextStyle(color: Colors.white),
-        
+
                 decoration: InputDecoration(
                   hintText: "e.g.stationery, notebook, pen",
-        
+
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
@@ -220,7 +263,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                       width: 1,
                     ),
                   ),
-        
+
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Colors.blue, width: 2),
@@ -238,11 +281,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               DropdownButtonFormField<String>(
-                
-                initialValue: selectedCategory,
-        
+                initialValue: selectedCategoryValue,
+
                 dropdownColor: Color(0xFF0B0D1C),
-        
+
                 icon: Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: Icon(
@@ -251,49 +293,54 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                     size: 30,
                   ),
                 ),
-        
+
                 style: TextStyle(color: Colors.white, fontSize: 18),
-        
+
                 decoration: InputDecoration(
                   hint: Align(
                     alignment: Alignment.centerLeft,
-                    child: const Text(
-                        "Select category",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 18,
-                        ),
-                      ),
+                    child: Text(
+                      categoryState is ExpenseCategoryLoading
+                          ? "Loading categories"
+                          : categoryNames.isEmpty
+                          ? "No categories available"
+                          : "Select category",
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
                   ),
-        
+
                   hintStyle: TextStyle(color: Color(0xFF454858), fontSize: 18),
-        
+
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
                   ),
-        
+
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Color(0xFF292C3E), width: 1),
                   ),
-        
+
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Color(0xFF00AEFF), width: 1.5),
+                    borderSide: BorderSide(
+                      color: Color(0xFF00AEFF),
+                      width: 1.5,
+                    ),
                   ),
                 ),
-        
-                items: categories.map((category) {
+
+                items: categoryNames.map((category) {
                   return DropdownMenuItem<String>(
                     value: category,
                     child: Text(category),
                   );
                 }).toList(),
-        
+
                 onChanged: (value) {
                   setState(() {
                     selectedCategory = value;
+                    selectedSubCategory = null;
                   });
                 },
               ),
@@ -308,10 +355,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               DropdownButtonFormField<String>(
-                initialValue: selectedCategory,
-        
+                initialValue: selectedSubCategoryValue,
+
                 dropdownColor: Color(0xFF0B0D1C),
-        
+
                 icon: Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: Icon(
@@ -320,45 +367,44 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                     size: 30,
                   ),
                 ),
-        
+
                 style: TextStyle(color: Colors.white, fontSize: 18),
-        
+
                 decoration: InputDecoration(
-        
                   hint: Align(
                     alignment: Alignment.centerLeft,
                     child: const Text(
-                        "Select category",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 18,
-                        ),
-                      ),
+                      "Select sub-category",
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
                   ),
-        
+
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
                   ),
-        
+
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Color(0xFF292C3E), width: 1),
                   ),
-        
+
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Color(0xFF00AEFF), width: 1.5),
+                    borderSide: BorderSide(
+                      color: Color(0xFF00AEFF),
+                      width: 1.5,
+                    ),
                   ),
                 ),
-        
-                items: categories.map((category) {
+
+                items: subCategoryValues.map((subCategory) {
                   return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
+                    value: subCategory,
+                    child: Text(subCategory),
                   );
                 }).toList(),
-        
+
                 onChanged: (value) {
                   setState(() {
                     selectedSubCategory = value;
@@ -376,118 +422,111 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               ),
               const SizedBox(height: 5),
               DottedBorder(
-      options: RoundedRectDottedBorderOptions(
-        radius: const Radius.circular(12),
-        color: const Color(0xFF292C3E),
-        strokeWidth: 2,
-        dashPattern: const [8, 6],
-        padding: EdgeInsets.zero,
-      ),
-
-      child: Container(
-        width: double.infinity,
-        height: 250,
-
-        decoration: BoxDecoration(
-          color: const Color(0xFF080B1B),
-          borderRadius: BorderRadius.circular(12),
-        ),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-
-            // Image Icon
-            const Icon(
-              Icons.photo_library_outlined,
-              color: Color(0xFF454858),
-              size: 50,
-            ),
-
-            const SizedBox(height: 25),
-
-            // Upload Button
-            ElevatedButton(
-              onPressed: () {
-                getImage();
-              },
-
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF292C3E),
-                foregroundColor: Colors.white,
-                elevation: 0,
-
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                options: RoundedRectDottedBorderOptions(
+                  radius: const Radius.circular(12),
+                  color: const Color(0xFF292C3E),
+                  strokeWidth: 2,
+                  dashPattern: const [8, 6],
+                  padding: EdgeInsets.zero,
                 ),
 
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  width: double.infinity,
+                  height: 250,
+
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF080B1B),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Image Icon
+                      const Icon(
+                        Icons.photo_library_outlined,
+                        color: Color(0xFF454858),
+                        size: 50,
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // Upload Button
+                      ElevatedButton(
+                        onPressed: () {
+                          getImage();
+                        },
+
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF292C3E),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+
+                        child: const Text(
+                          "Upload image",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // Supported formats
+                      const Text(
+                        "Supported formats: JPG, PNG | Max.60 MB",
+                        style: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
-              child: const Text(
-                "Upload image",
-                style: TextStyle(
-                  fontSize: 14,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // Supported formats
-            const Text(
-              "Supported formats: JPG, PNG | Max.60 MB",
-              style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
             ],
           ),
         ),
-        
       ),
-      bottomNavigationBar:
-    BlocConsumer<CreateExpenseBloc, CreateExpenseState>(
-  listener: (context, state) {
-    if (state is CreateExpenseSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Expense created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      bottomNavigationBar: BlocConsumer<CreateExpenseBloc, CreateExpenseState>(
+        listener: (context, state) {
+          if (state is CreateExpenseSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Expense created successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
 
-      Navigator.pop(context);
-    }
+            Navigator.pop(context);
+          }
 
-    if (state is CreateExpenseFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  },
-  builder: (context, state) {
-    return SettleButton().getSettleButton(
-      context,
-      'Create',
-      isLoading: state is CreateExpenseLoading,
-      onTap: state is CreateExpenseLoading
-          ? null
-          : submitExpense,
-    );
-  },
-),
+          if (state is CreateExpenseFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          return SettleButton().getSettleButton(
+            context,
+            'Create',
+            isLoading: state is CreateExpenseLoading,
+            onTap: state is CreateExpenseLoading ? null : submitExpense,
+          );
+        },
+      ),
     );
   }
 
@@ -598,59 +637,57 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   }
 
   void submitExpense() {
-  // 1. Validate expense date
-  if (selectedDate == null) {
-    showMessage('Please select an expense date.');
-    return;
+    // 1. Validate expense date
+    if (selectedDate == null) {
+      showMessage('Please select an expense date.');
+      return;
+    }
+
+    // 2. Validate amount
+    final double? amount = double.tryParse(amountController.text.trim());
+
+    if (amount == null || amount <= 0) {
+      showMessage('Please enter a valid amount.');
+      return;
+    }
+
+    // 3. Validate transaction details
+    if (detailsController.text.trim().isEmpty) {
+      showMessage('Please enter transaction details.');
+      return;
+    }
+
+    // 4. Validate category
+    if (selectedCategory == null) {
+      showMessage('Please select a category.');
+      return;
+    }
+    if (selectedSubCategory == null) {
+      showMessage('Please select a sub-category.');
+      return;
+    }
+
+    // 6. Determine expense source
+    final String source = selectedOption == 'Option 2' ? 'Wallet' : 'Self Paid';
+
+    // 7. Create the Expense object
+    final expense = Expense(
+      expenseDate: selectedDate!,
+      amount: amount,
+      source: source,
+      description: detailsController.text.trim(),
+      category: selectedCategory!,
+      subCategory: selectedSubCategory!,
+      receiptLocalPath: file?.path,
+    );
+
+    // 8. Send the expense to the BLoC
+    context.read<CreateExpenseBloc>().add(SubmitExpenseEvent(expense));
   }
 
-  // 2. Validate amount
-  final double? amount =
-      double.tryParse(amountController.text.trim());
-
-  if (amount == null || amount <= 0) {
-    showMessage('Please enter a valid amount.');
-    return;
+  void showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
-
-  // 3. Validate transaction details
-  if (detailsController.text.trim().isEmpty) {
-    showMessage('Please enter transaction details.');
-    return;
-  }
-
-  // 4. Validate category
-  if (selectedCategory == null) {
-    showMessage('Please select a category.');
-    return;
-  }
-
-  // 6. Determine expense source
-  final String source =
-      selectedOption == 'Option 2' ? 'Wallet' : 'Self Paid';
-
-  // 7. Create the Expense object
-  final expense = Expense(
-    expenseDate: selectedDate!,
-    amount: amount,
-    source: source,
-    description: detailsController.text.trim(),
-    category: selectedCategory!,
-    subCategory: selectedSubCategory!,
-    receiptLocalPath: file?.path,
-  );
-
-  // 8. Send the expense to the BLoC
-  context.read<CreateExpenseBloc>().add(
-        SubmitExpenseEvent(expense),
-      );
 }
-
-void showMessage(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
-}
-
-}
-

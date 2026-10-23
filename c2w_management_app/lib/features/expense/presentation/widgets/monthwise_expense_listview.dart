@@ -208,7 +208,7 @@ class MonthwiseExpenseListview {
             ...items.map((item) {
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>TransactionDetails()));
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>TransactionDetails(group)));
                 },
                 child: Container(
                   color: Color.fromRGBO(7, 10, 27, 1),
