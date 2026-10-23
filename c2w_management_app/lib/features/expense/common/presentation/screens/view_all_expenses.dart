@@ -1,10 +1,10 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_history_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/common_filters.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/floating_button.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_individual_listview.dart';
-import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_history_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';

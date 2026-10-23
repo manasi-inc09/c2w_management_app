@@ -1,8 +1,8 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/individual_expenses.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/individual_expenses.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:flutter/material.dart';
 
