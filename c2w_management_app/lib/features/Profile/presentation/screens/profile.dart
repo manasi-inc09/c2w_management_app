@@ -8,7 +8,9 @@ import 'package:c2w_management_app/features/login_signup/presentation/screens/lo
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 const Color bgColor = Color(0xFF0A0F24);
 const Color cardColor = Color(0xFF141B34);
@@ -27,6 +29,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String? profileDocumentId;
+  final ImagePicker _imagePicker = ImagePicker();
+
   @override
   @override
   void initState() {
@@ -85,7 +89,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder:(context) => LoginScreen(),)),
+                    onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      (route) => false,
+                    ),
                     child: Text(
                       'Logout',
                       style: GoogleFonts.figtree(fontSize: 16),
@@ -111,6 +118,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _pickProfileImage() async {
+    final email = profileDocumentId;
+    if (email == null) {
+      showMessage('Could not identify this profile. Please sign in again.');
+      return;
+    }
+
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image == null || !mounted) return;
+
+      context.read<ProfileBloc>().add(
+        UploadProfileImageEvent(email: email, filePath: image.path),
+      );
+    } on PlatformException catch (error) {
+      showMessage(error.message ?? 'Could not select an image.');
+    }
+  }
+
+  void showMessage(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text, style: GoogleFonts.figtree(fontSize: 14))),
+    );
+  }
+
+  Widget _buildProfileAvatar(String imageUrl, {required bool isUploading}) {
+    final fallback = Image.asset(
+      'assets/images/sales_admin/profile.png',
+      fit: BoxFit.cover,
+    );
+
+    return GestureDetector(
+      onTap: isUploading ? null : _pickProfileImage,
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.green,
+            child: ClipOval(
+              child: SizedBox(
+                width: 70,
+                height: 70,
+                child: imageUrl.isEmpty
+                    ? fallback
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => fallback,
+                      ),
+              ),
+            ),
+          ),
+          if (isUploading)
+            const Positioned.fill(
+              child: CircleAvatar(
+                radius: 35,
+                backgroundColor: Color(0x99000000),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Positioned(
+              right: 0,
+              bottom: 0,
+              child: CircleAvatar(
+                radius: 12,
+                backgroundColor: blueColor,
+                child: Icon(Icons.camera_alt, size: 14, color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,25 +221,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: GoogleFonts.figtree(fontSize: 18, color: Colors.white),
         ),
       ),
-      body: BlocBuilder<ProfileBloc, ProfileState>(
+      body: BlocConsumer<ProfileBloc, ProfileState>(
+        listener: (context, state) {
+          if (state is ProfileImageUploadSuccess) {
+            showMessage('Profile picture updated successfully.');
+          } else if (state is ProfileImageUploadFailure) {
+            showMessage(state.message);
+          }
+        },
         builder: (context, state) {
           if (state is ProfileLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is ProfileSuccess) {
-            final user = state.user;
+          final user = switch (state) {
+            ProfileSuccess(:final user) => user,
+            ProfileImageUploadLoading(:final user) => user,
+            ProfileImageUploadSuccess(:final user) => user,
+            ProfileImageUploadFailure(:final user) => user,
+            _ => null,
+          };
+          if (user != null) {
+            final isUploading = state is ProfileImageUploadLoading;
 
             return SingleChildScrollView(
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-                  const CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.green,
-                    backgroundImage: AssetImage(
-                      'assets/images/sales_admin/profile.png',
-                    ),
+                  _buildProfileAvatar(
+                    user.profileImage,
+                    isUploading: isUploading,
                   ),
                   const SizedBox(height: 10),
                   Text(

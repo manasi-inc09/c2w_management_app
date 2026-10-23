@@ -112,7 +112,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
         return Scaffold(
           backgroundColor: backgroundColor,
           appBar: AppBar(
-            leading: Icon(Icons.arrow_back, color: Colors.white),
+            //leading: Icon(Icons.arrow_back, color: Colors.white),
             title: Text(
               "Expense Manager",
               style: TextStyle(
@@ -540,22 +540,6 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                         ),
                       ],
                     ),
-                    //   Positioned(
-                    //           right: 20,
-                    //           bottom: 34,
-                    //           child: GestureDetector(
-                    //             onTap: () {},
-                    //             child: Container(
-                    //               width: 56,
-                    //               height: 56,
-                    //               decoration: const BoxDecoration(
-                    //                 color: Color(0xFF0091FF),
-                    //                 shape: BoxShape.circle,
-                    //               ),
-                    //               child: const Icon(Icons.add, color: Colors.white, size: 28),
-                    //             ),
-                    //           ),
-                    //         ),
                   ],
                 ),
               ),

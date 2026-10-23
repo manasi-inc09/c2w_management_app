@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:c2w_management_app/features/Profile/data/repository/GetUserdata.dart';
+import 'package:c2w_management_app/features/Profile/data/repository/GetUserData.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileBloc.dart';
 import 'package:c2w_management_app/features/Profile/presentation/screens/profile.dart';
 import 'package:c2w_management_app/features/enquiry/create_enquiry/data/repository/AddEnquiry.dart';
@@ -136,7 +136,9 @@ class MainApp extends StatelessWidget {
               CreateExpenseBloc(createExpenseUseCase: createExpenseUseCase),
         ),
         BlocProvider<ProfileBloc>(
-          create: (context) => ProfileBloc(GetUserData()),
+          create: (context) => ProfileBloc(
+            GetUserData(),
+          ),
           child: const ProfileScreen(),
         ),
         BlocProvider<AddEnquiryBloc>(

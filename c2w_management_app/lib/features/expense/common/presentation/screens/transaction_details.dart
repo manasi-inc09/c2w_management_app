@@ -5,9 +5,11 @@ import 'package:c2w_management_app/features/expense/presentation/widgets/bottoms
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class TransactionDetails extends StatefulWidget {
   final Map<String, dynamic> expense;
@@ -88,6 +90,9 @@ class _TransactionDetailsState extends State<TransactionDetails> {
 
   @override
   Widget build(BuildContext context) {
+    final claimantName = _expense['claimantName']?.toString() ?? 'Member';
+    final profileImage = _expense['profileImage']?.toString().trim() ?? '';
+
     return Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
@@ -118,17 +123,25 @@ class _TransactionDetailsState extends State<TransactionDetails> {
               //crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                Container(
-                  height: 100,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color.fromRGBO(255, 194, 187, 1),
-                  ),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: const Color.fromRGBO(255, 194, 187, 1),
+                  child: profileImage.isEmpty
+                      ? _claimantInitial(claimantName)
+                      : ClipOval(
+                          child: Image.network(
+                            profileImage,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) =>
+                                _claimantInitial(claimantName),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  _expense['claimantName'],
+                  claimantName,
                   style: GoogleFonts.figtree(
                     color: Colors.white,
                     fontSize: 22,
@@ -167,14 +180,20 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      Text(
-                        _expense['expenseDate'].toString(),
+                      
+Text(
+                        DateFormat('dd MMM yyyy, hh:mm a').format(
+                          (_expense['expenseDate'] as Timestamp)
+                              .toDate()
+                              .toLocal(),
+                        ),
                         style: GoogleFonts.figtree(
                           fontSize: 16,
-                          fontWeight: FontWeight(500),
+                          fontWeight: FontWeight.w500,
                           color: Color.fromRGBO(255, 255, 255, 0.6),
                         ),
                       ),
+
                       Divider(color: Color.fromRGBO(47, 44, 44, 0.8)),
                       SizedBox(height: 10),
                       Text(
@@ -273,6 +292,17 @@ class _TransactionDetailsState extends State<TransactionDetails> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _claimantInitial(String name) {
+    return Text(
+      name.isEmpty ? 'M' : name[0].toUpperCase(),
+      style: GoogleFonts.figtree(
+        color: Colors.white,
+        fontSize: 36,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

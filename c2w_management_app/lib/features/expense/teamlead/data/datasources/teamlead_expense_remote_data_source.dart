@@ -103,15 +103,17 @@ class ExpenseRemoteDataSource {
         .collection('expenses')
         .where('email', isEqualTo: email)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (document) => <String, dynamic>{
-                  ...document.data(),
-                  'id': document.id,
-                },
-              )
-              .toList(),
+        .asyncMap(
+          (snapshot) => _addProfileImages(
+            snapshot.docs
+                .map(
+                  (document) => <String, dynamic>{
+                    ...document.data(),
+                    'id': document.id,
+                  },
+                )
+                .toList(),
+          ),
         );
   }
 
@@ -119,28 +121,58 @@ class ExpenseRemoteDataSource {
     return _firestore
         .collection('expenses')
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (document) => <String, dynamic>{
-                  ...document.data(),
-                  'id': document.id,
-                },
-              )
-              .toList(),
+        .asyncMap(
+          (snapshot) => _addProfileImages(
+            snapshot.docs
+                .map(
+                  (document) => <String, dynamic>{
+                    ...document.data(),
+                    'id': document.id,
+                  },
+                )
+                .toList(),
+          ),
         );
   }
 
   Future<List<Map<String, dynamic>>> getAllExpenses() async {
     final snapshot = await _firestore.collection('expenses').get();
-    return snapshot.docs
-        .map(
-          (document) => <String, dynamic>{
-            ...document.data(),
-            'id': document.id,
-          },
-        )
-        .toList();
+    return _addProfileImages(
+      snapshot.docs
+          .map(
+            (document) => <String, dynamic>{
+              ...document.data(),
+              'id': document.id,
+            },
+          )
+          .toList(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _addProfileImages(
+    List<Map<String, dynamic>> expenses,
+  ) async {
+    if (expenses.isEmpty) return expenses;
+
+    final emails = expenses
+        .map((expense) => expense['email']?.toString().trim())
+        .whereType<String>()
+        .where((email) => email.isNotEmpty)
+        .toSet();
+    final userDocuments = await Future.wait(
+      emails.map((email) => _firestore.collection('UserData').doc(email).get()),
+    );
+    final profileImages = <String, String>{};
+    for (final document in userDocuments) {
+      if (!document.exists) continue;
+      profileImages[document.id.toLowerCase()] =
+          document.data()?['profileImage']?.toString() ?? '';
+    }
+
+    return expenses.map((expense) {
+      final email = expense['email']?.toString().toLowerCase();
+      return {...expense, 'profileImage': profileImages[email] ?? ''};
+    }).toList();
   }
 
   Future<double> getWalletBalance() async {
@@ -294,6 +326,7 @@ class ExpenseRemoteDataSource {
         'email': document.id,
         'name': data['Name']?.toString() ?? 'Unnamed member',
         'role': data['role']?.toString() ?? 'Member',
+        'profileImage': data['profileImage']?.toString() ?? '',
         'status':status??'Pending',
         'mobile':
             data['Mobile no.']?.toString() ??
@@ -308,14 +341,16 @@ class ExpenseRemoteDataSource {
         .collection('expenses')
         .where('email', isEqualTo: email)
         .get();
-    return snapshot.docs
-        .map(
-          (document) => <String, dynamic>{
-            ...document.data(),
-            'id': document.id,
-          },
-        )
-        .toList();
+    return _addProfileImages(
+      snapshot.docs
+          .map(
+            (document) => <String, dynamic>{
+              ...document.data(),
+              'id': document.id,
+            },
+          )
+          .toList(),
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchExpenseCategories() {

@@ -56,3 +56,31 @@ class ProfileUpdateFailure extends ProfileState {
   @override
   List<Object?> get props => [message];
 }
+
+class ProfileImageUploadLoading extends ProfileState {
+  final UserModel user;
+
+  const ProfileImageUploadLoading(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
+class ProfileImageUploadSuccess extends ProfileState {
+  final UserModel user;
+
+  const ProfileImageUploadSuccess(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
+class ProfileImageUploadFailure extends ProfileState {
+  final UserModel user;
+  final String message;
+
+  const ProfileImageUploadFailure({required this.user, required this.message});
+
+  @override
+  List<Object?> get props => [user, message];
+}

@@ -240,6 +240,8 @@ class _MembersListState extends State<MembersList> {
                           final name =
                               member['name']?.toString() ?? 'Unnamed member';
                           final role = member['role']?.toString() ?? 'Member';
+                          final profileImage =
+                              member['profileImage']?.toString() ?? '';
                           return Column(
                             children: [
                               GestureDetector(
@@ -275,10 +277,20 @@ class _MembersListState extends State<MembersList> {
                                           ),
                                         ),
                                         clipBehavior: Clip.antiAlias,
-                                        child: Image.asset(
-                                          "assets/image.png",
-                                          fit: BoxFit.cover,
-                                        ),
+                                        child: profileImage.isEmpty
+                                            ? Image.asset(
+                                                "assets/image.png",
+                                                fit: BoxFit.cover,
+                                              )
+                                            : Image.network(
+                                                profileImage,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, _, _) =>
+                                                    Image.asset(
+                                                      "assets/image.png",
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                              ),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(

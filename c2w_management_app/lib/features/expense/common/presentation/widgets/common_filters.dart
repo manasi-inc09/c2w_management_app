@@ -1,7 +1,6 @@
 import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:c2w_management_app/features/enquiry/dashboard/presentation/widgets/filters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -536,6 +535,8 @@ class _ExpenseFilterSheetState extends State<_ExpenseFilterSheet> {
               Builder(
                 builder: (context) {
                   final name = member['name']?.toString() ?? 'Unnamed member';
+                  final profileImage =
+                      member['profileImage']?.toString().trim() ?? '';
                   final selected =
                       _selection.memberEmail == member['email']?.toString();
                   return _radioTile(
@@ -557,13 +558,31 @@ class _ExpenseFilterSheetState extends State<_ExpenseFilterSheet> {
                         CircleAvatar(
                           radius: 15,
                           backgroundColor: const Color(0xFF536D8A),
-                          child: Text(
-                            name.isEmpty ? 'M' : name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: profileImage.isEmpty
+                              ? Text(
+                                  name.isEmpty ? 'M' : name[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                )
+                              : ClipOval(
+                                  child: Image.network(
+                                    profileImage,
+                                    width: 30,
+                                    height: 30,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Text(
+                                      name.isEmpty
+                                          ? 'M'
+                                          : name[0].toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                         ),
                       ],
                     ),
