@@ -223,10 +223,25 @@ List<Map<String, dynamic>> filterExpenses(
 
   return expenses.where((expense) {
     final email = expense['email']?.toString().toLowerCase();
-    if (selection.transactionType == 'My Transactions' &&
-        (currentEmail == null ||
-            email != _normalizeEmail(currentEmail).toLowerCase())) {
-      return false;
+    if (selection.transactionType == 'My Transactions') {
+      final currentRawEmail = currentEmail?.toLowerCase() ?? '';
+      final normalizedCurrentEmail = _normalizeEmail(
+        currentEmail ?? '',
+      ).toLowerCase();
+      final normalizedExpenseEmail = email == null
+          ? null
+          : _normalizeEmail(email).toLowerCase();
+
+      final matchesCurrentUser =
+          currentEmail != null &&
+          (email == currentRawEmail ||
+              email == normalizedCurrentEmail ||
+              normalizedExpenseEmail == normalizedCurrentEmail ||
+              normalizedExpenseEmail == currentRawEmail);
+
+      if (!matchesCurrentUser) {
+        return false;
+      }
     }
     final date = _expenseDate(expense);
     if (selection.transactionType == 'Recent Transactions' &&

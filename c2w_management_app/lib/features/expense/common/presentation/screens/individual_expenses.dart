@@ -14,7 +14,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class IndividualExpenses extends StatefulWidget {
-  const IndividualExpenses({super.key});
+  final bool showOnlyMyTransactions;
+
+  const IndividualExpenses({super.key, this.showOnlyMyTransactions = false});
 
   @override
   State<IndividualExpenses> createState() => _IndividualExpensesState();
@@ -50,17 +52,18 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
   }
 
   Future<void> _refreshHistory() {
+    final email = _profileEmail;
     final bloc = context.read<ExpenseHistoryBloc>();
     final role = _authRole;
     if (role == 'superadmin') {
       return reloadAfterEvent(
         states: bloc.stream,
-        dispatch: () => bloc.add(LoadAllExpenses()),
+        dispatch: () => bloc.add(LoadExpensesByEmail(email!)),
         isComplete: (state) =>
             state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
       );
     }
-    final email = _profileEmail;
+    //final email = _profileEmail;
     if (email == null || email.isEmpty) return Future.value();
     return reloadAfterEvent(
       states: bloc.stream,
@@ -102,6 +105,14 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
   void initState() {
     super.initState();
     final role = _authRole;
+    if (widget.showOnlyMyTransactions) {
+      final email = _profileEmail;
+      if (email != null && email.isNotEmpty) {
+        context.read<ExpenseHistoryBloc>().add(LoadExpensesByEmail(email));
+      }
+      return;
+    }
+
     if (role == 'superadmin') {
       context.read<ExpenseHistoryBloc>().add(LoadAllExpenses());
     } else if (['teamlead', 'mentor', 'instructor'].contains(role)) {
