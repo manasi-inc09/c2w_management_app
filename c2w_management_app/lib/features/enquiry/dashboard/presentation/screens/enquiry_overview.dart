@@ -23,10 +23,8 @@ class _EnquiryState extends State<Enquiry> {
   Color _callStatusColor(String status) {
     switch (status) {
       case 'Done':
-        return const Color(0xFF19D18A);
-      case 'Not Recieved':
-      case 'Not Received':
         return const Color(0xFFFF5268);
+
       default:
         return const Color(0xFFFFB21A);
     }
@@ -35,6 +33,25 @@ class _EnquiryState extends State<Enquiry> {
   bool _sameStatus(String first, String second) =>
       first.toLowerCase().replaceAll('recieved', 'received') ==
       second.toLowerCase().replaceAll('recieved', 'received');
+
+  Future<void> _refreshEnquiries() async {
+    final bloc = context.read<DashBoardBloc>();
+    final refreshFinished = bloc.stream.firstWhere(
+      (state) =>
+          state is DashBoardLoaded ||
+          state is DashBoardEmpty ||
+          state is DashBoardError,
+    );
+    bloc.add(const RefreshEnquiriesEvent());
+    await refreshFinished;
+  }
+
+  Widget _scrollableMessage(Widget message) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [SizedBox(height: 280, child: Center(child: message))],
+    );
+  }
 
   bool _authorHasRole(String authorEmail, String role) =>
       authorEmail.trim().toLowerCase().startsWith('${role.toLowerCase()}_');
@@ -119,11 +136,13 @@ class _EnquiryState extends State<Enquiry> {
     return BlocBuilder<DashBoardBloc, DashBoardState>(
       builder: (context, state) {
         if (state is DashBoardLoading || state is DashBoardInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return _scrollableMessage(
+            const CircularProgressIndicator(color: Colors.white),
+          );
         }
         if (state is DashBoardError) {
-          return Center(
-            child: Column(
+          return _scrollableMessage(
+            Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -145,8 +164,8 @@ class _EnquiryState extends State<Enquiry> {
             : <EnquiryModel>[];
         final visible = _visibleEnquiries(all);
         if (visible.isEmpty) {
-          return Center(
-            child: Text(
+          return _scrollableMessage(
+            Text(
               all.isEmpty ? 'No enquiries found' : 'No matching enquiries',
               style: const TextStyle(color: Colors.white54),
             ),
@@ -154,6 +173,7 @@ class _EnquiryState extends State<Enquiry> {
         }
         return ListView.builder(
           padding: const EdgeInsets.all(8),
+          physics: const AlwaysScrollableScrollPhysics(),
           itemCount: visible.length,
           itemBuilder: (context, index) {
             final item = visible[index];
@@ -168,8 +188,9 @@ class _EnquiryState extends State<Enquiry> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                  padding: EdgeInsets.symmetric(
+                    horizontal:
+                        MediaQuery.sizeOf(context).width < 380 ? 10 : 12,
                     vertical: 10,
                   ),
                   child: Row(
@@ -198,20 +219,28 @@ class _EnquiryState extends State<Enquiry> {
                                 ),
                                 const SizedBox(width: 4),
                                 Tooltip(
-                                  message: 'Previous enquiry history',
+                                  message: 'Call status: ${item.callStatus}',
                                   child: Icon(
                                     Icons.chat_bubble,
-                                    color: item.enquiryHistory.isNotEmpty
-                                        ? const Color(0xFFFF6B62)
+                                    color: item.callStatus
+                                                .trim()
+                                                .toLowerCase() ==
+                                            'done'
+                                        ? const Color.fromARGB(255, 207, 85, 85)
                                         : Colors.white30,
                                     size: 15,
                                   ),
                                 ),
+                                SizedBox(width: 3,),
                                 Tooltip(
-                                  message: 'Admission ${item.admissionStatus}',
+                                  message:
+                                      'Admission status: ${item.admissionStatus}',
                                   child: Icon(
                                     Icons.check_circle,
-                                    color: item.admissionStatus == 'Completed'
+                                    color: item.admissionStatus
+                                                .trim()
+                                                .toLowerCase() ==
+                                            'completed'
                                         ? const Color(0xFF19D18A)
                                         : Colors.white30,
                                     size: 15,
@@ -301,11 +330,14 @@ class _EnquiryState extends State<Enquiry> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 380;
+    final horizontalPadding = isCompact ? 8.0 : 12.0;
     Widget searchBar = const SizedBox();
 
     if (isSearchVisible) {
       searchBar = Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(horizontalPadding),
         child: TextField(
           onChanged: (value) {
             setState(() {
@@ -369,12 +401,12 @@ class _EnquiryState extends State<Enquiry> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: Size.fromHeight(isCompact ? 50 : 56),
           child: SizedBox(
-            height: 56,
+            height: isCompact ? 50 : 56,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               children: [
                 Center(
                   child: Badge(
@@ -424,7 +456,7 @@ class _EnquiryState extends State<Enquiry> {
                         label,
                         style: GoogleFonts.figtree(
                           color: Colors.white,
-                          fontSize: 13,
+                          fontSize: isCompact ? 12 : 13,
                         ),
                       ),
                     ),
@@ -439,7 +471,7 @@ class _EnquiryState extends State<Enquiry> {
         children: [
           const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             child: BlocBuilder<DashBoardBloc, DashBoardState>(
               builder: (context, state) {
                 final count = state is DashBoardLoaded
@@ -456,7 +488,13 @@ class _EnquiryState extends State<Enquiry> {
           ),
           searchBar,
 
-          Expanded(child: _enquiriesList()),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshEnquiries,
+              color: const Color.fromRGBO(5, 164, 255, 1),
+              child: _enquiriesList(),
+            ),
+          ),
         ],
       ),
     );

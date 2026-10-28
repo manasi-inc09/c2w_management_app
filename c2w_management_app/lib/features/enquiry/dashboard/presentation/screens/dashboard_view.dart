@@ -1,4 +1,3 @@
-
 import 'dart:developer';
 
 import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
@@ -28,8 +27,7 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
-    // If DashBoardBloc is already provided by an ancestor (e.g., in main.dart), reuse it;
-    // otherwise, provide it locally so the Dashboard works out-of-the-box.
+
     try {
       context.read<DashBoardBloc>();
       return const _DashboardViewContent();
@@ -61,23 +59,39 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
     bloc.add(const FetchEnquiriesEvent());
   }
 
-
   /// Null-safe access to the logged in email (avoids `authEmail!` crashes).
   String get _email => AuthRepository.authEmail ?? '';
 
   /// Sales admin has no bottom navigation bar.
   bool get _isSalesAdmin => _email.contains("salesadmin_");
 
-  /// Instructor / mentor / team lead cannot see the "See all" button.
-  bool get _canSeeAllEnquiries =>
-      !(_email.contains("instructor_") ||
-          _email.contains("mentor_") ||
-          _email.contains("teamlead_"));
+  bool get _isTeamLeadMentorOrInstructor =>
+      _email.startsWith('teamlead_') ||
+      _email.startsWith('mentor_') ||
+      _email.startsWith('instructor_');
+
+  /// These roles can open their own date-sorted enquiry list and history.
+  bool get _canOpenEnquiryOverview =>
+      _isTeamLeadMentorOrInstructor ||
+      _email.contains('salesadmin_') ||
+      _email.contains('superadmin_');
 
   /// Instructor / super admin get the ExpenseManager, everyone else gets
   /// their own IndividualExpenses screen.
   bool get _isExpenseManagerRole =>
       _email.contains("instructor") || _email.contains("superadmin");
+
+  Future<void> _refreshEnquiries(BuildContext context) async {
+    final bloc = context.read<DashBoardBloc>();
+    final refreshFinished = bloc.stream.firstWhere(
+      (state) =>
+          state is DashBoardLoaded ||
+          state is DashBoardEmpty ||
+          state is DashBoardError,
+    );
+    bloc.add(const RefreshEnquiriesEvent());
+    await refreshFinished;
+  }
 
   Color _modeColor(String mode) {
     switch (mode.toLowerCase()) {
@@ -119,29 +133,19 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
               Text(
                 state.message,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.figtree(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.figtree(color: Colors.white70, fontSize: 13),
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
                   context.read<DashBoardBloc>().add(
-                        const FetchEnquiriesEvent(),
-                      );
+                    const FetchEnquiriesEvent(),
+                  );
                 },
-                icon: const Icon(
-                  Icons.refresh,
-                  size: 16,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
                 label: Text(
                   'Retry',
-                  style: GoogleFonts.figtree(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: GoogleFonts.figtree(color: Colors.white, fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF161B2E),
@@ -163,18 +167,11 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
         child: Center(
           child: Column(
             children: [
-              const Icon(
-                Icons.inbox_outlined,
-                color: Colors.white38,
-                size: 44,
-              ),
+              const Icon(Icons.inbox_outlined, color: Colors.white38, size: 44),
               const SizedBox(height: 10),
               Text(
                 'No enquiries found',
-                style: GoogleFonts.figtree(
-                  color: Colors.white54,
-                  fontSize: 14,
-                ),
+                style: GoogleFonts.figtree(color: Colors.white54, fontSize: 14),
               ),
             ],
           ),
@@ -199,6 +196,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   }
 
   Widget _buildEnquiryCard(BuildContext context, EnquiryModel item) {
+    final isCompact = MediaQuery.sizeOf(context).width < 380;
     final modeColor = _modeColor(item.mode);
     final displayName = item.studentName.isNotEmpty
         ? item.studentName.toUpperCase()
@@ -213,7 +211,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
           borderRadius: BorderRadius.circular(10),
           onTap: () {
             log(AuthRepository.authEmail!);
-            if(AuthRepository.authEmail!.contains("salesadmin_") || AuthRepository.authEmail!.contains("superadmin_") ){
+            if (_canOpenEnquiryOverview) {
               log("in card..");
 
               Navigator.of(context).push(
@@ -249,20 +247,32 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                             color: Colors.white24,
                           ),
                           const SizedBox(width: 8),
-                          if (item.studentFeedback.isNotEmpty)
-                            const Icon(
-                              Icons.chat_bubble,
-                              color: Colors.redAccent,
+                          Tooltip(
+                            message: 'Call status: ${item.callStatus}',
+                            child: Icon(
+                              Icons.chat,
+                              color: item.callStatus.trim().toLowerCase() ==
+                                      'done'
+                                  ? const Color.fromARGB(255, 207, 85, 85)
+                                  : Colors.white30,
                               size: 14,
                             ),
-                          if (item.mode.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            const Icon(
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message:
+                                'Admission status: ${item.admissionStatus}',
+                            child: Icon(
                               Icons.check_circle,
-                              color: Colors.green,
+                              color: item.admissionStatus
+                                          .trim()
+                                          .toLowerCase() ==
+                                      'completed'
+                                  ? const Color(0xFF19D18A)
+                                  : Colors.white30,
                               size: 16,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -272,7 +282,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.figtree(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: isCompact ? 14 : 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -333,6 +343,12 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   /// The "Home" tab (gradient background, app bar, create-enquiry section and
   /// the enquiries list).
   Widget _buildHomeTab(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final isCompact = screenSize.width < 380;
+    final heroImageSize =
+        (screenSize.width * 0.26).clamp(72.0, 100.0).toDouble();
+    final sectionSpacing =
+        (screenSize.height * 0.018).clamp(8.0, 16.0).toDouble();
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -356,14 +372,14 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
             children: [
               Image.asset(
                 "assets/images/sales_admin/core2web.png",
-                width: 36.68,
-                height: 30,
+                width: isCompact ? 32 : 36.68,
+                height: isCompact ? 26 : 30,
                 fit: BoxFit.cover,
               ),
               Image.asset(
                 "assets/images/sales_admin/c2wtext.png",
-                width: 100,
-                height: 60,
+                width: isCompact ? 82 : 100,
+                height: isCompact ? 50 : 60,
               ),
             ],
           ),
@@ -392,16 +408,20 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
             const SizedBox(width: 12),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
+        body: RefreshIndicator(
+          onRefresh: () => _refreshEnquiries(context),
+          color: const Color.fromRGBO(110, 75, 239, 1),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
             children: [
               Center(
                 child: Column(
                   children: [
                     Image.asset(
                       "assets/images/sales_admin/notes.png",
-                      width: 96.92,
-                      height: 94.94,
+                      width: heroImageSize,
+                      height: heroImageSize,
                       fit: BoxFit.cover,
                     ),
                     const SizedBox(height: 8),
@@ -442,9 +462,9 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                           );
                           // Refresh the list when coming back
                           if (context.mounted) {
-                            context
-                                .read<DashBoardBloc>()
-                                .add(const FetchEnquiriesEvent());
+                            context.read<DashBoardBloc>().add(
+                              const FetchEnquiriesEvent(),
+                            );
                           }
                         },
                         icon: const Icon(
@@ -469,7 +489,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: sectionSpacing),
                     const Divider(
                       color: Color.fromRGBO(255, 255, 255, 0.06),
                       thickness: 1,
@@ -479,11 +499,11 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 16),
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    const SizedBox(height: 20),
+                    SizedBox(height: sectionSpacing),
                     BlocBuilder<DashBoardBloc, DashBoardState>(
                       builder: (context, state) {
                         final count = state is DashBoardLoaded
@@ -495,7 +515,9 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                             Row(
                               children: [
                                 Text(
-                                  "New Enquiry",
+                                  _isTeamLeadMentorOrInstructor
+                                      ? 'My Enquiries'
+                                      : 'New Enquiry',
                                   style: GoogleFonts.figtree(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,
@@ -539,7 +561,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                                 ],
                                 const Spacer(),
                                 // "See all" is hidden for instructor_ / mentor_ / teamlead_
-                                if (_canSeeAllEnquiries) ...[
+                                if (_canOpenEnquiryOverview) ...[
                                   TextButton(
                                     onPressed: () {
                                       Navigator.of(context).push(
@@ -548,18 +570,33 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                                         ),
                                       );
                                     },
-                                    child: Text(
-                                      "See all",
-                                      style: GoogleFonts.figtree(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                  const Icon(
+                                    child:
+                                        (AuthRepository.authEmail?.contains(
+                                                  "salesadmin_",
+                                                ) ==
+                                                true ||
+                                            AuthRepository.authEmail?.contains(
+                                                  "superadmin_",
+                                                ) ==
+                                                true)
+                                        ? Row(
+                                          children: [
+                                            Text(
+                                                "See all",
+                                                style: GoogleFonts.figtree(
+                                                  fontSize: 14,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              const Icon(
                                     Icons.chevron_right,
                                     color: Colors.grey,
                                   ),
+                                          ],
+                                        )
+                                        : const SizedBox.shrink(),
+                                  ),
+
                                 ],
                               ],
                             ),
@@ -573,6 +610,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
