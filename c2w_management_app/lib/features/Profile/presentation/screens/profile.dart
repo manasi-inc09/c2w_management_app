@@ -4,6 +4,9 @@ import 'package:c2w_management_app/features/Profile/data/models/UserModel.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileBloc.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileEvent.dart';
 import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileState.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +42,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = FirebaseAuth.instance.currentUser?.email;
 
     if (email != null) {
-      final cleanedEmail = email.replaceFirst(
-        RegExp(r'^(admin|mentor|instructor|salesadmin|teamlead)_'),
+      final cleanedEmail = email.trim().replaceFirst(
+        RegExp(
+          r'^(superadmin|salesadmin|teamlead|instructor|mentor|admin)_',
+          caseSensitive: false,
+        ),
         '',
       );
 
@@ -89,10 +95,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                      (route) => false,
-                    ),
+                    onPressed: () {
+                      final loginBloc = context.read<Loginsignupbloc>();
+                      Navigator.of(context).pop();
+                      loginBloc.add(const LogoutEvent());
+                    },
                     child: Text(
                       'Logout',
                       style: GoogleFonts.figtree(fontSize: 16),
@@ -205,175 +212,210 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF070A1B),
-      appBar: AppBar(
-        backgroundColor: bgColor,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
+    return BlocListener<Loginsignupbloc, LoginSignupState>(
+      listener: (context, state) {
+        if (state is LogoutSuccessful) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        } else if (state is LogoutFailure) {
+          showMessage(state.message);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF070A1B),
+        appBar: AppBar(
+          backgroundColor: bgColor,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          title: Text(
+            'Profile',
+            style: GoogleFonts.figtree(fontSize: 18, color: Colors.white),
+          ),
+        ),
+        body: BlocConsumer<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state is ProfileImageUploadSuccess) {
+              showMessage('Profile picture updated successfully.');
+            } else if (state is ProfileImageUploadFailure) {
+              showMessage(state.message);
+            }
           },
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-        ),
-        title: Text(
-          'Profile',
-          style: GoogleFonts.figtree(fontSize: 18, color: Colors.white),
-        ),
-      ),
-      body: BlocConsumer<ProfileBloc, ProfileState>(
-        listener: (context, state) {
-          if (state is ProfileImageUploadSuccess) {
-            showMessage('Profile picture updated successfully.');
-          } else if (state is ProfileImageUploadFailure) {
-            showMessage(state.message);
-          }
-        },
-        builder: (context, state) {
-          if (state is ProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          builder: (context, state) {
+            if (state is ProfileLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final user = switch (state) {
-            ProfileSuccess(:final user) => user,
-            ProfileImageUploadLoading(:final user) => user,
-            ProfileImageUploadSuccess(:final user) => user,
-            ProfileImageUploadFailure(:final user) => user,
-            _ => null,
-          };
-          if (user != null) {
-            final isUploading = state is ProfileImageUploadLoading;
+            final user = switch (state) {
+              ProfileSuccess(:final user) => user,
+              ProfileImageUploadLoading(:final user) => user,
+              ProfileImageUploadSuccess(:final user) => user,
+              ProfileImageUploadFailure(:final user) => user,
+              _ => null,
+            };
+            if (user != null) {
+              final isUploading = state is ProfileImageUploadLoading;
+              final isSalesAdmin =
+                  FirebaseAuth.instance.currentUser?.email
+                          ?.toLowerCase()
+                          .startsWith('salesadmin_') ==
+                      true ||
+                  user.role.toLowerCase() == 'salesadmin';
+              final isSuperAdmin =
+                  FirebaseAuth.instance.currentUser?.email
+                          ?.toLowerCase()
+                          .startsWith('superadmin_') ==
+                      true ||
+                  user.role.toLowerCase() == 'superadmin';
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  _buildProfileAvatar(
-                    user.profileImage,
-                    isUploading: isUploading,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    user.fullName,
-                    style: GoogleFonts.figtree(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    _buildProfileAvatar(
+                      user.profileImage,
+                      isUploading: isUploading,
                     ),
-                  ),
-                  Text(
-                    user.role.toUpperCase(),
-                    style: GoogleFonts.figtree(fontSize: 14, color: greyText),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    color: cardColor,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      children: [
-                        StatItem(
-                          number: user.totalExpense.toStringAsFixed(0),
-                          label: 'Total Expense',
-                        ),
-                        const StatDivider(),
-                        StatItem(
-                          number: user.pendingExpense.toStringAsFixed(0),
-                          label: 'Pending Expense',
-                        ),
-                        const StatDivider(),
-                        StatItem(
-                          number: user.paidExpense.toStringAsFixed(0),
-                          label: 'Paid Expense',
-                        ),
-                        const StatDivider(),
-                        StatItem(
-                          number: user.totalEnquiries.toString(),
-                          label: 'Total Enquiries',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ProfileTile(
-                    icon: Icons.person_outline,
-                    title: 'Personal Information',
-                    subtitle: 'Full name, Mobile no., Email id, DOB, UPI',
-                    onTap: () {
-                      final email = profileDocumentId;
-
-                      if (email == null) {
-                        return;
-                      }
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              PersonalInfoScreen(user: user, email: email),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  ProfileTile(
-                    header: 'Security Settings',
-                    icon: Icons.vpn_key_outlined,
-                    title: 'Change Password',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ChangePasswordScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => showLogoutDialog(context),
-                    child: Container(
-                      width: double.infinity,
-                      color: cardColor,
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, color: accentColor, size: 20),
-                          SizedBox(width: 10),
-                          Text(
-                            'Log Out',
-                            style: GoogleFonts.figtree(
-                              color: accentColor,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 10),
+                    Text(
+                      user.fullName,
+                      style: GoogleFonts.figtree(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-          if (state is ProfileNotFound) {
-            return const Center(
-              child: Text(
-                'User data not found',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          }
+                    Text(
+                      user.role.toUpperCase(),
+                      style: GoogleFonts.figtree(fontSize: 14, color: greyText),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      color: cardColor,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: isSalesAdmin || isSuperAdmin
+                          ? Row(
+                              children: [
+                                StatItem(
+                                  number: user.totalEnquiries.toString(),
+                                  label: 'Total Enquiries',
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                StatItem(
+                                  number: user.totalExpense.toStringAsFixed(0),
+                                  label: 'Total Expense',
+                                ),
+                                const StatDivider(),
+                                StatItem(
+                                  number: user.pendingExpense.toStringAsFixed(
+                                    0,
+                                  ),
+                                  label: 'Pending Expense',
+                                ),
+                                const StatDivider(),
+                                StatItem(
+                                  number: user.paidExpense.toStringAsFixed(0),
+                                  label: 'Paid Expense',
+                                ),
+                                const StatDivider(),
+                                StatItem(
+                                  number: user.totalEnquiries.toString(),
+                                  label: 'Total Enquiries',
+                                ),
+                              ],
+                            ),
+                    ),
+                    const SizedBox(height: 8),
+                    ProfileTile(
+                      icon: Icons.person_outline,
+                      title: 'Personal Information',
+                      subtitle: 'Full name, Mobile no., Email id, DOB, UPI',
+                      onTap: () {
+                        final email = profileDocumentId;
 
-          if (state is ProfileFailure) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
+                        if (email == null) {
+                          return;
+                        }
 
-          return const Center(child: CircularProgressIndicator());
-        },
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PersonalInfoScreen(user: user, email: email),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ProfileTile(
+                      header: 'Security Settings',
+                      icon: Icons.vpn_key_outlined,
+                      title: 'Change Password',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () => showLogoutDialog(context),
+                      child: Container(
+                        width: double.infinity,
+                        color: cardColor,
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout, color: accentColor, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Log Out',
+                              style: GoogleFonts.figtree(
+                                color: accentColor,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            if (state is ProfileNotFound) {
+              return const Center(
+                child: Text(
+                  'User data not found',
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            }
+
+            if (state is ProfileFailure) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
       ),
     );
   }

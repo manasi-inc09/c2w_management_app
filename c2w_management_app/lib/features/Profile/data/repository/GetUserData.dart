@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/Profile/data/models/UserModel.dart';
+import 'package:c2w_management_app/features/enquiry/dashboard/data/repository/GetEnquiryData.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GetUserData {
@@ -44,6 +45,15 @@ class GetUserData {
           }
         }
 
+        final enquiries = await GetEnquiryData(
+          firestore: firebaseFirestore,
+        ).fetchEnquiries();
+        final totalEnquiries = enquiries.fold<int>(
+          0,
+          (count, enquiry) =>
+              count + (enquiry.enquiryHistory.isEmpty ? 1 : enquiry.enquiryHistory.length),
+        );
+
         UserModel userModel = UserModel(
           fullName: data["Name"] ?? '',
           dob: data["DOB"] ?? '',
@@ -56,6 +66,7 @@ class GetUserData {
           totalExpense: totalExpense,
           paidExpense: paidExpense,
           pendingExpense: totalExpense - paidExpense,
+          totalEnquiries: totalEnquiries,
         );
 
         log("User data fetched successfully");

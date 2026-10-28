@@ -1,4 +1,9 @@
+import 'dart:developer';
+
+import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -21,10 +26,30 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    var shouldOpenDashboard = false;
+    final authRepository = AuthRepository();
+    try {
+      final savedLoginStatus = await authRepository.isLoggedIn();
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      shouldOpenDashboard = savedLoginStatus && firebaseUser != null;
+
+      if (shouldOpenDashboard) {
+        AuthRepository.authEmail = firebaseUser.email;
+      } else if (savedLoginStatus) {
+        await authRepository.clearLoginStatus();
+      }
+    } catch (error, stackTrace) {
+      log('Could not check saved login status: $error', stackTrace: stackTrace);
+    }
+
+    if (!mounted) return;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
+        builder: (context) => shouldOpenDashboard
+            ? const DashboardView()
+            : const LoginScreen(),
       ),
     );
   }

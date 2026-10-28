@@ -3,7 +3,9 @@ import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/
 import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/bloc/AddEnquiryState.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:toastification/toastification.dart';
 
@@ -19,6 +21,7 @@ class CreateEquiry extends StatefulWidget {
 }
 
 class _CreateEquiryState extends State<CreateEquiry> {
+  final _formKey = GlobalKey<FormState>();
   TextEditingController nameController = TextEditingController();
   TextEditingController mobileController = TextEditingController();
   TextEditingController clgController = TextEditingController();
@@ -27,11 +30,19 @@ class _CreateEquiryState extends State<CreateEquiry> {
   TextEditingController sourceController = TextEditingController();
 
   final List<String> colleges = [
-    'College of Engineering Pune',
-    'MIT Pune',
-    'VIT Pune',
-    'Symbiosis',
-    'Other',
+    "Abhinav College of Engineering",
+    "Bharati Vidyapeeth Deemed University College of Engineering",
+    "Dr. D. Y. Patil Institute of Technology",
+    "JSPM's Bhivarabai Sawant Institute of Technology and Research",
+    "JSPM's Narhe Technical Campus (NTC)",
+    "Sinhgad Institute of Technology and Science (SITS)",
+    "Sinhgad Institute of Management and Computer Application (SIMCA)",
+    "SKN Sinhgad Institute of Technology and Science, Lonavala",
+    "Zeal College of Engineering and Research (ZCOER)",
+    "MIT Pune",
+    "VIT Pune",
+    "Symbiosis",
+    "Other",
   ];
   final List<String> sources = ['Website', 'YouTube', 'Instagram'];
   String? selectedCollege;
@@ -48,9 +59,101 @@ class _CreateEquiryState extends State<CreateEquiry> {
   final List<String> selectedBatches = [];
   final List<String> modes = ['Offline', 'Online', 'Recorded'];
   String? selectedMode;
+  String? selectedReference;
+  List<String> _referenceOptions = const [];
+  bool _referencesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReferences();
+  }
+
+  Future<void> _loadReferences() async {
+    final currentEmail = AuthRepository.authEmail;
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('UserData').get();
+      final references = <String>[];
+      String? ownName;
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final email = (data['Email'] ?? doc.id).toString();
+        final role = (data['Role'] ?? '').toString().toLowerCase();
+        final name = (data['Name'] ?? email).toString().trim();
+        if (currentEmail != null && (doc.id == currentEmail || email == currentEmail)) {
+          ownName = name;
+        }
+        if (role == 'teamlead' || role == 'mentor' || role == 'instructor') {
+          if (name.isNotEmpty) references.add(name);
+        }
+      }
+      final own = ownName == null ? 'Own' : 'Own ($ownName)';
+      references.remove(own);
+      references.remove(ownName);
+      references.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      if (!mounted) return;
+      setState(() {
+        _referenceOptions = [own, ...references.toSet()];
+        selectedReference = own;
+        _referencesLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _referenceOptions = ['Own'];
+        selectedReference = 'Own';
+        _referencesLoading = false;
+      });
+    }
+  }
+
+  Future<void> _searchReference() async {
+    final selection = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        var query = '';
+        return StatefulBuilder(builder: (context, setDialogState) {
+          final options = _referenceOptions.where((name) => name.toLowerCase().contains(query.toLowerCase())).toList();
+          return AlertDialog(
+            backgroundColor: const Color(0xFF161B2E),
+            title: const Text('Search reference', style: TextStyle(color: Colors.white)),
+            content: SizedBox(
+              width: MediaQuery.sizeOf(context).width * .8,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextField(
+                  autofocus: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(hintText: 'Search name', hintStyle: TextStyle(color: Colors.white54), prefixIcon: Icon(Icons.search, color: Colors.white54)),
+                  onChanged: (value) => setDialogState(() => query = value),
+                ),
+                const SizedBox(height: 8),
+                Flexible(child: options.isEmpty
+                    ? const Center(child: Text('No matching references', style: TextStyle(color: Colors.white70)))
+                    : ListView.builder(shrinkWrap: true, itemCount: options.length, itemBuilder: (_, index) => ListTile(title: Text(options[index], style: const TextStyle(color: Colors.white)), onTap: () => Navigator.pop(dialogContext, options[index])))),
+              ]),
+            ),
+          );
+        });
+      },
+    );
+    if (selection != null) setState(() => selectedReference = selection);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    mobileController.dispose();
+    clgController.dispose();
+    feedbackController.dispose();
+    refController.dispose();
+    sourceController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = screenWidth < 360 ? 14.0 : 20.0;
     final isLoading =
         context.watch<AddEnquiryBloc>().state is AddEnquiryLoading;
     return BlocListener<AddEnquiryBloc, AddEnquiryState>(
@@ -125,7 +228,8 @@ class _CreateEquiryState extends State<CreateEquiry> {
           ),
         ),
         body: SingleChildScrollView(
-          child: Column(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: Form(key: _formKey, child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -139,9 +243,11 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 ),
               ),
               SizedBox(height: 10),
-              TextField(
+              TextFormField(
                 controller: nameController,
                 style: TextStyle(color: Colors.white),
+                textCapitalization: TextCapitalization.words,
+                validator: (value) => value == null || value.trim().isEmpty ? 'Enter student name' : null,
                 decoration: InputDecoration(
                   hintText: 'Type here student name',
                   hintStyle: const TextStyle(color: Colors.white54),
@@ -170,10 +276,12 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 ),
               ),
               SizedBox(height: 10),
-              TextField(
+              TextFormField(
                 controller: mobileController,
                 style: TextStyle(color: Colors.white),
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                validator: (value) => value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value.trim()) ? 'Enter a valid 10-digit mobile number' : null,
                 decoration: InputDecoration(
                   hintText: '000 0000 000',
                   hintStyle: const TextStyle(color: Colors.white54),
@@ -207,14 +315,21 @@ class _CreateEquiryState extends State<CreateEquiry> {
               SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: selectedCollege,
+                isExpanded: true, // Prevents horizontal overflow
                 dropdownColor: const Color(0xFF161B2E),
                 iconEnabledColor: Colors.white,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 hint: const Text(
                   'Select college',
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.white54),
                 ),
+                validator: (value) => value == null ? 'Select a college' : null,
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Colors.white),
@@ -227,14 +342,28 @@ class _CreateEquiryState extends State<CreateEquiry> {
                     ),
                   ),
                 ),
-                items: colleges
-                    .map(
-                      (college) => DropdownMenuItem(
-                        value: college,
-                        child: Text(college),
+                items: colleges.map((college) {
+                  return DropdownMenuItem<String>(
+                    value: college,
+                    child: Text(
+                      college,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                selectedItemBuilder: (context) {
+                  return colleges.map((college) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        college,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                    .toList(),
+                    );
+                  }).toList();
+                },
                 onChanged: (value) {
                   setState(() {
                     selectedCollege = value;
@@ -276,6 +405,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   );
                 }).toList(),
               ),
+              if (selectedBatches.isEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('Select at least one batch', style: TextStyle(color: Colors.redAccent, fontSize: 12))),
 
               SizedBox(height: 10),
               Text(
@@ -319,6 +449,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   ),
                 ),
               ),
+              if (selectedMode == null) const Padding(padding: EdgeInsets.only(top: 6), child: Text('Select a mode', style: TextStyle(color: Colors.redAccent, fontSize: 12))),
 
               SizedBox(height: 10),
               Text(
@@ -330,7 +461,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 ),
               ),
               SizedBox(height: 10),
-              TextField(
+              TextFormField(
                 controller: feedbackController,
                 style: TextStyle(color: Colors.white),
                 maxLines: 4,
@@ -363,13 +494,12 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 ),
               ),
               SizedBox(height: 10),
-              TextField(
-                controller: refController,
-                style: TextStyle(color: Colors.white),
-                keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  hintText: 'Type here...',
-                  hintStyle: const TextStyle(color: Colors.white54),
+              InkWell(
+                onTap: _referencesLoading ? null : _searchReference,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    hintText: 'Select or search reference',
+                    suffixIcon: _referencesLoading ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))) : const Icon(Icons.search, color: Colors.white70),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -377,10 +507,12 @@ class _CreateEquiryState extends State<CreateEquiry> {
                       width: 1.5,
                     ),
                   ),
-                  border: OutlineInputBorder(
+                    border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Colors.white),
                   ),
+                ),
+                  child: Text(selectedReference ?? 'Select reference', style: TextStyle(color: selectedReference == null ? Colors.white54 : Colors.white)),
                 ),
               ),
 
@@ -404,6 +536,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   'Select Source',
                   style: TextStyle(color: Colors.white54),
                 ),
+                validator: (value) => value == null ? 'Select an enquiry source' : null,
                 decoration: InputDecoration(
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -455,12 +588,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   onPressed: isLoading
                       ? null
                       : () {
-                          if (nameController.text.trim().isEmpty ||
-                              mobileController.text.trim().isEmpty ||
-                              selectedCollege == null ||
-                              selectedBatches.isEmpty ||
-                              selectedMode == null ||
-                              selectedSource == null) {
+                          if (!_formKey.currentState!.validate() || selectedBatches.isEmpty || selectedMode == null || selectedReference == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text(
@@ -478,25 +606,6 @@ class _CreateEquiryState extends State<CreateEquiry> {
                             return;
                           }
 
-                          final mobile = mobileController.text.trim();
-
-                          if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  'Enter a valid 10-digit mobile number',
-                                ),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
                           context.read<AddEnquiryBloc>().add(
                             CreateEnquiryEvent(
                               studentName: nameController.text.trim(),
@@ -507,9 +616,10 @@ class _CreateEquiryState extends State<CreateEquiry> {
                               ),
                               mode: selectedMode!,
                               studentFeedback: feedbackController.text.trim(),
-                              referenceBy: refController.text.trim(),
+                              referenceBy: selectedReference!,
                               enquirySource: selectedSource!,
                               enquiryAddedBy: AuthRepository.authEmail!,
+                              enquiryType: "General",
                             ),
                           );
                         },
@@ -519,9 +629,11 @@ class _CreateEquiryState extends State<CreateEquiry> {
               ),
               SizedBox(height: 20),
             ],
-          ),
+          ))),
         ),
       ),
+    )
     );
+
   }
 }
