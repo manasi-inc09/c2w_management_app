@@ -164,10 +164,13 @@ class _EnquiryState extends State<Enquiry> {
             : <EnquiryModel>[];
         final visible = _visibleEnquiries(all);
         if (visible.isEmpty) {
+          if (all.isEmpty) {
+            return _scrollableMessage(const SizedBox.shrink());
+          }
           return _scrollableMessage(
-            Text(
-              all.isEmpty ? 'No enquiries found' : 'No matching enquiries',
-              style: const TextStyle(color: Colors.white54),
+            const Text(
+              'No matching enquiries',
+              style: TextStyle(color: Colors.white54),
             ),
           );
         }

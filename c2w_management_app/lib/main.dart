@@ -44,7 +44,7 @@ void main() async {
       projectId: "c2w-erp",
     ),
   );
-  log("firebase initiallized");
+  log("firebase initiallized..");
   runApp(const MainApp());
 }
 

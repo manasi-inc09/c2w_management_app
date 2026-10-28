@@ -5,7 +5,6 @@ import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Re
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:toastification/toastification.dart';
 
@@ -59,86 +58,6 @@ class _CreateEquiryState extends State<CreateEquiry> {
   final List<String> selectedBatches = [];
   final List<String> modes = ['Offline', 'Online', 'Recorded'];
   String? selectedMode;
-  String? selectedReference;
-  List<String> _referenceOptions = const [];
-  bool _referencesLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadReferences();
-  }
-
-  Future<void> _loadReferences() async {
-    final currentEmail = AuthRepository.authEmail;
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('UserData').get();
-      final references = <String>[];
-      String? ownName;
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final email = (data['Email'] ?? doc.id).toString();
-        final role = (data['Role'] ?? '').toString().toLowerCase();
-        final name = (data['Name'] ?? email).toString().trim();
-        if (currentEmail != null && (doc.id == currentEmail || email == currentEmail)) {
-          ownName = name;
-        }
-        if (role == 'teamlead' || role == 'mentor' || role == 'instructor') {
-          if (name.isNotEmpty) references.add(name);
-        }
-      }
-      final own = ownName == null ? 'Own' : 'Own ($ownName)';
-      references.remove(own);
-      references.remove(ownName);
-      references.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      if (!mounted) return;
-      setState(() {
-        _referenceOptions = [own, ...references.toSet()];
-        selectedReference = own;
-        _referencesLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _referenceOptions = ['Own'];
-        selectedReference = 'Own';
-        _referencesLoading = false;
-      });
-    }
-  }
-
-  Future<void> _searchReference() async {
-    final selection = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        var query = '';
-        return StatefulBuilder(builder: (context, setDialogState) {
-          final options = _referenceOptions.where((name) => name.toLowerCase().contains(query.toLowerCase())).toList();
-          return AlertDialog(
-            backgroundColor: const Color(0xFF161B2E),
-            title: const Text('Search reference', style: TextStyle(color: Colors.white)),
-            content: SizedBox(
-              width: MediaQuery.sizeOf(context).width * .8,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                TextField(
-                  autofocus: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(hintText: 'Search name', hintStyle: TextStyle(color: Colors.white54), prefixIcon: Icon(Icons.search, color: Colors.white54)),
-                  onChanged: (value) => setDialogState(() => query = value),
-                ),
-                const SizedBox(height: 8),
-                Flexible(child: options.isEmpty
-                    ? const Center(child: Text('No matching references', style: TextStyle(color: Colors.white70)))
-                    : ListView.builder(shrinkWrap: true, itemCount: options.length, itemBuilder: (_, index) => ListTile(title: Text(options[index], style: const TextStyle(color: Colors.white)), onTap: () => Navigator.pop(dialogContext, options[index])))),
-              ]),
-            ),
-          );
-        });
-      },
-    );
-    if (selection != null) setState(() => selectedReference = selection);
-  }
-
   @override
   void dispose() {
     nameController.dispose();
@@ -281,9 +200,9 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 style: TextStyle(color: Colors.white),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-                validator: (value) => value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value.trim()) ? 'Enter a valid 10-digit mobile number' : null,
+                validator: (value) => value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value.trim()) ? 'Enter a valid mobile number' : null,
                 decoration: InputDecoration(
-                  hintText: '000 0000 000',
+                  hintText: 'Enter 10-digit mobile no.',
                   hintStyle: const TextStyle(color: Colors.white54),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -494,12 +413,16 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 ),
               ),
               SizedBox(height: 10),
-              InkWell(
-                onTap: _referencesLoading ? null : _searchReference,
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    hintText: 'Select or search reference',
-                    suffixIcon: _referencesLoading ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))) : const Icon(Icons.search, color: Colors.white70),
+              TextFormField(
+                controller: refController,
+                style: const TextStyle(color: Colors.white),
+                textCapitalization: TextCapitalization.words,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Enter a reference name'
+                    : null,
+                decoration: InputDecoration(
+                  hintText: 'Enter reference name',
+                  hintStyle: const TextStyle(color: Colors.white54),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -511,8 +434,6 @@ class _CreateEquiryState extends State<CreateEquiry> {
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Colors.white),
                   ),
-                ),
-                  child: Text(selectedReference ?? 'Select reference', style: TextStyle(color: selectedReference == null ? Colors.white54 : Colors.white)),
                 ),
               ),
 
@@ -588,7 +509,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   onPressed: isLoading
                       ? null
                       : () {
-                          if (!_formKey.currentState!.validate() || selectedBatches.isEmpty || selectedMode == null || selectedReference == null) {
+                          if (!_formKey.currentState!.validate() || selectedBatches.isEmpty || selectedMode == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text(
@@ -616,7 +537,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                               ),
                               mode: selectedMode!,
                               studentFeedback: feedbackController.text.trim(),
-                              referenceBy: selectedReference!,
+                              referenceBy: refController.text.trim(),
                               enquirySource: selectedSource!,
                               enquiryAddedBy: AuthRepository.authEmail!,
                               enquiryType: "General",
