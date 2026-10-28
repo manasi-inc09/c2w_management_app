@@ -81,7 +81,7 @@ class FloatingButton {
                         ],
                         const SizedBox(height: 8),
                         Divider(),
-                        (AuthRepository.authEmail!.contains("instructor"))?GestureDetector(
+                        (AuthRepository.authEmail!.contains("instructor")||AuthRepository.authEmail!.contains("superadmin"))?GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,

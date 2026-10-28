@@ -62,35 +62,46 @@ class MonthwiseIndividualListview {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        month == null ? '' : '${month.year}',
-                        style: const TextStyle(
-                          color: Color(0xFF7E8B9B),
-                          fontSize: 12,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          month == null ? '' : '${month.year}',
+                          style: const TextStyle(
+                            color: Color(0xFF7E8B9B),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        month == null
-                            ? 'Date unavailable'
-                            : _monthName(month.month),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 2),
+                        Text(
+                          month == null
+                              ? 'Date unavailable'
+                              : _monthName(month.month),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Text(
-                    _formatAmount(monthTotal),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 110,
+                    child: Text(
+                      _formatAmount(monthTotal),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -113,6 +124,7 @@ class MonthwiseIndividualListview {
                   avatarColors[(colorOffset + entry.key) % avatarColors.length];
               final subtitle = [
                 category,
+                transaction['company']?.toString() ?? '',
                 source,
               ].where((value) => value.isNotEmpty).join(' • ');
 
@@ -180,28 +192,33 @@ class MonthwiseIndividualListview {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _formatAmount(_transactionAmount(transaction)),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: 90,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _formatAmount(_transactionAmount(transaction)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              date == null
-                                  ? '—'
-                                  : '${date.day} ${_shortMonthName(date.month)}',
-                              style: const TextStyle(
-                                color: Color(0xFF7E8B9B),
-                                fontSize: 12,
+                              const SizedBox(height: 4),
+                              Text(
+                                date == null
+                                    ? '—'
+                                    : '${date.day} ${_shortMonthName(date.month)}',
+                                style: const TextStyle(
+                                  color: Color(0xFF7E8B9B),
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),

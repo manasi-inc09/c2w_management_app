@@ -1,11 +1,20 @@
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
+import 'package:c2w_management_app/features/expense/teamlead/domain/entities/wallet_financial_summary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/repositories/teamlead_expense_repositories.dart';
 
 abstract interface class ExpenseCreator {
   Future<String> call(Expense expense);
 }
 
-class CreateExpenseUseCase implements ExpenseCreator {
+abstract interface class ExpenseUpdater {
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  });
+}
+
+class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
   final ExpenseRepository repository;
 
   CreateExpenseUseCase(this.repository);
@@ -13,6 +22,19 @@ class CreateExpenseUseCase implements ExpenseCreator {
   @override
   Future<String> call(Expense expense) {
     return repository.createExpense(expense);
+  }
+
+  @override
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return repository.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email) {
@@ -37,6 +59,14 @@ class CreateExpenseUseCase implements ExpenseCreator {
 
   Future<void> addWalletTopUp(double amount) {
     return repository.addWalletTopUp(amount);
+  }
+
+  Future<List<Map<String, dynamic>>> getWalletTopUpHistory() {
+    return repository.getWalletTopUpHistory();
+  }
+
+  Future<WalletFinancialSummary> getWalletFinancialSummary() {
+    return repository.getWalletFinancialSummary();
   }
 
   Future<void> settleWalletExpense({
@@ -69,10 +99,12 @@ class CreateExpenseUseCase implements ExpenseCreator {
 
   Future<void> addExpenseCategory({
     required String name,
+    required String company,
     required List<String> subCategories,
   }) {
     return repository.addExpenseCategory(
       name: name,
+      company: company,
       subCategories: subCategories,
     );
   }
@@ -80,11 +112,13 @@ class CreateExpenseUseCase implements ExpenseCreator {
   Future<void> updateExpenseCategory({
     required String id,
     required String name,
+    required String company,
     required List<String> subCategories,
   }) {
     return repository.updateExpenseCategory(
       id: id,
       name: name,
+      company: company,
       subCategories: subCategories,
     );
   }

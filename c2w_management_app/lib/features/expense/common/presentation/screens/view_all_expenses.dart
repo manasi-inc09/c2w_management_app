@@ -140,8 +140,9 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
             );
           }
           if (state is ExpenseHistoryLoaded) {
+            final filterState = context.watch<ExpenseFilterBloc>().state;
             final selection = canUseExpenseFilters()
-                ? context.watch<ExpenseFilterBloc>().state.selection
+                ? filterState.selection
                 : const ExpenseFilterSelection();
             final filteredExpenses = filterExpenses(
               state.expenses,
@@ -149,6 +150,9 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
               currentEmail:
                   FirebaseAuth.instance.currentUser?.email ??
                   AuthRepository.authEmail,
+              categoryCompanies: filterState is ExpenseFilterLoaded
+                  ? filterState.categoryCompanies
+                  : const {},
             ).where(_matchesExpenseSearch).toList();
             if (filteredExpenses.isEmpty) {
               return RefreshIndicator(

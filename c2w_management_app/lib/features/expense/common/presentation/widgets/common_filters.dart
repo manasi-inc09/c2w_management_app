@@ -30,6 +30,9 @@ Future<void> showExpenseFilters(
     builder: (_) => BlocBuilder<ExpenseFilterBloc, ExpenseFilterInitial>(
       builder: (context, state) => _ExpenseFilterSheet(
         initialSelection: initialSelection,
+        companies: state is ExpenseFilterLoaded
+            ? state.companies
+            : const <String>[],
         categories: state is ExpenseFilterLoaded
             ? state.categories
             : const <String>[],
@@ -167,7 +170,7 @@ class CommonFilters {
                 child: _FilterChip(
                   label: dateLabel,
                   width: 130,
-                  onTap: () => showExpenseFilters(context, initialTab: 3),
+                  onTap: () => showExpenseFilters(context, initialTab: 4),
                 ),
               ),
               Padding(
@@ -180,7 +183,7 @@ class CommonFilters {
                 child: _FilterChip(
                   label: selection.memberName ?? 'All Members',
                   width: 140,
-                  onTap: () => showExpenseFilters(context, initialTab: 2),
+                  onTap: () => showExpenseFilters(context, initialTab: 3),
                 ),
               ),
             ],
@@ -233,6 +236,7 @@ class _FilterChip extends StatelessWidget {
 
 class _ExpenseFilterSheet extends StatefulWidget {
   final ExpenseFilterSelection initialSelection;
+  final List<String> companies;
   final List<String> categories;
   final Map<String, List<String>> subCategories;
   final List<Map<String, dynamic>> members;
@@ -242,6 +246,7 @@ class _ExpenseFilterSheet extends StatefulWidget {
 
   const _ExpenseFilterSheet({
     required this.initialSelection,
+    required this.companies,
     required this.categories,
     required this.subCategories,
     required this.members,
@@ -259,7 +264,13 @@ class _ExpenseFilterSheetState extends State<_ExpenseFilterSheet> {
   late int _currentTab;
   String? _expandedCategory;
 
-  static const _tabs = ['Transactions', 'Categories', 'Members', 'Date'];
+  static const _tabs = [
+    'Transactions',
+    'Categories',
+    'Companies',
+    'Members',
+    'Date',
+  ];
 
   @override
   void initState() {
@@ -418,6 +429,9 @@ class _ExpenseFilterSheetState extends State<_ExpenseFilterSheet> {
               } else if (_selection.memberEmail != null &&
                   label == (_selection.memberName ?? _selection.memberEmail)) {
                 _selection = _selection.copyWith(clearMember: true);
+              } else if (_selection.company != null &&
+                  label == 'Company: ${_selection.company}') {
+                _selection = _selection.copyWith(clearCompany: true);
               } else if (_selection.category != null &&
                   label.startsWith(_selection.category!)) {
                 _selection = _selection.copyWith(
@@ -529,6 +543,26 @@ class _ExpenseFilterSheetState extends State<_ExpenseFilterSheet> {
           ],
         );
       case 2:
+        return ListView(
+          children: [
+            _radioTile(
+              label: 'All Companies',
+              selected: _selection.company == null,
+              onTap: () => setState(
+                () => _selection = _selection.copyWith(clearCompany: true),
+              ),
+            ),
+            for (final company in widget.companies)
+              _radioTile(
+                label: company,
+                selected: _selection.company == company,
+                onTap: () => setState(
+                  () => _selection = _selection.copyWith(company: company),
+                ),
+              ),
+          ],
+        );
+      case 3:
         return ListView(
           children: [
             for (final member in widget.members)

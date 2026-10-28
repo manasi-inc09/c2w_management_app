@@ -16,6 +16,7 @@ class AddNewCategory extends StatefulWidget {
 class _AddNewCategoryState extends State<AddNewCategory> {
   final _categoryController = TextEditingController();
   final List<TextEditingController> _subCategoryControllers = [];
+  String? _selectedCompany;
 
   void _addSubCategory() {
     setState(() => _subCategoryControllers.add(TextEditingController()));
@@ -37,9 +38,16 @@ class _AddNewCategoryState extends State<AddNewCategory> {
       ).showSnackBar(const SnackBar(content: Text('Enter a category name.')));
       return;
     }
+    if (_selectedCompany == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select a company.')));
+      return;
+    }
     context.read<ExpenseCategoryBloc>().add(
       SaveExpenseCategory(
         name: name,
+        company: _selectedCompany!,
         subCategories: _subCategoryControllers
             .map((controller) => controller.text.trim())
             .where((value) => value.isNotEmpty)
@@ -114,6 +122,28 @@ class _AddNewCategoryState extends State<AddNewCategory> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
+                ),
+                const SizedBox(height: 20),
+                _sectionTitle('Company'),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCompany,
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: AppTheme().appBarBackgroundColor,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Select company',
+                  ),
+                  items: expenseCompanies
+                      .map(
+                        (company) => DropdownMenuItem(
+                          value: company,
+                          child: Text(company),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (company) =>
+                      setState(() => _selectedCompany = company),
                 ),
                 const SizedBox(height: 20),
                 _sectionTitle('Sub-Categories'),

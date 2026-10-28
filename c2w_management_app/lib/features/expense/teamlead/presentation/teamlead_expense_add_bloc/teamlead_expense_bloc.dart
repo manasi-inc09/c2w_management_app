@@ -9,6 +9,7 @@ class CreateExpenseBloc extends Bloc<CreateExpenseEvent, CreateExpenseState> {
   CreateExpenseBloc({required this.createExpenseUseCase})
     : super(CreateExpenseInitial()) {
     on<SubmitExpenseEvent>(_onSubmitExpense);
+    on<UpdateExpenseEvent>(_onUpdateExpense);
   }
 
   Future<void> _onSubmitExpense(
@@ -19,6 +20,30 @@ class CreateExpenseBloc extends Bloc<CreateExpenseEvent, CreateExpenseState> {
 
     try {
       await createExpenseUseCase(event.expense);
+      emit(CreateExpenseSuccess());
+    } catch (error) {
+      emit(CreateExpenseFailure(_getErrorMessage(error)));
+    }
+  }
+
+  Future<void> _onUpdateExpense(
+    UpdateExpenseEvent event,
+    Emitter<CreateExpenseState> emit,
+  ) async {
+    emit(CreateExpenseLoading());
+
+    try {
+      final updater = createExpenseUseCase;
+      if (updater is! ExpenseUpdater) {
+        throw Exception(
+          'Transaction editing is not available for this account.',
+        );
+      }
+      await (updater as ExpenseUpdater).updateExpense(
+        expenseId: event.expenseId,
+        expense: event.expense,
+        existingReceiptUrl: event.existingReceiptUrl,
+      );
       emit(CreateExpenseSuccess());
     } catch (error) {
       emit(CreateExpenseFailure(_getErrorMessage(error)));

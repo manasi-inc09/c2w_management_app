@@ -2,7 +2,10 @@ import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
+<<<<<<< HEAD
+=======
 
+>>>>>>> 9b099cbf7c98d606e943242ba78f4308cd0855b1
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,6 +22,7 @@ class EditCategory extends StatefulWidget {
 class _EditCategoryState extends State<EditCategory> {
   late final TextEditingController _categoryController;
   late final List<TextEditingController> _subCategoryControllers;
+  String? _selectedCompany;
 
   @override
   void initState() {
@@ -26,6 +30,8 @@ class _EditCategoryState extends State<EditCategory> {
     _categoryController = TextEditingController(
       text: widget.category['name']?.toString() ?? '',
     );
+    final company = widget.category['company']?.toString();
+    _selectedCompany = expenseCompanies.contains(company) ? company : null;
     final subCategories = widget.category['subCategories'];
     _subCategoryControllers = subCategories is List
         ? subCategories
@@ -42,6 +48,12 @@ class _EditCategoryState extends State<EditCategory> {
       ).showSnackBar(const SnackBar(content: Text('Enter a category name.')));
       return;
     }
+    if (_selectedCompany == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select a company.')));
+      return;
+    }
     final id = widget.category['id']?.toString();
     if (id == null || id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,6 +65,7 @@ class _EditCategoryState extends State<EditCategory> {
       SaveExpenseCategory(
         id: id,
         name: name,
+        company: _selectedCompany!,
         subCategories: _subCategoryControllers
             .map((controller) => controller.text.trim())
             .where((value) => value.isNotEmpty)
@@ -127,6 +140,28 @@ class _EditCategoryState extends State<EditCategory> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
+                ),
+                const SizedBox(height: 20),
+                _sectionTitle('Company'),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCompany,
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: AppTheme().appBarBackgroundColor,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Select company',
+                  ),
+                  items: expenseCompanies
+                      .map(
+                        (company) => DropdownMenuItem(
+                          value: company,
+                          child: Text(company),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (company) =>
+                      setState(() => _selectedCompany = company),
                 ),
                 const SizedBox(height: 20),
                 _sectionTitle('Sub-Categories'),

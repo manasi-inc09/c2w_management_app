@@ -2,8 +2,14 @@ import 'dart:developer';
 
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
+import 'package:c2w_management_app/features/expense/teamlead/domain/entities/wallet_financial_summary.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+class _CompanyExpenseAccumulator {
+  double totalExpenses = 0;
+  double walletFundedExpenses = 0;
+}
 
 class ExpenseRemoteDataSource {
   final FirebaseFirestore _firestore;
@@ -86,6 +92,7 @@ class ExpenseRemoteDataSource {
       'source': expense.source,
       'description': expense.description,
       'category': expense.category,
+      'company': expense.company,
       'subCategory': expense.subCategory,
 
       'receiptUrl': receiptUrl,
@@ -96,6 +103,63 @@ class ExpenseRemoteDataSource {
 
     await expenseReference.set(expenseData);
     return expenseId;
+  }
+
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) async {
+    if (expenseId.trim().isEmpty) {
+      throw Exception('Transaction ID is required to update an expense.');
+    }
+
+    final user = _auth.currentUser;
+    final authEmail = user?.email?.toLowerCase();
+    if (authEmail == null || authEmail.isEmpty) {
+      throw Exception('Please log in before updating a transaction.');
+    }
+
+    final expenseReference = _firestore.collection('expenses').doc(expenseId);
+    final expenseSnapshot = await expenseReference.get();
+    if (!expenseSnapshot.exists) {
+      throw Exception('This transaction no longer exists.');
+    }
+
+    final isAdminOrInstructor =
+        authEmail.startsWith('superadmin_') ||
+        authEmail.startsWith('instructor_');
+    final isOwnerRole =
+        authEmail.startsWith('mentor_') || authEmail.startsWith('teamlead_');
+    final ownerEmail = expenseSnapshot
+        .data()?['email']
+        ?.toString()
+        .toLowerCase();
+    if (!isAdminOrInstructor &&
+        !(isOwnerRole && _profileEmail(authEmail) == ownerEmail)) {
+      throw Exception('You are not allowed to update this transaction.');
+    }
+
+    var receiptUrl = existingReceiptUrl;
+    final receiptLocalPath = expense.receiptLocalPath;
+    if (receiptLocalPath != null && receiptLocalPath.isNotEmpty) {
+      receiptUrl = await _cloudinaryDataSource.uploadReceipt(
+        filePath: receiptLocalPath,
+        expenseId: '${expenseId}_${DateTime.now().microsecondsSinceEpoch}',
+      );
+    }
+
+    await expenseReference.update({
+      'expenseDate': Timestamp.fromDate(expense.expenseDate),
+      'amount': expense.amount,
+      'source': expense.source,
+      'description': expense.description,
+      'category': expense.category,
+      'company': expense.company,
+      'subCategory': expense.subCategory,
+      'receiptUrl': receiptUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email) {
@@ -221,6 +285,136 @@ class ExpenseRemoteDataSource {
     });
   }
 
+  Future<List<Map<String, dynamic>>> getWalletTopUpHistory() async {
+    _requireWalletManager();
+    final snapshot = await _firestore
+        .collection('wallets')
+        .doc('organization')
+        .collection('ledger')
+        .where('type', isEqualTo: 'top-up')
+        .get();
+    final entries = snapshot.docs
+        .map(
+          (document) => <String, dynamic>{
+            ...document.data(),
+            'id': document.id,
+          },
+        )
+        .toList();
+    entries.sort((first, second) {
+      final firstDate = first['createdAt'];
+      final secondDate = second['createdAt'];
+      final firstMillis = firstDate is Timestamp
+          ? firstDate.millisecondsSinceEpoch
+          : 0;
+      final secondMillis = secondDate is Timestamp
+          ? secondDate.millisecondsSinceEpoch
+          : 0;
+      return secondMillis.compareTo(firstMillis);
+    });
+    return entries;
+  }
+
+  Future<WalletFinancialSummary> getWalletFinancialSummary() async {
+    _requireWalletManager();
+    final walletReference = _firestore
+        .collection('wallets')
+        .doc('organization');
+    final walletSnapshot = await walletReference.get();
+    final expenseSnapshot = await _firestore.collection('expenses').get();
+    final categorySnapshot = await _firestore
+        .collection('expenseCategories')
+        .get();
+    final ledgerSnapshot = await walletReference.collection('ledger').get();
+
+    final categoryCompanies = <String, String>{};
+    for (final document in categorySnapshot.docs) {
+      final data = document.data();
+      final name = data['name']?.toString().trim() ?? '';
+      final company = data['company']?.toString().trim() ?? '';
+      if (name.isNotEmpty && company.isNotEmpty) {
+        categoryCompanies[name] = company;
+      }
+    }
+
+    String companyFor(Map<String, dynamic> expense) {
+      final company = expense['company']?.toString().trim() ?? '';
+      if (company.isNotEmpty) return company;
+      final category = expense['category']?.toString() ?? '';
+      return categoryCompanies[category] ?? 'Unassigned';
+    }
+
+    double amountOf(dynamic value) {
+      if (value is num) return value.toDouble();
+      return double.tryParse(value?.toString() ?? '') ?? 0;
+    }
+
+    final totals = <String, _CompanyExpenseAccumulator>{};
+    final companyByExpenseId = <String, String>{};
+    final companyExpenses = <String, List<Map<String, dynamic>>>{};
+    for (final document in expenseSnapshot.docs) {
+      final expense = document.data();
+      final company = companyFor(expense);
+      companyByExpenseId[document.id] = company;
+      companyExpenses.putIfAbsent(company, () => <Map<String, dynamic>>[]).add({
+        ...expense,
+        'id': document.id,
+        'company': company,
+      });
+      totals
+          .putIfAbsent(company, _CompanyExpenseAccumulator.new)
+          .totalExpenses += amountOf(
+        expense['amount'],
+      );
+    }
+
+    var totalTopUps = 0.0;
+    final topUpHistory = <Map<String, dynamic>>[];
+    for (final document in ledgerSnapshot.docs) {
+      final entry = <String, dynamic>{...document.data(), 'id': document.id};
+      if (entry['type'] == 'top-up') {
+        totalTopUps += amountOf(entry['amount']);
+        topUpHistory.add(entry);
+      } else if (entry['type'] == 'settlement') {
+        final expenseId = entry['expenseId']?.toString();
+        final company = expenseId == null
+            ? 'Unassigned'
+            : companyByExpenseId[expenseId] ?? 'Unassigned';
+        totals
+            .putIfAbsent(company, _CompanyExpenseAccumulator.new)
+            .walletFundedExpenses += amountOf(
+          entry['amount'],
+        );
+      }
+    }
+
+    topUpHistory.sort((first, second) {
+      final firstDate = first['createdAt'];
+      final secondDate = second['createdAt'];
+      final firstMillis = firstDate is Timestamp
+          ? firstDate.millisecondsSinceEpoch
+          : 0;
+      final secondMillis = secondDate is Timestamp
+          ? secondDate.millisecondsSinceEpoch
+          : 0;
+      return secondMillis.compareTo(firstMillis);
+    });
+
+    return WalletFinancialSummary(
+      currentBalance: amountOf(walletSnapshot.data()?['balance']),
+      totalTopUps: totalTopUps,
+      companyTotals: {
+        for (final entry in totals.entries)
+          entry.key: CompanyExpenseTotals(
+            totalExpenses: entry.value.totalExpenses,
+            walletFundedExpenses: entry.value.walletFundedExpenses,
+          ),
+      },
+      companyExpenses: companyExpenses,
+      topUpHistory: topUpHistory,
+    );
+  }
+
   Future<void> settleWalletExpense({
     required String expenseId,
     required double amount,
@@ -315,10 +509,10 @@ class ExpenseRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getMembers() async {
     final snapshot = await _firestore.collection('UserData').get();
-    final expenseSnapshot=await _firestore.collection("expenses").get();
+    final expenseSnapshot = await _firestore.collection("expenses").get();
     String? status;
-    for(var t in expenseSnapshot.docs){
-      status=t.get("status");
+    for (var t in expenseSnapshot.docs) {
+      status = t.get("status");
     }
     return snapshot.docs.map((document) {
       final data = document.data();
@@ -327,7 +521,7 @@ class ExpenseRemoteDataSource {
         'name': data['Name']?.toString() ?? 'Unnamed member',
         'role': data['role']?.toString() ?? 'Member',
         'profileImage': data['profileImage']?.toString() ?? '',
-        'status':status??'Pending',
+        'status': status ?? 'Pending',
         'mobile':
             data['Mobile no.']?.toString() ??
             data['Mobile no.:']?.toString() ??
@@ -387,12 +581,16 @@ class ExpenseRemoteDataSource {
 
   Future<void> addExpenseCategory({
     required String name,
+    required String company,
     required List<String> subCategories,
   }) async {
     _requireExpenseCategoryManager();
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
       throw Exception('Enter a category name.');
+    }
+    if (!['Incubators', 'Core2web', 'Both'].contains(company)) {
+      throw Exception('Select a valid company.');
     }
     final duplicate = await _firestore
         .collection('expenseCategories')
@@ -404,6 +602,7 @@ class ExpenseRemoteDataSource {
     }
     await _firestore.collection('expenseCategories').add({
       'name': normalizedName,
+      'company': company,
       'subCategories': _normalizeSubCategories(subCategories),
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -413,12 +612,16 @@ class ExpenseRemoteDataSource {
   Future<void> updateExpenseCategory({
     required String id,
     required String name,
+    required String company,
     required List<String> subCategories,
   }) async {
     _requireExpenseCategoryManager();
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
       throw Exception('Enter a category name.');
+    }
+    if (!['Incubators', 'Core2web', 'Both'].contains(company)) {
+      throw Exception('Select a valid company.');
     }
     final duplicate = await _firestore
         .collection('expenseCategories')
@@ -430,6 +633,7 @@ class ExpenseRemoteDataSource {
     }
     await _firestore.collection('expenseCategories').doc(id).update({
       'name': normalizedName,
+      'company': company,
       'subCategories': _normalizeSubCategories(subCategories),
       'updatedAt': FieldValue.serverTimestamp(),
     });
