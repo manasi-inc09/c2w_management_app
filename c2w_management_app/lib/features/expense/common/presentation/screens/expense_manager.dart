@@ -112,7 +112,6 @@ class _ExpenseManagerState extends State<ExpenseManager> {
             );
         final unpaidAmount = totalAmount - paidAmount;
         final recentExpenses = expenses.take(5).toList();
-        final avatarColors = ColorList().colorList;
 
         return Scaffold(
           backgroundColor: backgroundColor,
@@ -447,8 +446,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color:
-                                      avatarColors[index % avatarColors.length],
+                                  color: ColorList().colorForIndex(index),
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,

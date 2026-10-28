@@ -162,12 +162,14 @@ class _LoginScreenState extends State<LoginScreen> {
       
                     _label('Password'),
                     TextField(
+                      
                       controller: _passCtrl,
                       obscureText: _obscure,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       cursorColor: Colors.white,
                       decoration: _decoration(
                         'Enter a password',
+                        
                         suffix: IconButton(
                           icon: Icon(
                             _obscure
@@ -175,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : Icons.visibility_off_outlined,
                             color: _hint,
                             size: 20,
+                            
                           ),
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
@@ -183,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
       
                     _label('Role'),
                     DropdownButtonFormField<String>(
-                      value: _roleCtrl.text.isEmpty ? null : _roleCtrl.text,
+                      initialValue: _roleCtrl.text.isEmpty ? null : _roleCtrl.text,
                       hint: const Text(
                         'Select your role',
                         style: TextStyle(
@@ -280,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Log In',
                                 style: TextStyle(
                                   color: _canSubmit
-                                      ? const Color.fromARGB(255, 198, 184, 184)
+                                      ? Colors.white
                                       : Colors.white,
                                   fontWeight: FontWeight.w600,
                                 ),

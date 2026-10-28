@@ -218,9 +218,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
                                 shape: BoxShape.circle,
                               ),
                               child: CircleAvatar(
-                                backgroundColor:
-                                    ColorList().colorList[index %
-                                        ColorList().colorList.length],
+                                backgroundColor: ColorList().colorForIndex(index),
                                 child: Text(
                                   name.isEmpty ? '?' : name[0].toUpperCase(),
                                   style: GoogleFonts.figtree(

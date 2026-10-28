@@ -1,5 +1,4 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/enquiry/dashboard/presentation/widgets/filters.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_manager.dart';
@@ -14,97 +13,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-final List<Map<String, dynamic>> transactionData = [
-  {
-    'year': '2025',
-    'month': 'December',
-    'totalAmount': '₹5835',
-    'transactions': [
-      {
-        'initial': 'S',
-        'avatarBg': const Color.fromRGBO(255, 179, 167, 1),
-        'avatarTextColor': const Color.fromRGBO(158, 54, 42, 1),
-        'title': 'Stationery, Notebook, Pen',
-        'category': 'Event • SuperX Flutter',
-        'amount': '₹86',
-        'date': '14 Dec',
-      },
-      {
-        'initial': 'S',
-        'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
-        'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
-        'title': 'Breakfast',
-        'category': 'Event • SuperX Flutter',
-        'amount': '₹350',
-        'date': '14 Dec',
-      },
-      {
-        'initial': 'K',
-        'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
-        'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
-        'title': 'New Mobile Sim',
-        'category': 'Electronic Gadgets',
-        'amount': '₹899',
-        'date': '14 Dec',
-      },
-      {
-        'initial': 'A',
-        'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
-        'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
-        'title': 'Hard Drive 1TB',
-        'category': 'Electronic Gadgets',
-        'amount': '₹4500',
-        'date': '14 Dec',
-      },
-    ],
-  },
-  {
-    'year': '2025',
-    'month': 'November',
-    'totalAmount': '₹2755',
-    'transactions': [
-      {
-        'initial': 'N',
-        'avatarBg': const Color.fromRGBO(255, 236, 179, 1),
-        'avatarTextColor': const Color.fromRGBO(191, 54, 12, 1),
-        'title': 'November Expense',
-        'category': 'Event • SuperX Flutter',
-        'amount': '₹2755',
-        'date': '28 Nov',
-      },
-      {
-        'initial': 'S',
-        'avatarBg': const Color.fromRGBO(187, 198, 255, 1),
-        'avatarTextColor': const Color.fromRGBO(50, 63, 148, 1),
-        'title': 'Breakfast',
-        'category': 'Event • SuperX Flutter',
-        'amount': '₹350',
-        'date': '14 Dec',
-      },
-      {
-        'initial': 'K',
-        'avatarBg': const Color.fromRGBO(185, 246, 202, 1),
-        'avatarTextColor': const Color.fromRGBO(27, 94, 32, 1),
-        'title': 'New Mobile Sim',
-        'category': 'Electronic Gadgets',
-        'amount': '₹899',
-        'date': '14 Dec',
-      },
-      {
-        'initial': 'A',
-        'avatarBg': const Color.fromRGBO(225, 190, 231, 1),
-        'avatarTextColor': const Color.fromRGBO(106, 27, 154, 1),
-        'title': 'Hard Drive 1TB',
-        'category': 'Electronic Gadgets',
-        'amount': '₹4500',
-        'date': '14 Dec',
-      },
-    ],
-  },
-];
-
 class IndividualExpenses extends StatefulWidget {
-  const IndividualExpenses({super.key});
+  final bool showOnlyMyTransactions;
+
+  const IndividualExpenses({super.key, this.showOnlyMyTransactions = false});
 
   @override
   State<IndividualExpenses> createState() => _IndividualExpensesState();
@@ -140,17 +52,18 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
   }
 
   Future<void> _refreshHistory() {
+    final email = _profileEmail;
     final bloc = context.read<ExpenseHistoryBloc>();
     final role = _authRole;
     if (role == 'superadmin') {
       return reloadAfterEvent(
         states: bloc.stream,
-        dispatch: () => bloc.add(LoadAllExpenses()),
+        dispatch: () => bloc.add(LoadExpensesByEmail(email!)),
         isComplete: (state) =>
             state is ExpenseHistoryLoaded || state is ExpenseHistoryFailure,
       );
     }
-    final email = _profileEmail;
+    //final email = _profileEmail;
     if (email == null || email.isEmpty) return Future.value();
     return reloadAfterEvent(
       states: bloc.stream,
@@ -192,6 +105,14 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
   void initState() {
     super.initState();
     final role = _authRole;
+    if (widget.showOnlyMyTransactions) {
+      final email = _profileEmail;
+      if (email != null && email.isNotEmpty) {
+        context.read<ExpenseHistoryBloc>().add(LoadExpensesByEmail(email));
+      }
+      return;
+    }
+
     if (role == 'superadmin') {
       context.read<ExpenseHistoryBloc>().add(LoadAllExpenses());
     } else if (['teamlead', 'mentor', 'instructor'].contains(role)) {
@@ -319,8 +240,11 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
           ),
           Expanded(
             child: !hasLiveHistory
-                ? MonthwiseIndividualListview().getMonthwiseExpenseListview(
-                    transactionData,
+                ? const Center(
+                    child: Text(
+                      'No expense history available yet.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                   )
                 : role != 'superadmin' &&
                       (_profileEmail == null || _profileEmail!.isEmpty)

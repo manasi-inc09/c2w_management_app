@@ -1,9 +1,13 @@
 import 'package:c2w_management_app/core/app_theme.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/wallet_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/bottomsheet_settle.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/wallet_top_up_history.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -241,62 +245,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           body: Column(
             children: [
-              Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 20,
-                      right: 10,
-                      top: 20,
-                      bottom: 10,
-                    ),
-                    child: Container(
-                      height: 45,
-                      width: 140,
-                      decoration: BoxDecoration(
-                        color: AppTheme().appBarBackgroundColor,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'All Categories',
-                          style: GoogleFonts.figtree(
-                            fontSize: 14,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 10,
-                      right: 10,
-                      top: 20,
-                      bottom: 10,
-                    ),
-                    child: Container(
-                      height: 45,
-                      width: 130,
-                      decoration: BoxDecoration(
-                        color: AppTheme().appBarBackgroundColor,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'dd-mm-yyyy',
-                          style: GoogleFonts.figtree(
-                            fontSize: 14,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              CommonFilters().getCategoryDateChips(context),
               const SizedBox(height: 10),
               Expanded(child: _walletExpenseContent(state, expenses)),
             ],
@@ -331,6 +280,20 @@ class _WalletScreenState extends State<WalletScreen> {
         ),
       );
     }
+
+    final filteredExpenses = (expenses ?? []).where((expense) {
+      final selection = canUseExpenseFilters()
+          ? context.watch<ExpenseFilterBloc>().state.selection
+          : const ExpenseFilterSelection();
+      final currentEmail =
+          FirebaseAuth.instance.currentUser?.email ?? AuthRepository.authEmail;
+      return filterExpenses(
+        [expense],
+        selection,
+        currentEmail: currentEmail,
+      ).isNotEmpty;
+    }).toList();
+
     if (expenses == null || expenses.isEmpty) {
       return RefreshIndicator(
         onRefresh: _refreshWallet,
@@ -350,10 +313,29 @@ class _WalletScreenState extends State<WalletScreen> {
         ),
       );
     }
+    if (filteredExpenses.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _refreshWallet,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Text(
+                  'No transactions match the selected filters.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return RefreshIndicator(
       onRefresh: _refreshWallet,
       child: MonthwiseIndividualListview().getExpenseHistoryListview(
-        expenses,
+        filteredExpenses,
         onTransactionTap: (expense) {
           if (canSettleWalletExpenses()) {
             _openSettlement(expense);

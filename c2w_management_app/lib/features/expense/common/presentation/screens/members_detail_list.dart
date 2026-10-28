@@ -107,6 +107,9 @@ class _MembersDetailListState extends State<MembersDetailList> {
               settled = _settled(expenses);
             }
 
+            final profileImage =
+                widget.member['profileImage']?.toString().trim() ?? '';
+
             return Container(
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -119,11 +122,21 @@ class _MembersDetailListState extends State<MembersDetailList> {
                     height: 50,
                     width: 50,
                     decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 153, 217, 157),
                       shape: BoxShape.circle,
                       border: Border.all(width: 1, color: Colors.white),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: Image.asset("assets/image.png", fit: BoxFit.cover),
+                    child: profileImage.isEmpty
+                        ? const Icon(Icons.person_rounded, color: Colors.black)
+                        : Image.network(
+                            profileImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const Icon(
+                              Icons.person_rounded,
+                              color: Colors.black,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

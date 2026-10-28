@@ -58,8 +58,7 @@ class SubcategoriesPage extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               decoration: const BoxDecoration(shape: BoxShape.circle),
               child: CircleAvatar(
-                backgroundColor: ColorList()
-                    .colorList[categoryIndex % ColorList().colorList.length],
+                backgroundColor: ColorList().colorForIndex(categoryIndex),
                 child: Text(
                   name.isEmpty ? '?' : name[0].toUpperCase(),
                   style: GoogleFonts.figtree(
@@ -147,9 +146,7 @@ class SubcategoriesPage extends StatelessWidget {
                                     width: 45,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
-                                      color:
-                                          ColorList().colorList[index %
-                                              ColorList().colorList.length],
+                                      color: ColorList().colorForIndex(index),
                                     ),
                                     child: Center(
                                       child: Text(
