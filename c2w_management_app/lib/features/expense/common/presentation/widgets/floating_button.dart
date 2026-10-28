@@ -81,20 +81,31 @@ class FloatingButton {
                         ],
                         const SizedBox(height: 8),
                         Divider(),
-                        (AuthRepository.authEmail!.contains("instructor")||AuthRepository.authEmail!.contains("superadmin"))?GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => IndividualExpenses(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'My Transactions',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ):SizedBox(),
+                        (AuthRepository.authEmail!.contains("instructor") ||
+                                AuthRepository.authEmail!.contains(
+                                  "superadmin",
+                                ))
+                            ? GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const IndividualExpenses(
+                                            showOnlyMyTransactions: true,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'My Transactions',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox(),
                         const SizedBox(height: 12),
                       ],
                     ),
