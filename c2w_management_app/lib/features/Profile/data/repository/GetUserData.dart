@@ -48,10 +48,11 @@ class GetUserData {
         final enquiries = await GetEnquiryData(
           firestore: firebaseFirestore,
         ).fetchEnquiries();
-        final enquiryDocumentIds = enquiries
-            .map((enquiry) => enquiry.id)
-            .where((id) => id.isNotEmpty)
-            .toSet();
+        final totalEnquiries = enquiries.fold<int>(
+          0,
+          (count, enquiry) =>
+              count + (enquiry.enquiryHistory.isEmpty ? 1 : enquiry.enquiryHistory.length),
+        );
 
         UserModel userModel = UserModel(
           fullName: data["Name"] ?? '',
@@ -65,7 +66,7 @@ class GetUserData {
           totalExpense: totalExpense,
           paidExpense: paidExpense,
           pendingExpense: totalExpense - paidExpense,
-          totalEnquiries: enquiryDocumentIds.length,
+          totalEnquiries: totalEnquiries,
         );
 
         log("User data fetched successfully");

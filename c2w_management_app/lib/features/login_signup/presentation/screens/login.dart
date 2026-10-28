@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
@@ -23,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   final _roleCtrl = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
   // static String? authEmail;
 
   static const _bg = Color.fromRGBO(7, 10, 27, 1);
@@ -31,7 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _hint = Color(0xFF5C6078);
 
   bool get _canSubmit =>
-      _userCtrl.text.trim().isNotEmpty && _passCtrl.text.isNotEmpty;
+      _userCtrl.text.trim().isNotEmpty &&
+      _passCtrl.text.isNotEmpty &&
+      _roleCtrl.text.isNotEmpty;
 
   @override
   void initState() {
@@ -47,12 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _passCtrl.dispose();
     _roleCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _login() async {
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => _loading = false);
   }
 
   InputDecoration _decoration(String hint, {Widget? suffix}) {
@@ -89,10 +82,15 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<Loginsignupbloc,LoginSignupState>(
       listener: (context, state) {
         if(state is LoginSuccessful){
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Login Successful!!",style: TextStyle(color: Colors.white),),
-            backgroundColor: Colors.green,
-          ),);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+              state.sessionSaved
+                  ? "Login Successful!!"
+                  : "Login successful, but this device could not save your session.",
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: state.sessionSaved ? Colors.green : Colors.orange,
+          ));
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context)=>DashboardView())
           );
@@ -114,8 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   },
       builder:(context,state){
-        final isLoading = state is LoginSignupState;
-      
+        final isLoading = state is LoginLoading;
        return Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: _bg,
@@ -250,54 +247,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: (_canSubmit && !_loading)
-                            ? () async {
-                                if (_userCtrl.text.isNotEmpty &&
-                                    _passCtrl.text.isNotEmpty &&
-                                    _roleCtrl.text.isNotEmpty) {
-                                  context.read<Loginsignupbloc>().add(
-                                    LoginEvent(
-                                      _userCtrl.text.trim(),
-                                      _passCtrl.text.trim(),
-                                      _roleCtrl.text.trim(),
-                                    ),
-                                  );
-                                  
-                                //   Navigator.of(context).push(
-                                //   MaterialPageRoute(
-                                //     builder: (context) => DashboardView(),
-                                //   ),
-                                // );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("Invalid Credentials.Please Enter Correct Username and Password"),
-                                    ),
-                                  );
-                                }
-      
-                                setState(() => _loading = true);
-                                await Future.delayed(const Duration(seconds: 2));
-                                if (!mounted) return;
-                                setState(() => _loading = false);
-                                //  LoginScreen.authEmail=_userCtrl.text;
-                                // log("login email: ${LoginScreen.authEmail}");
-                                _userCtrl.clear();
-                                _passCtrl.clear();
-                                _roleCtrl.clear();
-                                
+                        onPressed: (_canSubmit && !isLoading)
+                            ? () {
+                                context.read<Loginsignupbloc>().add(
+                                  LoginEvent(
+                                    _userCtrl.text.trim(),
+                                    _passCtrl.text,
+                                    _roleCtrl.text.trim(),
+                                  ),
+                                );
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _accent,
-                          disabledBackgroundColor: _loading
+                          disabledBackgroundColor: isLoading
                               ? const Color(0xFF0B77B5)
                               : const Color(0xFF2A2D45),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: _loading
+                        child: isLoading
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,

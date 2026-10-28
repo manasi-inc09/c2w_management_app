@@ -25,12 +25,50 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
 
   bool isCollapsed = false;
   EnquiryModel? _activeEnquiry;
+  String? _selectedHistoryId;
 
-  EnquiryModel? get _enquiry => _activeEnquiry ?? widget.enquiry;
+  EnquiryModel? get _baseEnquiry => _activeEnquiry ?? widget.enquiry;
+
+  EnquiryHistoryItem? get _selectedHistoryItem {
+    final id = _selectedHistoryId;
+    if (id == null) return null;
+    for (final item in _baseEnquiry?.enquiryHistory ?? const []) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  EnquiryModel? get _enquiry {
+    final base = _baseEnquiry;
+    final historyItem = _selectedHistoryItem;
+    if (base == null || historyItem == null) return base;
+    return EnquiryModel(
+      id: base.id,
+      currentHistoryId: historyItem.id,
+      studentName: historyItem.studentName,
+      mobileNo: historyItem.mobileNo,
+      collegeName: historyItem.collegeName,
+      interestedBatches: historyItem.interestedBatches,
+      mode: historyItem.mode,
+      studentFeedback: historyItem.studentFeedback,
+      referenceBy: historyItem.referenceBy,
+      enquirySource: historyItem.enquirySource,
+      enquiryAddedBy: historyItem.enquiryAddedBy,
+      callStatus: historyItem.callStatus,
+      admissionStatus: historyItem.admissionStatus,
+      enquiryHistory: base.enquiryHistory,
+      callStatusUpdatedAt: historyItem.callStatusUpdatedAt,
+      admissionStatusUpdatedAt: historyItem.admissionStatusUpdatedAt,
+      createdAt: historyItem.createdAt,
+    );
+  }
 
   static const double expandedHeight = 280;
 
   static const double bottomHeight = 92;
+
+  double _currentExpandedHeight = expandedHeight;
+  double _currentBottomHeight = bottomHeight;
 
   static const bgColor = Color.fromRGBO(14, 16, 32, 1);
   static const appBarColor = Color.fromRGBO(20, 22, 39, 1);
@@ -54,7 +92,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
 
     _scrollController.addListener(() {
       // how much the big header can shrink
-      const collapseDistance = expandedHeight - kToolbarHeight - bottomHeight;
+      final collapseDistance =
+          _currentExpandedHeight - kToolbarHeight - _currentBottomHeight;
 
       // show the small title a little before it is fully closed
       final collapsed = _scrollController.offset > collapseDistance - 20;
@@ -95,7 +134,9 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       }
       await GetEnquiryData().updateEnquiryFields(
         enquiryId: enquiry.id,
-        historyId: enquiry.enquiryHistory.isEmpty
+        historyId: enquiry.currentHistoryId.isNotEmpty
+            ? enquiry.currentHistoryId
+            : enquiry.enquiryHistory.isEmpty
             ? null
             : enquiry.enquiryHistory.last.id,
         fields: fields,
@@ -114,11 +155,19 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
   Widget build(BuildContext context) {
     return BlocBuilder<DashBoardBloc, DashBoardState>(
       builder: (context, state) {
+        final screenSize = MediaQuery.sizeOf(context);
+        final isCompact = screenSize.width < 380;
+        _currentExpandedHeight = isCompact ? 305 : expandedHeight;
+        _currentBottomHeight = isCompact ? 100 : bottomHeight;
         if (state is DashBoardLoaded && state.enquiries.isNotEmpty) {
           _activeEnquiry = widget.enquiry == null
               ? state.enquiries.first
               : state.enquiries.firstWhere(
-                  (item) => item.id == widget.enquiry!.id,
+                  (item) =>
+                      item.id == widget.enquiry!.id &&
+                      (widget.enquiry!.currentHistoryId.isEmpty ||
+                          item.currentHistoryId ==
+                              widget.enquiry!.currentHistoryId),
                   orElse: () => widget.enquiry!,
                 );
         } else {
@@ -138,7 +187,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
             slivers: [
               SliverAppBar(
                 pinned: true,
-                expandedHeight: expandedHeight,
+                expandedHeight: _currentExpandedHeight,
                 backgroundColor: appBarColor,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -156,6 +205,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                     children: [
                       Text(
                         _enquiry?.studentName ?? 'Enquiry details',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.figtree(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -174,20 +225,21 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                 ),
 
                 actions: [
-                  AnimatedOpacity(
-                    opacity: isCollapsed ? 0 : 1,
-                    duration: const Duration(milliseconds: 200),
-                    child: Center(
-                      child: Text(
-                        'Raised on: ${_enquiry?.formattedDate ?? 'N/A'}',
-                        style: GoogleFonts.figtree(
-                          fontSize: 15,
-                          color: Colors.grey,
+                  if (!isCompact)
+                    AnimatedOpacity(
+                      opacity: isCollapsed ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: Center(
+                        child: Text(
+                          'Raised on: ${_enquiry?.formattedDate ?? 'N/A'}',
+                          style: GoogleFonts.figtree(
+                            fontSize: 15,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isCompact ? 4 : 16),
                 ],
 
                 flexibleSpace: FlexibleSpaceBar(
@@ -200,7 +252,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                 ),
 
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(bottomHeight),
+                  preferredSize: Size.fromHeight(_currentBottomHeight),
                   child: _staticPart(),
                 ),
               ),
@@ -237,8 +289,9 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
   }
 
   Widget _staticPart() {
+    final isNarrow = MediaQuery.sizeOf(context).width < 350;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: isNarrow ? 10 : 16),
       child: Column(
         children: [
           SizedBox(
@@ -248,12 +301,12 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                 Text(
                   'Call Status',
                   style: GoogleFonts.figtree(
-                    fontSize: 13,
+                    fontSize: isNarrow ? 11 : 13,
                     color: Colors.white54,
                   ),
                 ),
                 const Spacer(),
-                if (_enquiry?.callStatusUpdatedAt != null)
+                if (!isNarrow && _enquiry?.callStatusUpdatedAt != null)
                   Text(
                     _formatStatusDate(_enquiry!.callStatusUpdatedAt!),
                     style: GoogleFonts.figtree(
@@ -280,13 +333,13 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                 Text(
                   'Admission Status',
                   style: GoogleFonts.figtree(
-                    fontSize: 13,
+                    fontSize: isNarrow ? 11 : 13,
                     color: Colors.white54,
                   ),
                 ),
                 const Spacer(),
 
-                if (_enquiry?.admissionStatusUpdatedAt != null)
+                if (!isNarrow && _enquiry?.admissionStatusUpdatedAt != null)
                   Text(
                     _formatStatusDate(_enquiry!.admissionStatusUpdatedAt!),
                     style: GoogleFonts.figtree(
@@ -325,15 +378,27 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
   }) {
     return PopupMenuButton<String>(
       initialValue: value,
-      color: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
+      color: cardColor,
+      surfaceTintColor: appBarColor,
+      elevation: 12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: onSelected,
       itemBuilder: (context) => options
           .map(
             (status) => PopupMenuItem<String>(
               value: status,
-              child: Text(status, style: const TextStyle(color: Colors.white)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      status,
+                      style: GoogleFonts.figtree(color: Colors.white),
+                    ),
+                  ),
+                  if (status == value)
+                    const Icon(Icons.check, color: blue, size: 18),
+                ],
+              ),
             ),
           )
           .toList(),
@@ -375,11 +440,17 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
   }
 
   Widget _bigHeader(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 380;
+    final sidePadding = isCompact ? 12.0 : 16.0;
+    final batches = _enquiry?.interestedBatches ?? const <String>[];
+    final displayedBatches = batches.isEmpty ? ['Not specified'] : batches;
+    final maxBatchWidth = screenWidth * (isCompact ? 0.52 : 0.58);
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        16,
+        sidePadding,
         kToolbarHeight + MediaQuery.of(context).padding.top + 8,
-        16,
+        sidePadding,
         0,
       ),
       child: Column(
@@ -388,8 +459,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
           Row(
             children: [
               Container(
-                height: 50,
-                width: 50,
+                height: isCompact ? 42 : 50,
+                width: isCompact ? 42 : 50,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: const Color.fromARGB(255, 233, 186, 169),
@@ -400,7 +471,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                         ? _enquiry!.studentName[0].toUpperCase()
                         : '?',
                     style: GoogleFonts.figtree(
-                      fontSize: 25,
+                      fontSize: isCompact ? 21 : 25,
                       fontWeight: FontWeight.w600,
                       color: Colors.brown,
                     ),
@@ -408,14 +479,18 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                _enquiry?.studentName.isNotEmpty == true
-                    ? _enquiry!.studentName
-                    : 'Unnamed student',
-                style: GoogleFonts.figtree(
-                  fontSize: 25,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+              Expanded(
+                child: Text(
+                  _enquiry?.studentName.isNotEmpty == true
+                      ? _enquiry!.studentName
+                      : 'Unnamed student',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.figtree(
+                    fontSize: isCompact ? 20 : 25,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -426,28 +501,42 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
             children: [
               Text(
                 "Interested for",
-                style: GoogleFonts.figtree(fontSize: 16, color: Colors.white),
+                style: GoogleFonts.figtree(
+                  fontSize: isCompact ? 13 : 16,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  color: const Color.fromRGBO(42, 45, 62, 1),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Text(
-                  _enquiry?.interestedBatches.isNotEmpty == true
-                      ? _enquiry!.interestedBatches.join(', ')
-                      : 'Not specified',
-                  style: GoogleFonts.figtree(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+              SizedBox(width: isCompact ? 6 : 12),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: displayedBatches.map((batch) {
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxBatchWidth),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          color: const Color.fromRGBO(42, 45, 62, 1),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Text(
+                          batch,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.figtree(
+                            fontSize: isCompact ? 12 : 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
@@ -509,7 +598,10 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
   }
 
   Widget _historyTab() {
-    final enquiryHistory = _enquiry?.enquiryHistory ?? const [];
+    final currentHistoryId = _baseEnquiry?.currentHistoryId;
+    final enquiryHistory = (_baseEnquiry?.enquiryHistory ?? const [])
+        .where((item) => item.id != currentHistoryId)
+        .toList();
     if (enquiryHistory.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -526,7 +618,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       final chronologicalHistory = enquiryHistory;
       return Column(
         children: [
-          for (var index = 0; index < chronologicalHistory.length - 1; index++)
+          for (var index = 0; index < chronologicalHistory.length; index++)
             _historyCard(
               title: '${_ordinal(index + 1)} Enquiry',
               item: chronologicalHistory[index],
@@ -560,15 +652,21 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         ? const Color(0xFF13CE8B)
         : Colors.redAccent;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(8, 10, 8, 0),
-      padding: const EdgeInsets.fromLTRB(8, 8, 9, 9),
-      decoration: BoxDecoration(
-        color: cardColor,
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+        onTap: () {
+          setState(() => _selectedHistoryId = item.id);
+          _tabController.animateTo(0);
+        },
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+          padding: const EdgeInsets.fromLTRB(8, 8, 9, 9),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+          child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -617,6 +715,13 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                   showDot: true,
                 ),
                 _historyDivider(),
+                _historyRow(
+                  'Call status',
+                  item.callStatus,
+                  valueColor: _callStatusColor(item.callStatus),
+                  showDot: true,
+                ),
+                _historyDivider(),
                 Text(
                   'User feedback',
                   style: GoogleFonts.figtree(
@@ -638,10 +743,23 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'Tap to view details',
+                    style: GoogleFonts.figtree(
+                      fontSize: 11,
+                      color: blue,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

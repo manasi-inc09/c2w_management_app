@@ -7,15 +7,14 @@ class LoginSignupState extends Equatable {
   final String? mob;
   final String? upi;
   final String? dob;
-  final String? pass;
   final String? role;
 
   const LoginSignupState({
-    this.name,this.email,this.mob,this.upi,this.dob,this.pass,this.role
+    this.name,this.email,this.mob,this.upi,this.dob,this.role
   });
 
   @override
-  List<Object?> get props => [name,email,mob,upi,dob,pass];
+  List<Object?> get props => [name,email,mob,upi,dob,role];
 }
 
 abstract class LoginState extends Equatable {
@@ -28,7 +27,14 @@ class LoginInitial extends LoginSignupState {}
 
 class LoginLoading extends LoginSignupState {}
 
-class LoginSuccessful extends LoginSignupState {}
+class LoginSuccessful extends LoginSignupState {
+  final bool sessionSaved;
+
+  const LoginSuccessful({this.sessionSaved = true});
+
+  @override
+  List<Object?> get props => [sessionSaved];
+}
 
 class LoginInvalidCredentials extends LoginSignupState {}
 
@@ -36,6 +42,19 @@ class LoginFailure extends LoginSignupState {
   final String message;
 
   const LoginFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class LogoutLoading extends LoginSignupState {}
+
+class LogoutSuccessful extends LoginSignupState {}
+
+class LogoutFailure extends LoginSignupState {
+  final String message;
+
+  const LogoutFailure(this.message);
 
   @override
   List<Object?> get props => [message];

@@ -16,10 +16,13 @@ class LoginEvent extends LoginSignupEvent {
 
   LoginEvent(this.email, this.pass,this.role){
     print("Event...........${email}");
-    print(pass);
   }
   @override
   List<Object?> get props => [email, pass,role];
+}
+
+class LogoutEvent extends LoginSignupEvent {
+  const LogoutEvent();
 }
 
 class SignupAuthEvent extends LoginSignupEvent {
@@ -39,11 +42,10 @@ class SignupDataEvent extends LoginSignupEvent {
   final String mob;
   final String upi;
   final String dob;
-  final String pass;
   final String role;
 
-  const SignupDataEvent(this.name,this.email,this.mob,this.upi,this.dob,this.pass,this.role);
+  const SignupDataEvent(this.name,this.email,this.mob,this.upi,this.dob,this.role);
 
   @override
-  List<Object?> get props => [name,email,mob,upi,dob,pass,role];
+  List<Object?> get props => [name,email,mob,upi,dob,role];
 }

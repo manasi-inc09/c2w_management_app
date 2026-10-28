@@ -14,6 +14,8 @@ class EnquiryHistoryItem extends Equatable {
   final String enquiryAddedBy;
   final String callStatus;
   final String admissionStatus;
+  final DateTime? callStatusUpdatedAt;
+  final DateTime? admissionStatusUpdatedAt;
   final DateTime? createdAt;
 
   const EnquiryHistoryItem({
@@ -29,6 +31,8 @@ class EnquiryHistoryItem extends Equatable {
     this.enquiryAddedBy = '',
     required this.callStatus,
     required this.admissionStatus,
+    this.callStatusUpdatedAt,
+    this.admissionStatusUpdatedAt,
     this.createdAt,
   });
 
@@ -50,6 +54,12 @@ class EnquiryHistoryItem extends Equatable {
       enquiryAddedBy: (data['enquiryAddedBy'] ?? '').toString(),
       callStatus: (data['Call Status'] ?? 'Pending').toString(),
       admissionStatus: EnquiryModel.parseAdmissionStatus(data),
+      callStatusUpdatedAt: EnquiryModel.parseDateTime(
+        data['Call Status Updated At'],
+      ),
+      admissionStatusUpdatedAt: EnquiryModel.parseDateTime(
+        data['Admission Status Updated At'],
+      ),
       createdAt: EnquiryModel.parseDateTime(data['Created At']),
     );
   }
@@ -73,6 +83,12 @@ class EnquiryHistoryItem extends Equatable {
     'enquiryAddedBy': enquiryAddedBy,
     'Call Status': callStatus,
     'Admission Status': admissionStatus,
+    'Call Status Updated At': callStatusUpdatedAt == null
+        ? null
+        : Timestamp.fromDate(callStatusUpdatedAt!),
+    'Admission Status Updated At': admissionStatusUpdatedAt == null
+        ? null
+        : Timestamp.fromDate(admissionStatusUpdatedAt!),
     'Created At': createdAt == null ? null : Timestamp.fromDate(createdAt!),
   };
 
@@ -90,12 +106,15 @@ class EnquiryHistoryItem extends Equatable {
     enquiryAddedBy,
     callStatus,
     admissionStatus,
+    callStatusUpdatedAt,
+    admissionStatusUpdatedAt,
     createdAt,
   ];
 }
 
 class EnquiryModel extends Equatable {
   final String id;
+  final String currentHistoryId;
   final String studentName;
   final String mobileNo;
   final String collegeName;
@@ -119,6 +138,7 @@ class EnquiryModel extends Equatable {
 
   const EnquiryModel({
     required this.id,
+    this.currentHistoryId = '',
     required this.studentName,
     required this.mobileNo,
     required this.collegeName,
@@ -178,6 +198,7 @@ class EnquiryModel extends Equatable {
   factory EnquiryModel.fromMap(Map<String, dynamic> data, {String? id}) {
     return EnquiryModel(
       id: id ?? '',
+      currentHistoryId: (data['History Id'] ?? '').toString(),
       studentName: (data['Student Name'] ?? '').toString().trim(),
       mobileNo: (data['Mobile No'] ?? '').toString().trim(),
       collegeName: (data['College Name'] ?? '').toString().trim(),
@@ -205,6 +226,7 @@ class EnquiryModel extends Equatable {
   EnquiryModel copyWith({List<EnquiryHistoryItem>? enquiryHistory}) {
     return EnquiryModel(
       id: id,
+      currentHistoryId: currentHistoryId,
       studentName: studentName,
       mobileNo: mobileNo,
       collegeName: collegeName,
@@ -335,6 +357,7 @@ class EnquiryModel extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    currentHistoryId,
     studentName,
     mobileNo,
     collegeName,

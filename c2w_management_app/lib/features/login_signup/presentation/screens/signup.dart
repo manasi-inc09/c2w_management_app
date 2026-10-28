@@ -484,7 +484,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
                       child: ElevatedButton(
                         onPressed: selectedRole != null
                             ? () {
-                                context.read<Loginsignupbloc>().add(SignupDataEvent(widget.fullName,widget.email,widget.mobile, widget.upi, widget.dob, widget.password,selectedRole!));
+                                context.read<Loginsignupbloc>().add(SignupDataEvent(widget.fullName,widget.email,widget.mobile, widget.upi, widget.dob,selectedRole!));
                                 context.read<Loginsignupbloc>().add(SignupAuthEvent(widget.email, widget.password,selectedRole!));
                                 log(widget.email);
                                 
