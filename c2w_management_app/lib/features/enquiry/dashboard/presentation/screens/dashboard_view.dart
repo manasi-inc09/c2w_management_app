@@ -823,8 +823,8 @@ import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardState.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/enquiry_overview.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/enquiry_person_profile.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/expense_manager.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/individual_expenses.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_manager.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/individual_expenses.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

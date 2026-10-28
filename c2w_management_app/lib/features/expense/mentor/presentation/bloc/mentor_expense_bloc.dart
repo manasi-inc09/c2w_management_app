@@ -8,7 +8,7 @@ class MentorExpenseBloc extends CreateExpenseBloc {
     : super(createExpenseUseCase: _MentorExpenseCreator(createExpenseUseCase));
 }
 
-class _MentorExpenseCreator implements ExpenseCreator {
+class _MentorExpenseCreator implements ExpenseCreator, ExpenseUpdater {
   final CreateMentorExpenseUseCase _useCase;
 
   _MentorExpenseCreator(this._useCase);
@@ -16,5 +16,18 @@ class _MentorExpenseCreator implements ExpenseCreator {
   @override
   Future<String> call(Expense expense) {
     return _useCase.createExpense(expense);
+  }
+
+  @override
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return _useCase.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
   }
 }

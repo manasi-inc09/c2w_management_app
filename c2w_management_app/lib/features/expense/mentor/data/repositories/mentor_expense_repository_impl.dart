@@ -13,4 +13,17 @@ class MentorExpenseRepositoryImpl implements MentorExpenseRepository {
   Future<String> createExpense(Expense expense) {
     return _remoteDataSource.createExpense(expense);
   }
+
+  @override
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return _remoteDataSource.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
+  }
 }

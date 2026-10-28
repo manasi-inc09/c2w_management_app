@@ -1,6 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/wallet_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/wallet_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

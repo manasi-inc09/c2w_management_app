@@ -1,11 +1,13 @@
+import 'dart:io';
+
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_bloc.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_event.dart';
 import 'package:c2w_management_app/features/expense/teamlead/presentation/teamlead_expense_add_bloc/teamlead_expense_state.dart';
-import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,7 +15,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreateNewTransaction extends StatefulWidget {
-  const CreateNewTransaction({super.key});
+  final Map<String, dynamic>? expense;
+
+  const CreateNewTransaction({super.key, this.expense});
 
   @override
   State<CreateNewTransaction> createState() => _CreateNewTransactionState();
@@ -24,25 +28,27 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   String? url;
   DateTime? selectedDate;
   Future<void> getdate() async {
+    final today = DateTime.now();
     DateTime? showDate = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
+      initialDate: selectedDate != null && !selectedDate!.isAfter(today)
+          ? selectedDate!
+          : today,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: today,
     );
     if (showDate != null) {
       setState(() {
         selectedDate = showDate;
+        dateController.text = _formatDate(showDate);
       });
     }
   }
 
   Future<void> getImage() async {
-    ImagePicker imagePicker = ImagePicker();
-    final XFile? image = await imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
-    int fileSize = await image!.length();
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    final fileSize = await image.length();
 
     if (fileSize > 60 * 1024 * 1024) {
       if (!mounted) return;
@@ -51,16 +57,6 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
         const SnackBar(content: Text("Image size must be less than 60 MB")),
       );
       return;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.green,
-          content: Text(
-            "Image successfully uploaded",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
     }
 
     if (!mounted) return;
@@ -77,12 +73,47 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   TextEditingController dateController = TextEditingController();
   TextEditingController amountController = TextEditingController();
   TextEditingController detailsController = TextEditingController();
+  String? existingReceiptUrl;
+  bool get _isEditing => widget.expense != null;
   //TextEditingController selectedSubCategory=TextEditingController();
   //TextEditingController selectedSubCategory=TextEditingController();
   @override
   void initState() {
     super.initState();
+    final expense = widget.expense;
+    selectedDate = expense == null
+        ? DateTime.now()
+        : _readExpenseDate(expense['expenseDate']) ?? DateTime.now();
+    dateController.text = _formatDate(selectedDate!);
+    if (expense != null) {
+      amountController.text = expense['amount']?.toString() ?? '';
+      detailsController.text = expense['description']?.toString() ?? '';
+      selectedCategory = expense['category']?.toString();
+      selectedSubCategory = expense['subCategory']?.toString();
+      selectedOption = expense['source']?.toString().toLowerCase() == 'wallet'
+          ? 'Option 2'
+          : 'Option 1';
+      existingReceiptUrl = expense['receiptUrl']?.toString();
+    }
     context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
+  }
+
+  DateTime? _readExpenseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  @override
+  void dispose() {
+    dateController.dispose();
+    amountController.dispose();
+    detailsController.dispose();
+    super.dispose();
   }
 
   @override
@@ -153,6 +184,8 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               const SizedBox(height: 5),
               TextField(
                 controller: dateController,
+                readOnly: true,
+                onTap: getdate,
                 cursorColor: Colors.white,
                 style: TextStyle(
                   color: Color.fromRGBO(255, 255, 255, 0.6),
@@ -161,13 +194,9 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 ),
 
                 decoration: InputDecoration(
-                  hintText: (selectedDate == null)
-                      ? "Select Date"
-                      : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                  hintText: "Select Date",
                   suffixIcon: GestureDetector(
-                    onTap: () {
-                      getdate();
-                    },
+                    onTap: getdate,
                     child: Icon(Icons.calendar_month_outlined),
                   ),
                   suffixIconColor: Colors.white,
@@ -230,10 +259,10 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               Row(
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
-                  const SizedBox(width: 12),
-                  (AuthRepository.authEmail?.startsWith("instructor_") ?? false)
-                      ? buildRadioBox(title: "Wallet", value: "Option 2")
-                      : const SizedBox(),
+                  // const SizedBox(width: 12),
+                  // (AuthRepository.authEmail?.startsWith("instructor_") ?? false)
+                  //     ? buildRadioBox(title: "Wallet", value: "Option 2")
+                  //     : const SizedBox(),
                 ],
               ),
               const SizedBox(height: 5),
@@ -271,146 +300,147 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
-                "Category",
-                style: GoogleFonts.figtree(
-                  color: Color.fromRGBO(255, 255, 255, 0.6),
-                  fontSize: 16,
-                  fontWeight: FontWeight(400),
-                ),
-              ),
-              const SizedBox(height: 5),
-              DropdownButtonFormField<String>(
-                initialValue: selectedCategoryValue,
-
-                dropdownColor: Color(0xFF0B0D1C),
-
-                icon: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Color(0xFF9CA3AF),
-                    size: 30,
+              if (categoryNames.isNotEmpty) ...[
+                Text(
+                  "Category",
+                  style: GoogleFonts.figtree(
+                    color: Color.fromRGBO(255, 255, 255, 0.6),
+                    fontSize: 16,
+                    fontWeight: FontWeight(400),
                   ),
                 ),
+                const SizedBox(height: 5),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCategoryValue,
+                  dropdownColor: const Color(0xFF0B0D1C),
+                  icon: const Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFF9CA3AF),
+                      size: 30,
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                  decoration: const InputDecoration(
+                    hint: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Select category",
+                        style: TextStyle(color: Colors.grey, fontSize: 18),
+                      ),
+                    ),
+                    hintStyle: TextStyle(
+                      color: Color(0xFF454858),
+                      fontSize: 18,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      borderSide: BorderSide(
+                        color: Color(0xFF292C3E),
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      borderSide: BorderSide(
+                        color: Color(0xFF00AEFF),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  items: categoryNames
+                      .map(
+                        (category) => DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategory = value;
+                      selectedSubCategory = null;
+                    });
+                  },
+                ),
+              ],
+              if (subCategoryValues.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  "Sub-Category",
+                  style: GoogleFonts.figtree(
+                    color: const Color.fromRGBO(255, 255, 255, 0.6),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedSubCategoryValue,
 
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                  dropdownColor: Color(0xFF0B0D1C),
 
-                decoration: InputDecoration(
-                  hint: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      categoryState is ExpenseCategoryLoading
-                          ? "Loading categories"
-                          : categoryNames.isEmpty
-                          ? "No categories available"
-                          : "Select category",
-                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                  icon: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFF9CA3AF),
+                      size: 30,
                     ),
                   ),
 
-                  hintStyle: TextStyle(color: Color(0xFF454858), fontSize: 18),
+                  style: TextStyle(color: Colors.white, fontSize: 18),
 
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 18,
-                  ),
-
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Color(0xFF292C3E), width: 1),
-                  ),
-
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: Color(0xFF00AEFF),
-                      width: 1.5,
+                  decoration: InputDecoration(
+                    hint: Align(
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        "Select sub-category",
+                        style: TextStyle(color: Colors.grey, fontSize: 18),
+                      ),
                     ),
-                  ),
-                ),
 
-                items: categoryNames.map((category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
 
-                onChanged: (value) {
-                  setState(() {
-                    selectedCategory = value;
-                    selectedSubCategory = null;
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "Sub-Category",
-                style: GoogleFonts.figtree(
-                  color: Color.fromRGBO(255, 255, 255, 0.6),
-                  fontSize: 16,
-                  fontWeight: FontWeight(400),
-                ),
-              ),
-              const SizedBox(height: 5),
-              DropdownButtonFormField<String>(
-                initialValue: selectedSubCategoryValue,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: Color(0xFF292C3E),
+                        width: 1,
+                      ),
+                    ),
 
-                dropdownColor: Color(0xFF0B0D1C),
-
-                icon: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Color(0xFF9CA3AF),
-                    size: 30,
-                  ),
-                ),
-
-                style: TextStyle(color: Colors.white, fontSize: 18),
-
-                decoration: InputDecoration(
-                  hint: Align(
-                    alignment: Alignment.centerLeft,
-                    child: const Text(
-                      "Select sub-category",
-                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: Color(0xFF00AEFF),
+                        width: 1.5,
+                      ),
                     ),
                   ),
 
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 18,
-                  ),
+                  items: subCategoryValues.map((subCategory) {
+                    return DropdownMenuItem<String>(
+                      value: subCategory,
+                      child: Text(subCategory),
+                    );
+                  }).toList(),
 
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Color(0xFF292C3E), width: 1),
-                  ),
-
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: Color(0xFF00AEFF),
-                      width: 1.5,
-                    ),
-                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedSubCategory = value;
+                    });
+                  },
                 ),
-
-                items: subCategoryValues.map((subCategory) {
-                  return DropdownMenuItem<String>(
-                    value: subCategory,
-                    child: Text(subCategory),
-                  );
-                }).toList(),
-
-                onChanged: (value) {
-                  setState(() {
-                    selectedSubCategory = value;
-                  });
-                },
-              ),
+              ],
               const SizedBox(height: 20),
               Text(
                 "Attach Receipt",
@@ -439,57 +469,109 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
                     borderRadius: BorderRadius.circular(12),
                   ),
 
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Image Icon
-                      const Icon(
-                        Icons.photo_library_outlined,
-                        color: Color(0xFF454858),
-                        size: 50,
-                      ),
+                  child: file != null
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.file(
+                              File(file!.path),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Center(
+                                child: Text(
+                                  'Could not preview the selected receipt.',
+                                  style: TextStyle(color: Colors.white70),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 12,
+                              bottom: 12,
+                              child: ElevatedButton.icon(
+                                onPressed: getImage,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Change image'),
+                              ),
+                            ),
+                          ],
+                        )
+                      : (existingReceiptUrl?.isNotEmpty ?? false)
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              existingReceiptUrl!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Center(
+                                child: Text(
+                                  'Could not load the current receipt.',
+                                  style: TextStyle(color: Colors.white70),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 12,
+                              bottom: 12,
+                              child: ElevatedButton.icon(
+                                onPressed: getImage,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Change image'),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Image Icon
+                            const Icon(
+                              Icons.photo_library_outlined,
+                              color: Color(0xFF454858),
+                              size: 50,
+                            ),
 
-                      const SizedBox(height: 25),
+                            const SizedBox(height: 25),
 
-                      // Upload Button
-                      ElevatedButton(
-                        onPressed: () {
-                          getImage();
-                        },
+                            // Upload Button
+                            ElevatedButton(
+                              onPressed: () {
+                                getImage();
+                              },
 
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF292C3E),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF292C3E),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
 
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
 
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+
+                              child: const Text(
+                                "Upload image",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            // Supported formats
+                            const Text(
+                              "Supported formats: JPG, PNG | Max.60 MB",
+                              style: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
-
-                        child: const Text(
-                          "Upload image",
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Supported formats
-                      const Text(
-                        "Supported formats: JPG, PNG | Max.60 MB",
-                        style: TextStyle(
-                          color: Color(0xFF9CA3AF),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],
@@ -500,13 +582,17 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
         listener: (context, state) {
           if (state is CreateExpenseSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Expense created successfully!'),
+              SnackBar(
+                content: Text(
+                  _isEditing
+                      ? 'Transaction updated successfully!'
+                      : 'Expense created successfully!',
+                ),
                 backgroundColor: Colors.green,
               ),
             );
 
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           }
 
           if (state is CreateExpenseFailure) {
@@ -521,7 +607,7 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
         builder: (context, state) {
           return SettleButton().getSettleButton(
             context,
-            'Create',
+            _isEditing ? 'Update' : 'Create',
             isLoading: state is CreateExpenseLoading,
             onTap: state is CreateExpenseLoading ? null : submitExpense,
           );
@@ -637,51 +723,108 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
   }
 
   void submitExpense() {
-    // 1. Validate expense date
     if (selectedDate == null) {
       showMessage('Please select an expense date.');
       return;
     }
 
-    // 2. Validate amount
     final double? amount = double.tryParse(amountController.text.trim());
-
     if (amount == null || amount <= 0) {
       showMessage('Please enter a valid amount.');
       return;
     }
 
-    // 3. Validate transaction details
     if (detailsController.text.trim().isEmpty) {
       showMessage('Please enter transaction details.');
       return;
     }
 
-    // 4. Validate category
-    if (selectedCategory == null) {
+    final categoryState = context.read<ExpenseCategoryBloc>().state;
+    if (categoryState is ExpenseCategoryInitial ||
+        categoryState is ExpenseCategoryLoading) {
+      showMessage('Please wait while categories are loading.');
+      return;
+    }
+    if (categoryState is ExpenseCategoryFailure) {
+      showMessage('Could not load categories: ${categoryState.message}');
+      return;
+    }
+
+    final availableCategories = categoryState is ExpenseCategoryLoaded
+        ? categoryState.categories
+        : <Map<String, dynamic>>[];
+    final categoryNames = availableCategories
+        .map((category) => category['name']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
+    final selectedCategoryValue = categoryNames.contains(selectedCategory)
+        ? selectedCategory
+        : null;
+    if (categoryNames.isNotEmpty && selectedCategoryValue == null) {
       showMessage('Please select a category.');
       return;
     }
-    if (selectedSubCategory == null) {
-      showMessage('Please select a sub-category.');
+    Map<String, dynamic>? selectedCategoryData;
+    for (final category in availableCategories) {
+      if (category['name']?.toString() == selectedCategoryValue) {
+        selectedCategoryData = category;
+        break;
+      }
+    }
+    final subCategoryValues = selectedCategoryData?['subCategories'] is List
+        ? (selectedCategoryData!['subCategories'] as List)
+              .map((value) => value.toString())
+              .toList()
+        : <String>[];
+    final selectedSubCategoryValue =
+        subCategoryValues.contains(selectedSubCategory)
+        ? selectedSubCategory
+        : null;
+    if (file == null && (existingReceiptUrl?.isEmpty ?? true)) {
+      showMessage('Please attach a receipt.');
       return;
     }
 
-    // 6. Determine expense source
     final String source = selectedOption == 'Option 2' ? 'Wallet' : 'Self Paid';
 
-    // 7. Create the Expense object
+    String? categoryCompany = widget.expense?['company']?.toString();
+    if (categoryState is ExpenseCategoryLoaded) {
+      for (final category in categoryState.categories) {
+        if (category['name']?.toString() == selectedCategoryValue) {
+          categoryCompany = category['company']?.toString() ?? categoryCompany;
+          break;
+        }
+      }
+    }
+
     final expense = Expense(
       expenseDate: selectedDate!,
       amount: amount,
       source: source,
       description: detailsController.text.trim(),
-      category: selectedCategory!,
-      subCategory: selectedSubCategory!,
+      category: selectedCategoryValue ?? '',
+      company: categoryCompany,
+      subCategory: selectedSubCategoryValue ?? '',
       receiptLocalPath: file?.path,
     );
 
-    // 8. Send the expense to the BLoC
+    if (_isEditing) {
+      final expenseId = widget.expense?['id']?.toString();
+      if (expenseId == null || expenseId.isEmpty) {
+        showMessage(
+          'This transaction cannot be updated because its ID is missing.',
+        );
+        return;
+      }
+      context.read<CreateExpenseBloc>().add(
+        UpdateExpenseEvent(
+          expenseId: expenseId,
+          expense: expense,
+          existingReceiptUrl: existingReceiptUrl,
+        ),
+      );
+      return;
+    }
     context.read<CreateExpenseBloc>().add(SubmitExpenseEvent(expense));
   }
 

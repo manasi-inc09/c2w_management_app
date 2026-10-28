@@ -1,8 +1,8 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/edit_category.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/edit_category.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -63,7 +63,7 @@ class SubcategoriesPage extends StatelessWidget {
                 child: Text(
                   name.isEmpty ? '?' : name[0].toUpperCase(),
                   style: GoogleFonts.figtree(
-                    fontSize: 30,
+                    fontSize: 25,
                     fontWeight: FontWeight(600),
                   ),
                 ),
@@ -79,13 +79,15 @@ class SubcategoriesPage extends StatelessWidget {
                     name,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.figtree(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight(600),
                       color: Colors.white,
                     ),
                   ),
                   Text(
                     "${subCategories.length} Sub-Categories",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.figtree(
                       fontSize: 15,
                       fontWeight: FontWeight(400),
@@ -141,8 +143,8 @@ class SubcategoriesPage extends StatelessWidget {
                                 children: [
                                   const SizedBox(width: 20),
                                   Container(
-                                    height: 50,
-                                    width: 50,
+                                    height: 45,
+                                    width: 45,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
                                       color:
@@ -156,7 +158,7 @@ class SubcategoriesPage extends StatelessWidget {
                                             : value[0].toUpperCase(),
                                         style: GoogleFonts.figtree(
                                           color: Colors.black,
-                                          fontSize: 25,
+                                          fontSize: 23,
                                           fontWeight: FontWeight(600),
                                         ),
                                       ),
@@ -166,6 +168,8 @@ class SubcategoriesPage extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       value,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.figtree(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -188,17 +192,47 @@ class SubcategoriesPage extends StatelessWidget {
           ),
           if (canManageExpenseCategories())
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                height: 50,
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _edit(context),
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Add Sub-Category"),
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => _edit(context),
+                child: Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      width: 1,
+                      color: const Color.fromRGBO(5, 165, 255, 1),
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    color: const Color.fromRGBO(5, 165, 255, 0.1),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 25,
+                        width: 25,
+                        decoration: const BoxDecoration(
+                          color: Color.fromRGBO(5, 165, 255, 1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.add),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Add Sub-Category",
+                        style: GoogleFonts.figtree(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: const Color.fromRGBO(5, 165, 255, 1),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+          const SizedBox(height: 50),
         ],
       ),
     );

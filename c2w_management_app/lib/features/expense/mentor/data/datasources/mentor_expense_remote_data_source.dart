@@ -11,4 +11,16 @@ class MentorExpenseRemoteDataSource {
   Future<String> createExpense(Expense expense) {
     return _expenseDataSource.createExpense(expense);
   }
+
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return _expenseDataSource.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
+  }
 }

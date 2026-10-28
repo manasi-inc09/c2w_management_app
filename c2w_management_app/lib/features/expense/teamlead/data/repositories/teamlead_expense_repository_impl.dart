@@ -1,5 +1,6 @@
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_expense_remote_data_source.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/entities/teamlead_expense.dart';
+import 'package:c2w_management_app/features/expense/teamlead/domain/entities/wallet_financial_summary.dart';
 import 'package:c2w_management_app/features/expense/teamlead/domain/repositories/teamlead_expense_repositories.dart';
 
 class ExpenseRepositoryImpl implements ExpenseRepository {
@@ -11,6 +12,19 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<String> createExpense(Expense expense) async {
     return await _remoteDataSource.createExpense(expense);
+  }
+
+  @override
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return _remoteDataSource.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
   }
 
   @override
@@ -41,6 +55,16 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<void> addWalletTopUp(double amount) {
     return _remoteDataSource.addWalletTopUp(amount);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWalletTopUpHistory() {
+    return _remoteDataSource.getWalletTopUpHistory();
+  }
+
+  @override
+  Future<WalletFinancialSummary> getWalletFinancialSummary() {
+    return _remoteDataSource.getWalletFinancialSummary();
   }
 
   @override
@@ -79,10 +103,12 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<void> addExpenseCategory({
     required String name,
+    required String company,
     required List<String> subCategories,
   }) {
     return _remoteDataSource.addExpenseCategory(
       name: name,
+      company: company,
       subCategories: subCategories,
     );
   }
@@ -91,11 +117,13 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   Future<void> updateExpenseCategory({
     required String id,
     required String name,
+    required String company,
     required List<String> subCategories,
   }) {
     return _remoteDataSource.updateExpenseCategory(
       id: id,
       name: name,
+      company: company,
       subCategories: subCategories,
     );
   }

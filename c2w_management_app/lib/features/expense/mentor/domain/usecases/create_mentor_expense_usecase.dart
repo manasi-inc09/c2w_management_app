@@ -9,4 +9,16 @@ class CreateMentorExpenseUseCase {
   Future<String> createExpense(Expense expense) {
     return _repository.createExpense(expense);
   }
+
+  Future<void> updateExpense({
+    required String expenseId,
+    required Expense expense,
+    required String? existingReceiptUrl,
+  }) {
+    return _repository.updateExpense(
+      expenseId: expenseId,
+      expense: expense,
+      existingReceiptUrl: existingReceiptUrl,
+    );
+  }
 }

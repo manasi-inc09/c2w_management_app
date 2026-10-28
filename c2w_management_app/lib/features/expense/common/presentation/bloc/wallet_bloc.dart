@@ -1,4 +1,5 @@
 import 'package:c2w_management_app/features/expense/teamlead/domain/usescases/teamlead_expense_usecase.dart';
+import 'package:c2w_management_app/features/expense/teamlead/domain/entities/wallet_financial_summary.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -113,6 +114,20 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     on<_WalletStreamFailure>((event, emit) {
       emit(WalletLoadFailure(_errorMessage(event.error)));
     });
+  }
+
+  Future<List<Map<String, dynamic>>> getWalletTopUpHistory() {
+    if (!canTopUpWallet()) {
+      throw Exception('Only SuperAdmin can view wallet top-up history.');
+    }
+    return _expenseUseCase.getWalletTopUpHistory();
+  }
+
+  Future<WalletFinancialSummary> getWalletFinancialSummary() {
+    if (!canTopUpWallet()) {
+      throw Exception('Only SuperAdmin can view wallet financial summary.');
+    }
+    return _expenseUseCase.getWalletFinancialSummary();
   }
 
   Future<void> _load(LoadWallet event, Emitter<WalletState> emit) async {

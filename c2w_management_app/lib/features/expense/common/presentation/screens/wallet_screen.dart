@@ -1,8 +1,9 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/wallet_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/bottomsheet_settle.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/monthwise_individual_listview.dart';
-import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/wallet_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/bottomsheet_settle.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/wallet_top_up_history.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -171,6 +172,25 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                           ),
                           const Spacer(),
+                          if (canTopUpWallet())
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const WalletTopUpHistory(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.history,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                'Summary',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           if (canTopUpWallet())
                             ElevatedButton.icon(
                               onPressed: state is WalletActionInProgress

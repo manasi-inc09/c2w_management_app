@@ -3,6 +3,8 @@ import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Re
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+const expenseCompanies = ['Incubators', 'Core2web', 'Both'];
+
 bool canManageExpenseCategories() {
   final email =
       FirebaseAuth.instance.currentUser?.email ?? AuthRepository.authEmail;
@@ -17,11 +19,13 @@ class LoadExpenseCategories extends ExpenseCategoryEvent {}
 class SaveExpenseCategory extends ExpenseCategoryEvent {
   final String? id;
   final String name;
+  final String company;
   final List<String> subCategories;
 
   SaveExpenseCategory({
     this.id,
     required this.name,
+    required this.company,
     required this.subCategories,
   });
 }
@@ -81,12 +85,14 @@ class ExpenseCategoryBloc
       if (event.id == null) {
         await _expenseUseCase.addExpenseCategory(
           name: event.name,
+          company: event.company,
           subCategories: event.subCategories,
         );
       } else {
         await _expenseUseCase.updateExpenseCategory(
           id: event.id!,
           name: event.name,
+          company: event.company,
           subCategories: event.subCategories,
         );
       }

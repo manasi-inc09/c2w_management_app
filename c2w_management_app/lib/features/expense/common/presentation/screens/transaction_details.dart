@@ -1,10 +1,10 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/wallet_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/utils/reload_after_event.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/bottomsheet_settle.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/wallet_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/bottomsheet_settle.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/create_transaction_page.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/settle_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +32,13 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   bool get _isSettled =>
       _settledLocally ||
       _expense['status']?.toString().trim().toLowerCase() == 'settled';
+
+  bool get _canEditAnyExpense => canSettleWalletExpenses();
+
+  bool get _canEditOwnExpense {
+    final email = AuthRepository.authEmail?.toLowerCase() ?? '';
+    return email.startsWith('mentor_') || email.startsWith('teamlead_');
+  }
 
   Future<void> _refreshExpense() async {
     final bloc = context.read<WalletBloc>();
@@ -65,26 +72,73 @@ class _TransactionDetailsState extends State<TransactionDetails> {
       return;
     }
 
-    if (canSettleWalletExpenses()) {
-      final settled = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: AppTheme().appBarBackgroundColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        builder: (context) => BottomsheetSettle().getBottomSheetOpen(_expense),
-      );
-      if (settled == true && mounted) {
-        setState(() => _settledLocally = true);
-      }
-      return;
+    final settled = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme().appBarBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      builder: (context) => BottomsheetSettle().getBottomSheetOpen(_expense),
+    );
+    if (settled == true && mounted) {
+      setState(() => _settledLocally = true);
     }
+  }
 
-    Navigator.push(
+  Future<void> _onEditTap() async {
+    final updated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => const CreateNewTransaction()),
+      MaterialPageRoute(
+        builder: (context) => CreateNewTransaction(expense: _expense),
+      ),
+    );
+    if (updated == true && mounted) {
+      await _refreshExpense();
+    }
+  }
+
+  Future<void> _showReceipt(String receiptUrl) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: SizedBox(
+          width: MediaQuery.of(dialogContext).size.width,
+          height: MediaQuery.of(dialogContext).size.height * 0.8,
+          child: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  child: Image.network(
+                    receiptUrl,
+                    width: MediaQuery.of(dialogContext).size.width,
+                    height: MediaQuery.of(dialogContext).size.height * 0.8,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Center(
+                      child: Text(
+                        'Unable to load receipt.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: IconButton(
+                  tooltip: 'Close receipt',
+                  onPressed: () => Navigator.pop(dialogContext),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -92,6 +146,7 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   Widget build(BuildContext context) {
     final claimantName = _expense['claimantName']?.toString() ?? 'Member';
     final profileImage = _expense['profileImage']?.toString().trim() ?? '';
+    final receiptUrl = _expense['receiptUrl']?.toString().trim() ?? '';
 
     return Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
@@ -180,8 +235,8 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      
-Text(
+
+                      Text(
                         DateFormat('dd MMM yyyy, hh:mm a').format(
                           (_expense['expenseDate'] as Timestamp)
                               .toDate()
@@ -269,25 +324,64 @@ Text(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Image.network(_expense['receiptUrl']),
+                        clipBehavior: Clip.antiAlias,
+                        child: receiptUrl.isEmpty
+                            ? const Icon(
+                                Icons.receipt_long,
+                                color: Colors.black54,
+                              )
+                            : InkWell(
+                                onTap: () => _showReceipt(receiptUrl),
+                                child: Image.network(
+                                  receiptUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
-                SettleButton().getSettleButton(
-                  context,
-                  _isSettled
-                      ? 'Already Settled'
-                      : canSettleWalletExpenses()
-                      ? 'Settle'
-                      : AuthRepository.authEmail?.contains('mentor') == true ||
-                            AuthRepository.authEmail?.contains('teamlead') ==
-                                true
-                      ? 'Edit'
-                      : 'Settle',
-                  onTap: _onActionTap,
-                ),
+                const SizedBox(height: 20),
+                if (_canEditAnyExpense)
+                  Container(
+                    height: 100,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    color: AppTheme().appBarBackgroundColor,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _onEditTap,
+                            child:Text('Edit',style:GoogleFonts.figtree(fontSize: 15,color: Colors.white),),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.blue)),
+                            onPressed: _isSettled ? null : _onActionTap,
+                            child: Text(
+                              _isSettled ? 'Already Settled' : 'Settle',style: GoogleFonts.figtree(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  SettleButton().getSettleButton(
+                    context,
+                    _canEditOwnExpense
+                        ? 'Edit'
+                        : _isSettled
+                        ? 'Already Settled'
+                        : 'Settle',
+                    onTap: _canEditOwnExpense ? _onEditTap : _onActionTap,
+                  ),
               ],
             ),
           ),

@@ -1,9 +1,9 @@
 import 'package:c2w_management_app/core/app_theme.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_category_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/bloc/expense_filter_bloc.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/add_new_category.dart';
-import 'package:c2w_management_app/features/expense/presentation/screens/subcategories_page.dart';
-import 'package:c2w_management_app/features/expense/presentation/widgets/colorlist.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/add_new_category.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/subcategories_page.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -182,6 +182,9 @@ class _ManageCategoriesState extends State<ManageCategories> {
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     final name = category['name']?.toString() ?? '';
+                    final company =
+                        category['company']?.toString() ??
+                        'Company not assigned';
                     final subCategories =
                         (category['subCategories'] as List?)
                             ?.map((value) => value.toString())
@@ -194,7 +197,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
                         top: 10,
                       ),
                       child: Container(
-                        height: 80,
+                        height: 85,
                         width: MediaQuery.sizeOf(context).width,
                         decoration: BoxDecoration(
                           color: AppTheme().appBarBackgroundColor,
@@ -208,8 +211,8 @@ class _ManageCategoriesState extends State<ManageCategories> {
                           children: [
                             const SizedBox(width: 10),
                             Container(
-                              height: 60,
-                              width: 60,
+                              height: 50,
+                              width: 50,
                               clipBehavior: Clip.antiAlias,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
@@ -221,41 +224,61 @@ class _ManageCategoriesState extends State<ManageCategories> {
                                 child: Text(
                                   name.isEmpty ? '?' : name[0].toUpperCase(),
                                   style: GoogleFonts.figtree(
-                                    fontSize: 30,
+                                    fontSize: 25,
                                     fontWeight: FontWeight(600),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: GoogleFonts.figtree(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight(600),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  "${subCategories.length} Sub-Categories",
-                                  style: GoogleFonts.figtree(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight(400),
-                                    color: const Color.fromRGBO(
-                                      255,
-                                      255,
-                                      255,
-                                      0.6,
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.figtree(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight(600),
+                                      color: Colors.white,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    company,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.figtree(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight(500),
+                                      color: const Color.fromRGBO(
+                                        255,
+                                        255,
+                                        255,
+                                        0.6,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    "${subCategories.length} Sub-Categories",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.figtree(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight(400),
+                                      color: const Color.fromRGBO(
+                                        255,
+                                        255,
+                                        255,
+                                        0.6,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const Spacer(),
                             IconButton(
                               onPressed: () async {
                                 await Navigator.push<bool>(
