@@ -1,34 +1,111 @@
-
-
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthRepository {
   static const String _loginStatusKey = 'is_logged_in';
+  static const String _userCreationAppName = 'user-creation';
+  static FirebaseApp? _userCreationApp;
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
   UserCredential? userCredential;
-  Map<String,dynamic>? obj ;
-   static String? authEmail;
+  Map<String, dynamic>? obj;
+  static String? authEmail;
+
+  static const Map<String, String> _roleAliases = {
+    'salesadmin': 'salesadmin',
+    'sales admin': 'salesadmin',
+    'teamlead': 'teamlead',
+    'team lead': 'teamlead',
+    'mentor': 'mentor',
+    'instructor': 'instructor',
+    'superadmin': 'superadmin',
+    'super admin': 'superadmin',
+  };
+
+  static String normalizeRole(String role) {
+    final normalized = role.trim().toLowerCase().replaceAll('_', ' ');
+    return _roleAliases[normalized] ?? normalized.replaceAll(' ', '');
+  }
+
+  static String cleanEmail(String? email) {
+    final trimmed = (email ?? '').trim();
+    if (trimmed.isEmpty) return '';
+    return trimmed.replaceFirst(
+      RegExp(
+        r'^(superadmin|salesadmin|teamlead|instructor|mentor|admin)_',
+        caseSensitive: false,
+      ),
+      '',
+    );
+  }
+
+  static Future<bool> isProfileComplete({String? email}) async {
+    final resolvedEmail = cleanEmail(
+      email ?? authEmail ?? FirebaseAuth.instance.currentUser?.email,
+    );
+    if (resolvedEmail.isEmpty) return false;
+
+    try {
+      final data = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(resolvedEmail)
+          .get();
+
+      if (!data.exists || data.data() == null) return false;
+
+      final userData = data.data()!;
+      final requiredFields = [
+        userData['Mobile No'],
+        userData['UPI ID'],
+        userData['DOB'],
+        userData['profileImage'],
+      ];
+
+      return requiredFields.every(
+        (field) => field != null && field.toString().trim().isNotEmpty,
+      );
+    } catch (error, stackTrace) {
+      log('Profile completeness check failed: $error', stackTrace: stackTrace);
+      return false;
+    }
+  }
 
   Future<UserCredential> loginUser({
     required String email,
     required String pass,
     required String role,
+  }) async {
+    final normalizedRole = normalizeRole(role);
+    final normalizedEmail = cleanEmail(email).toLowerCase();
+    if (normalizedEmail.isEmpty) {
+      throw ArgumentError('Email is required to log in.');
+    }
 
-  }) async{
-    role=role.toLowerCase();
-    try{
-      authEmail = "${role}_$email";
-      log("login email : ${role}_$email");
-       userCredential = await  _firebaseAuth
-                  .signInWithEmailAndPassword(email:authEmail!,password: pass);
+    final userData = await _firebaseFirestore
+        .collection('UserData')
+        .doc(normalizedEmail)
+        .get();
+    final registeredRole = userData.data()?['Role']?.toString();
+    if (registeredRole != null &&
+        registeredRole.trim().isNotEmpty &&
+        normalizeRole(registeredRole) != normalizedRole) {
+      throw LoginRoleMismatchException();
+    }
 
-      log("UserCredentials : ${userCredential}");
+    try {
+      authEmail = '${normalizedRole}_$normalizedEmail';
+      log('login email : $authEmail');
+      userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: authEmail!,
+        password: pass,
+      );
+
+      log('UserCredentials : $userCredential');
     } on FirebaseAuthException catch (err) {
       authEmail = null;
       log('Login failed: ${err.message}');
@@ -64,21 +141,37 @@ class AuthRepository {
     required String email,
     required String pass,
     required String role,
+  }) async {
+    role = role.toLowerCase();
+    final createdEmail = '${role}_$email';
 
-  }) async{
-    role=role.toLowerCase();
-    try{
-      authEmail = "${role}_$email";
-      log("login email : ${role}_$email");
-       userCredential = await  _firebaseAuth
-                  .createUserWithEmailAndPassword(email:authEmail!,password: pass);
+    final app = _userCreationApp ??= await Firebase.initializeApp(
+      name: _userCreationAppName,
+      options: Firebase.app().options,
+    );
+    final creationAuth = FirebaseAuth.instanceFor(app: app);
 
-      // log("UserCredentials : ${userCredential}");
-    }on FirebaseAuthException catch (err){
+    try {
+      log('creating user email : $createdEmail');
+      final credential = await creationAuth.createUserWithEmailAndPassword(
+        email: createdEmail,
+        password: pass,
+      );
 
-      log(" error message ${err.message}");
+      try {
+        await creationAuth.signOut();
+      } catch (error, stackTrace) {
+        log(
+          'Created user but could not sign out the isolated account: $error',
+          stackTrace: stackTrace,
+        );
+      }
+
+      return credential;
+    } on FirebaseAuthException catch (error) {
+      log('User creation failed: ${error.message}');
+      rethrow;
     }
-    return userCredential!;
   }
 
   Future<void> signupdata({
@@ -88,29 +181,30 @@ class AuthRepository {
     required String upi,
     required String dob,
     required String role,
-  })async{
-    role=role.toLowerCase();
-    try{
-      print("in repo email: ${email}");
-      log("${role}_${email}");
-     obj = {
-                  "Name":name,
-                  "Email":email,
-                  "Mobile No":mobno,
-                  "UPI ID":upi,
-                  "DOB":dob,
-                  "Role":role
-                 
-                };
-                log("data adding in firebase.................");
-    }on FirebaseException catch (err){
-      log("${err.message}");
+  }) async {
+    role = role.toLowerCase();
+    final userData = <String, dynamic>{
+      'Name': name,
+      'Email': email,
+      'Role': role,
+    };
+
+    if (mobno.trim().isNotEmpty) {
+      userData['Mobile No'] = mobno.trim();
     }
-    return await _firebaseFirestore.collection("UserData").doc(email).set(obj!);
-         
-    
+    if (upi.trim().isNotEmpty) {
+      userData['UPI ID'] = upi.trim();
+    }
+    if (dob.trim().isNotEmpty) {
+      userData['DOB'] = dob.trim();
+    }
+
+    obj = userData;
+    log('data adding in firebase.................');
+    return await _firebaseFirestore.collection('UserData').doc(email).set(obj!);
   }
+}
 
-
-
+class LoginRoleMismatchException implements Exception {
+  const LoginRoleMismatchException();
 }

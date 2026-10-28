@@ -11,8 +11,10 @@ import 'package:c2w_management_app/features/enquiry/dashboard/presentation/scree
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/enquiry_person_profile.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/individual_expenses.dart';
-
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/complete_profile_screen.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/users_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +29,6 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
-
     try {
       context.read<DashBoardBloc>();
       return const _DashboardViewContent();
@@ -54,9 +55,19 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   @override
   void initState() {
     super.initState();
-    // Refresh on each dashboard entry so results use the current account's access.
+    _ensureProfileComplete();
     final bloc = context.read<DashBoardBloc>();
     bloc.add(const FetchEnquiriesEvent());
+  }
+
+  Future<void> _ensureProfileComplete() async {
+    final isComplete = await AuthRepository.isProfileComplete();
+    if (!mounted || isComplete) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const CompleteProfileScreen()),
+      (route) => false,
+    );
   }
 
   /// Null-safe access to the logged in email (avoids `authEmail!` crashes).
@@ -80,6 +91,9 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   /// their own IndividualExpenses screen.
   bool get _isExpenseManagerRole =>
       _email.contains("instructor") || _email.contains("superadmin");
+
+  bool get _canViewUsers =>
+      _email.startsWith('instructor_') || _email.startsWith('superadmin_');
 
   Future<void> _refreshEnquiries(BuildContext context) async {
     final bloc = context.read<DashBoardBloc>();
@@ -237,8 +251,8 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                             message: 'Call status: ${item.callStatus}',
                             child: Icon(
                               Icons.chat,
-                              color: item.callStatus.trim().toLowerCase() ==
-                                      'done'
+                              color:
+                                  item.callStatus.trim().toLowerCase() == 'done'
                                   ? const Color.fromARGB(255, 207, 85, 85)
                                   : Colors.white30,
                               size: 14,
@@ -250,9 +264,8 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                                 'Admission status: ${item.admissionStatus}',
                             child: Icon(
                               Icons.check_circle,
-                              color: item.admissionStatus
-                                          .trim()
-                                          .toLowerCase() ==
+                              color:
+                                  item.admissionStatus.trim().toLowerCase() ==
                                       'completed'
                                   ? const Color(0xFF19D18A)
                                   : Colors.white30,
@@ -331,10 +344,12 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   Widget _buildHomeTab(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     final isCompact = screenSize.width < 380;
-    final heroImageSize =
-        (screenSize.width * 0.26).clamp(72.0, 100.0).toDouble();
-    final sectionSpacing =
-        (screenSize.height * 0.018).clamp(8.0, 16.0).toDouble();
+    final heroImageSize = (screenSize.width * 0.26)
+        .clamp(72.0, 100.0)
+        .toDouble();
+    final sectionSpacing = (screenSize.height * 0.018)
+        .clamp(8.0, 16.0)
+        .toDouble();
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -400,202 +415,204 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Image.asset(
-                      "assets/images/sales_admin/notes.png",
-                      width: heroImageSize,
-                      height: heroImageSize,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Create New Enquiry",
-                      style: GoogleFonts.figtree(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        "assets/images/sales_admin/notes.png",
+                        width: heroImageSize,
+                        height: heroImageSize,
+                        fit: BoxFit.cover,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Add student information to begin the course\nenquiry process.",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.figtree(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color.fromRGBO(110, 75, 239, 1),
-                            Color.fromRGBO(253, 85, 42, 1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const CreateEquiry(),
-                            ),
-                          );
-                          // Refresh the list when coming back
-                          if (context.mounted) {
-                            context.read<DashBoardBloc>().add(
-                              const FetchEnquiriesEvent(),
-                            );
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.add,
+                      const SizedBox(height: 8),
+                      Text(
+                        "Create New Enquiry",
+                        style: GoogleFonts.figtree(
                           color: Colors.white,
-                          size: 18,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        label: Text(
-                          "Add Student Details",
-                          style: GoogleFonts.figtree(
-                            color: Colors.white,
-                            fontSize: 13,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Add student information to begin the course\nenquiry process.",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.figtree(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color.fromRGBO(110, 75, 239, 1),
+                              Color.fromRGBO(253, 85, 42, 1),
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const CreateEquiry(),
+                              ),
+                            );
+                            // Refresh the list when coming back
+                            if (context.mounted) {
+                              context.read<DashBoardBloc>().add(
+                                const FetchEnquiriesEvent(),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: Text(
+                            "Add Student Details",
+                            style: GoogleFonts.figtree(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: sectionSpacing),
-                    const Divider(
-                      color: Color.fromRGBO(255, 255, 255, 0.06),
-                      thickness: 1,
-                      height: 1,
-                    ),
-                  ],
+                      SizedBox(height: sectionSpacing),
+                      const Divider(
+                        color: Color.fromRGBO(255, 255, 255, 0.06),
+                        thickness: 1,
+                        height: 1,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    SizedBox(height: sectionSpacing),
-                    BlocBuilder<DashBoardBloc, DashBoardState>(
-                      builder: (context, state) {
-                        final count = state is DashBoardLoaded
-                            ? state.enquiries.length
-                            : null;
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 10 : 16,
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      SizedBox(height: sectionSpacing),
+                      BlocBuilder<DashBoardBloc, DashBoardState>(
+                        builder: (context, state) {
+                          final count = state is DashBoardLoaded
+                              ? state.enquiries.length
+                              : null;
 
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  _isTeamLeadMentorOrInstructor
-                                      ? 'My Enquiries'
-                                      : 'New Enquiry',
-                                  style: GoogleFonts.figtree(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                if (count != null) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    _isTeamLeadMentorOrInstructor
+                                        ? 'My Enquiries'
+                                        : 'New Enquiry',
+                                    style: GoogleFonts.figtree(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromRGBO(
-                                        110,
-                                        75,
-                                        239,
-                                        0.25,
+                                  ),
+                                  if (count != null) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
+                                      decoration: BoxDecoration(
                                         color: const Color.fromRGBO(
                                           110,
                                           75,
                                           239,
-                                          0.8,
+                                          0.25,
                                         ),
-                                        width: 1,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color.fromRGBO(
+                                            110,
+                                            75,
+                                            239,
+                                            0.8,
+                                          ),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "$count",
+                                        style: GoogleFonts.figtree(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
-                                    child: Text(
-                                      "$count",
-                                      style: GoogleFonts.figtree(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                                const Spacer(),
-                                // "See all" is hidden for instructor_ / mentor_ / teamlead_
-                                if (_canOpenEnquiryOverview) ...[
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => Enquiry(),
-                                        ),
-                                      );
-                                    },
-                                    child:
-                                        (AuthRepository.authEmail?.contains(
-                                                  "salesadmin_",
-                                                ) ==
-                                                true ||
-                                            AuthRepository.authEmail?.contains(
-                                                  "superadmin_",
-                                                ) ==
-                                                true)
-                                        ? Row(
-                                          children: [
-                                            Text(
-                                                "See all",
-                                                style: GoogleFonts.figtree(
-                                                  fontSize: 14,
+                                  ],
+                                  const Spacer(),
+                                  // "See all" is hidden for instructor_ / mentor_ / teamlead_
+                                  if (_canOpenEnquiryOverview) ...[
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) => Enquiry(),
+                                          ),
+                                        );
+                                      },
+                                      child:
+                                          (AuthRepository.authEmail?.contains(
+                                                    "salesadmin_",
+                                                  ) ==
+                                                  true ||
+                                              AuthRepository.authEmail
+                                                      ?.contains(
+                                                        "superadmin_",
+                                                      ) ==
+                                                  true)
+                                          ? Row(
+                                              children: [
+                                                Text(
+                                                  "See all",
+                                                  style: GoogleFonts.figtree(
+                                                    fontSize: 14,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                  Icons.chevron_right,
                                                   color: Colors.grey,
                                                 ),
-                                              ),
-                                              const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.grey,
-                                  ),
-                                          ],
-                                        )
-                                        : const SizedBox.shrink(),
-                                  ),
-
+                                              ],
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            _buildEnquiriesList(context, state),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildEnquiriesList(context, state),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ),
           ),
         ),
@@ -605,24 +622,51 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Tab 0: Home (enquiries) | Tab 1: Expenses (role based)
-      body: IndexedStack(
-        index: currentIndex,
-        children: [
-          _buildHomeTab(context),
-          _isExpenseManagerRole ? ExpenseManager() : IndividualExpenses(),
-        ],
+    final pages = <Widget>[
+      _buildHomeTab(context),
+      _isExpenseManagerRole ? ExpenseManager() : IndividualExpenses(),
+    ];
+    if (_canViewUsers) {
+      pages.add(const UsersScreen());
+    }
+
+    final navItems = <BottomNavigationBarItem>[
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.contact_support_outlined),
+        label: 'Enquiry',
       ),
-      // Sales admin does not get a bottom navigation bar
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.currency_rupee),
+        label: 'Expense',
+      ),
+    ];
+    if (_canViewUsers) {
+      navItems.add(
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.people_alt_outlined),
+          label: 'Users',
+        ),
+      );
+    }
+
+    return Scaffold(
+      body: IndexedStack(index: currentIndex, children: pages),
       bottomNavigationBar: _isSalesAdmin
           ? null
           : CommonBottomNavigationBar(
               currentIndex: currentIndex,
+              items: navItems,
               onTap: (index) {
-                setState(() {
-                  currentIndex = index;
-                });
+                if (index < pages.length) {
+                  if (index != currentIndex) {
+                    context.read<ExpenseFilterBloc>().add(
+                      ResetExpenseFilters(),
+                    );
+                  }
+                  setState(() {
+                    currentIndex = index;
+                  });
+                }
               },
             ),
     );

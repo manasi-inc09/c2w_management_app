@@ -22,6 +22,8 @@ class MembersDetailList extends StatefulWidget {
 }
 
 class _MembersDetailListState extends State<MembersDetailList> {
+  late final ExpenseFilterBloc _expenseFilterBloc;
+
   Future<void> _refreshMemberDetails() {
     final bloc = context.read<MemberDetailsBloc>();
     return reloadAfterEvent(
@@ -35,7 +37,15 @@ class _MembersDetailListState extends State<MembersDetailList> {
   @override
   void initState() {
     super.initState();
+    _expenseFilterBloc = context.read<ExpenseFilterBloc>();
+    _expenseFilterBloc.add(ResetExpenseFilters());
     context.read<MemberDetailsBloc>().add(LoadMemberDetails(widget.member));
+  }
+
+  @override
+  void dispose() {
+    _expenseFilterBloc.add(ResetExpenseFilters());
+    super.dispose();
   }
 
   double _amount(dynamic value) {

@@ -23,6 +23,7 @@ class IndividualExpenses extends StatefulWidget {
 }
 
 class _IndividualExpensesState extends State<IndividualExpenses> {
+  late final ExpenseFilterBloc _expenseFilterBloc;
   String selectedOption = "Option 1";
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -75,6 +76,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
 
   @override
   void dispose() {
+    _expenseFilterBloc.add(ResetExpenseFilters());
     _searchController.dispose();
     super.dispose();
   }
@@ -104,6 +106,8 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
   @override
   void initState() {
     super.initState();
+    _expenseFilterBloc = context.read<ExpenseFilterBloc>();
+    _expenseFilterBloc.add(ResetExpenseFilters());
     final role = _authRole;
     if (widget.showOnlyMyTransactions) {
       final email = _profileEmail;

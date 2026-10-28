@@ -33,6 +33,8 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
           );
         }
         emit(LoginSuccessful(sessionSaved: sessionSaved));
+      } on LoginRoleMismatchException {
+        emit(LoginRoleMismatch());
       } on FirebaseException catch (e) {
         if (e.code == 'invalid-credential' ||
             e.code == 'wrong-password' ||
@@ -60,18 +62,6 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
       }
     });
 
-    on<SignupAuthEvent>((event, emit) async {
-      print("SignUp auth Event Called");
-      print("Email: ${event.email}");
-      emit(LoginSignupState(email: event.email, role: event.role));
-      try {
-        await _authRepository.signupUser(email: event.email, pass: event.pass,role: event.role);
-      } on FirebaseException catch (e) {
-        print(e.message);
-      }
-      print("SignUp Auth emitted");
-    });
-
     on<SignupDataEvent>((event, emit) async {
       print("Signup Event Called");
       print("Name: ${event.name}");
@@ -79,6 +69,11 @@ class Loginsignupbloc extends Bloc<LoginSignupEvent, LoginSignupState> {
       emit(SignupLoading());
 
       try {
+        await _authRepository.signupUser(
+          email: event.email,
+          pass: event.password,
+          role: event.role,
+        );
         await _authRepository.signupdata(
           name: event.name,
           email: event.email,

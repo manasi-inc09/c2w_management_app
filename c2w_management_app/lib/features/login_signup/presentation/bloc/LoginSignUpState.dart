@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 
 class LoginSignupState extends Equatable {
@@ -10,11 +9,16 @@ class LoginSignupState extends Equatable {
   final String? role;
 
   const LoginSignupState({
-    this.name,this.email,this.mob,this.upi,this.dob,this.role
+    this.name,
+    this.email,
+    this.mob,
+    this.upi,
+    this.dob,
+    this.role,
   });
 
   @override
-  List<Object?> get props => [name,email,mob,upi,dob,role];
+  List<Object?> get props => [name, email, mob, upi, dob, role];
 }
 
 abstract class LoginState extends Equatable {
@@ -37,6 +41,8 @@ class LoginSuccessful extends LoginSignupState {
 }
 
 class LoginInvalidCredentials extends LoginSignupState {}
+
+class LoginRoleMismatch extends LoginSignupState {}
 
 class LoginFailure extends LoginSignupState {
   final String message;
@@ -75,5 +81,5 @@ class SignupFailure extends LoginSignupState {
   const SignupFailure(this.message);
 
   @override
-  List<Object?> get props => [...super.props,message];
+  List<Object?> get props => [...super.props, message];
 }

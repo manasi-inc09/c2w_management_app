@@ -21,6 +21,8 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  late final ExpenseFilterBloc _expenseFilterBloc;
+
   Future<void> _refreshWallet() {
     final bloc = context.read<WalletBloc>();
     return reloadAfterEvent(
@@ -34,7 +36,15 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   void initState() {
     super.initState();
+    _expenseFilterBloc = context.read<ExpenseFilterBloc>();
+    _expenseFilterBloc.add(ResetExpenseFilters());
     context.read<WalletBloc>().add(LoadWallet());
+  }
+
+  @override
+  void dispose() {
+    _expenseFilterBloc.add(ResetExpenseFilters());
+    super.dispose();
   }
 
   Future<void> _showTopUpDialog() async {

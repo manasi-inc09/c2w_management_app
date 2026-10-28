@@ -1,8 +1,9 @@
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
-import 'package:c2w_management_app/features/login_signup/presentation/screens/signup.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/complete_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -77,245 +78,269 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
+  Future<void> _handleSuccessfulLogin(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final profileComplete = await AuthRepository.isProfileComplete();
+    if (!mounted) return;
+
+    if (profileComplete) {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const DashboardView()),
+      );
+      return;
+    }
+
+    navigator.pushReplacement(
+      MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<Loginsignupbloc,LoginSignupState>(
+    return BlocConsumer<Loginsignupbloc, LoginSignupState>(
       listener: (context, state) {
-        if(state is LoginSuccessful){
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-              state.sessionSaved
-                  ? "Login Successful!!"
-                  : "Login successful, but this device could not save your session.",
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: state.sessionSaved ? Colors.green : Colors.orange,
-          ));
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context)=>DashboardView())
-          );
-
-        }else if(state is LoginInvalidCredentials){
+        if (state is LoginSuccessful) {
           ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid username or password'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else if (state is LoginFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  },
-      builder:(context,state){
-        final isLoading = state is LoginLoading;
-       return Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: _bg,
-        body: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color.fromRGBO(32, 34, 58, 1),
-                  Color.fromRGBO(7, 10, 27, 0),
-                ],
+            SnackBar(
+              content: Text(
+                state.sessionSaved
+                    ? "Login Successful!!"
+                    : "Login successful, but this device could not save your session.",
+                style: const TextStyle(color: Colors.white),
               ),
+              backgroundColor: state.sessionSaved
+                  ? Colors.green
+                  : Colors.orange,
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 60),
-                    Text(
-                      'Welcome back!',
-                      style: GoogleFonts.figtree(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Enter username or password to continue',
-                      style: TextStyle(color: Color(0xFF9A9DB5), fontSize: 14),
-                    ),
-                    const SizedBox(height: 30),
-      
-                    _label('Email'),
-                    TextField(
-                      controller: _userCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      cursorColor: Colors.white,
-                      decoration: _decoration('Enter your registered username'),
-                    ),
-      
-                    _label('Password'),
-                    TextField(
-                      
-                      controller: _passCtrl,
-                      obscureText: _obscure,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      cursorColor: Colors.white,
-                      decoration: _decoration(
-                        'Enter a password',
-                        
-                        suffix: IconButton(
-                          icon: Icon(
-                            _obscure
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            color: _hint,
-                            size: 20,
-                            
-                          ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+          );
+          _handleSuccessfulLogin(context);
+        } else if (state is LoginRoleMismatch) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Your selected role is incorrect for this account.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (state is LoginInvalidCredentials) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid username or password'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (state is LoginFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is LoginLoading;
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: _bg,
+          body: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromRGBO(32, 34, 58, 1),
+                    Color.fromRGBO(7, 10, 27, 0),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 60),
+                      Text(
+                        'Welcome back!',
+                        style: GoogleFonts.figtree(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-      
-                    _label('Role'),
-                    DropdownButtonFormField<String>(
-                      initialValue: _roleCtrl.text.isEmpty ? null : _roleCtrl.text,
-                      hint: const Text(
-                        'Select your role',
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Enter username or password to continue',
                         style: TextStyle(
                           color: Color(0xFF9A9DB5),
                           fontSize: 14,
                         ),
                       ),
-                      dropdownColor: const Color(0xFF12142A),
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      decoration: const InputDecoration(
-                        hintText: 'Select your role',
-                        hintStyle: TextStyle(
-                          color: Color(0xFF9A9DB5),
+                      const SizedBox(height: 30),
+
+                      _label('Email'),
+                      TextField(
+                        controller: _userCtrl,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        cursorColor: Colors.white,
+                        decoration: _decoration(
+                          'Enter your registered username',
+                        ),
+                      ),
+
+                      _label('Password'),
+                      TextField(
+                        controller: _passCtrl,
+                        obscureText: _obscure,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 14,
                         ),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'instructor',
-                          child: Text('Instructor'),
-                        ),
-                        DropdownMenuItem(value: 'mentor', child: Text('Mentor')),
-                        DropdownMenuItem(
-                          value: 'teamlead',
-                          child: Text('Team Lead'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'salesadmin',
-                          child: Text('Sales Admin'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'superadmin',
-                          child: Text('Super Admin'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _roleCtrl.text = value ?? '';
-                        });
-                      },
-                    ),
-      
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Forgot Password',
-                          style: TextStyle(
-                            color: Color(0xFF9A9DB5),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-      
-                    const SizedBox(height: 200),
-      
-                    // Spacer(),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: (_canSubmit && !isLoading)
-                            ? () {
-                                context.read<Loginsignupbloc>().add(
-                                  LoginEvent(
-                                    _userCtrl.text.trim(),
-                                    _passCtrl.text,
-                                    _roleCtrl.text.trim(),
-                                  ),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _accent,
-                          disabledBackgroundColor: isLoading
-                              ? const Color(0xFF0B77B5)
-                              : const Color(0xFF2A2D45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'Log In',
-                                style: TextStyle(
-                                  color: _canSubmit
-                                      ? Colors.white
-                                      : Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => SignUpScreen(),
+                        cursorColor: Colors.white,
+                        decoration: _decoration(
+                          'Enter a password',
+
+                          suffix: IconButton(
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: _hint,
+                              size: 20,
                             ),
-                          );
-                        },
-                        child: const Text(
-                          'Create an Account',
-                          style: TextStyle(
-                            color: Color(0xFF9A9DB5),
-                            fontSize: 16,
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+
+                      _label('Role'),
+                      DropdownButtonFormField<String>(
+                        initialValue: _roleCtrl.text.isEmpty
+                            ? null
+                            : _roleCtrl.text,
+                        hint: const Text(
+                          'Select your role',
+                          style: TextStyle(
+                            color: Color(0xFF9A9DB5),
+                            fontSize: 14,
+                          ),
+                        ),
+                        dropdownColor: const Color(0xFF12142A),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Select your role',
+                          hintStyle: TextStyle(
+                            color: Color(0xFF9A9DB5),
+                            fontSize: 14,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'instructor',
+                            child: Text('Instructor'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'mentor',
+                            child: Text('Mentor'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'teamlead',
+                            child: Text('Team Lead'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'salesadmin',
+                            child: Text('Sales Admin'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'superadmin',
+                            child: Text('Super Admin'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _roleCtrl.text = value ?? '';
+                          });
+                        },
+                      ),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            'Forgot Password',
+                            style: TextStyle(
+                              color: Color(0xFF9A9DB5),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 200),
+
+                      // Spacer(),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: (_canSubmit && !isLoading)
+                              ? () {
+                                  context.read<Loginsignupbloc>().add(
+                                    LoginEvent(
+                                      _userCtrl.text.trim(),
+                                      _passCtrl.text,
+                                      _roleCtrl.text.trim(),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _accent,
+                            disabledBackgroundColor: isLoading
+                                ? const Color(0xFF0B77B5)
+                                : const Color(0xFF2A2D45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  'Log In',
+                                  style: TextStyle(
+                                    color: _canSubmit
+                                        ? Colors.white
+                                        : Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-      }
+        );
+      },
     );
   }
 }

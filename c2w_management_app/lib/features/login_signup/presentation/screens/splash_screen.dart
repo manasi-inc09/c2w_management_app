@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
+import 'package:c2w_management_app/features/login_signup/presentation/screens/complete_profile_screen.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (shouldOpenDashboard) {
         AuthRepository.authEmail = firebaseUser.email;
+        shouldOpenDashboard = await AuthRepository.isProfileComplete();
       } else if (savedLoginStatus) {
         await authRepository.clearLoginStatus();
       }
@@ -49,7 +51,9 @@ class _SplashScreenState extends State<SplashScreen> {
       MaterialPageRoute(
         builder: (context) => shouldOpenDashboard
             ? const DashboardView()
-            : const LoginScreen(),
+            : (AuthRepository.authEmail != null
+                ? const CompleteProfileScreen()
+                : const LoginScreen()),
       ),
     );
   }
