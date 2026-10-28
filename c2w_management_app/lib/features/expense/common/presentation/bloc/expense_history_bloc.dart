@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:c2w_management_app/features/expense/teamlead/domain/usescases/teamlead_expense_usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -31,6 +33,7 @@ class ExpenseHistoryFailure extends ExpenseHistoryState {
 
 class ExpenseHistoryBloc
     extends Bloc<ExpenseHistoryEvent, ExpenseHistoryState> {
+  static const _loadTimeout = Duration(seconds: 30);
   final CreateExpenseUseCase _expenseUseCase;
 
   ExpenseHistoryBloc({required CreateExpenseUseCase expenseUseCase})
@@ -44,12 +47,9 @@ class ExpenseHistoryBloc
     LoadExpensesByEmail event,
     Emitter<ExpenseHistoryState> emit,
   ) async {
-    emit(ExpenseHistoryLoading());
-    await emit.forEach(
+    await _loadStream(
       _expenseUseCase.watchExpensesByEmail(event.email),
-      onData: ExpenseHistoryLoaded.new,
-      onError: (error, stackTrace) =>
-          ExpenseHistoryFailure(_getErrorMessage(error)),
+      emit,
     );
   }
 
@@ -57,13 +57,41 @@ class ExpenseHistoryBloc
     LoadAllExpenses event,
     Emitter<ExpenseHistoryState> emit,
   ) async {
-    emit(ExpenseHistoryLoading());
-    await emit.forEach(
+    await _loadStream(
       _expenseUseCase.watchAllExpenses(),
-      onData: ExpenseHistoryLoaded.new,
-      onError: (error, stackTrace) =>
-          ExpenseHistoryFailure(_getErrorMessage(error)),
+      emit,
     );
+  }
+
+  Future<void> _loadStream(
+    Stream<List<Map<String, dynamic>>> expensesStream,
+    Emitter<ExpenseHistoryState> emit,
+  ) async {
+    emit(ExpenseHistoryLoading());
+    final iterator = StreamIterator(expensesStream);
+    try {
+      final hasInitialData = await iterator.moveNext().timeout(
+        _loadTimeout,
+        onTimeout: () => throw TimeoutException(
+          'Expense loading timed out after 30 seconds.',
+        ),
+      );
+      if (!hasInitialData) {
+        emit(ExpenseHistoryFailure('No response received from the server.'));
+        return;
+      }
+
+      emit(ExpenseHistoryLoaded(iterator.current));
+      while (await iterator.moveNext()) {
+        emit(ExpenseHistoryLoaded(iterator.current));
+      }
+    } catch (error) {
+      if (!emit.isDone) {
+        emit(ExpenseHistoryFailure(_getErrorMessage(error)));
+      }
+    } finally {
+      await iterator.cancel();
+    }
   }
 
   String _getErrorMessage(Object error) {

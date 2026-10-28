@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:c2w_management_app/features/expense/teamlead/domain/usescases/teamlead_expense_usecase.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,6 +24,7 @@ class ExpenseManagerFailure {
 }
 
 class ExpenseManagerBloc extends Bloc<LoadExpenseManagerData, Object> {
+  static const _loadTimeout = Duration(seconds: 30);
   final CreateExpenseUseCase _expenseUseCase;
 
   ExpenseManagerBloc({required CreateExpenseUseCase expenseUseCase})
@@ -36,7 +39,12 @@ class ExpenseManagerBloc extends Bloc<LoadExpenseManagerData, Object> {
       final results = await Future.wait([
         _expenseUseCase.getAllExpenses(),
         _expenseUseCase.getMembers(),
-      ]);
+      ]).timeout(
+        _loadTimeout,
+        onTimeout: () => throw TimeoutException(
+          'Expense data loading timed out after 30 seconds.',
+        ),
+      );
       final expenses = results[0];
       final members = results[1];
       _sortExpenses(expenses);
@@ -72,6 +80,7 @@ class MembersFailure {
 }
 
 class MembersBloc extends Bloc<LoadMembers, Object> {
+  static const _loadTimeout = Duration(seconds: 30);
   final CreateExpenseUseCase _expenseUseCase;
 
   MembersBloc({required CreateExpenseUseCase expenseUseCase})
@@ -83,8 +92,17 @@ class MembersBloc extends Bloc<LoadMembers, Object> {
   Future<void> _load(LoadMembers event, Emitter<Object> emit) async {
     emit(MembersLoading());
     try {
-      final members = await _expenseUseCase.getMembers();
-      final expenses = await _expenseUseCase.getAllExpenses();
+      final results = await Future.wait([
+        _expenseUseCase.getMembers(),
+        _expenseUseCase.getAllExpenses(),
+      ]).timeout(
+        _loadTimeout,
+        onTimeout: () => throw TimeoutException(
+          'Member data loading timed out after 30 seconds.',
+        ),
+      );
+      final members = results[0];
+      final expenses = results[1];
       final expensesByEmail = <String, List<Map<String, dynamic>>>{};
 
       for (final expense in expenses) {
@@ -138,6 +156,7 @@ class MemberDetailsFailure {
 }
 
 class MemberDetailsBloc extends Bloc<LoadMemberDetails, Object> {
+  static const _loadTimeout = Duration(seconds: 30);
   final CreateExpenseUseCase _expenseUseCase;
 
   MemberDetailsBloc({required CreateExpenseUseCase expenseUseCase})
@@ -153,7 +172,14 @@ class MemberDetailsBloc extends Bloc<LoadMemberDetails, Object> {
       if (email == null || email.isEmpty) {
         throw Exception('The selected member does not have an email address.');
       }
-      final expenses = await _expenseUseCase.getExpensesByEmail(email);
+      final expenses = await _expenseUseCase
+          .getExpensesByEmail(email)
+          .timeout(
+            _loadTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Member expense loading timed out after 30 seconds.',
+            ),
+          );
       _sortExpenses(expenses);
       emit(MemberDetailsLoaded(member: event.member, expenses: expenses));
     } catch (error) {

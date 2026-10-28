@@ -24,6 +24,11 @@ class GetEnquiryData {
           email.startsWith('mentor_') ||
           email.startsWith('instructor_');
       final snapshot = await _firestore.collection('Enquiries').get();
+      if (snapshot.docs.isEmpty) {
+        log('No enquiries found in Firestore');
+        return const <EnquiryModel>[];
+      }
+
       final enquiries = <EnquiryModel>[];
       for (final doc in snapshot.docs) {
         final parent = doc.data();
@@ -35,6 +40,24 @@ class GetEnquiryData {
 
         final history = parent['Enquiry History'];
         if (history is List && history.isNotEmpty) {
+          if (isSalesAdminOrSuperAdmin) {
+            Map? latestEntry;
+            for (final entry in history.reversed) {
+              if (entry is Map) {
+                latestEntry = entry;
+                break;
+              }
+            }
+            if (latestEntry == null) continue;
+
+            final latest = Map<String, dynamic>.from(latestEntry)
+              ..['Mobile No'] = parent['Mobile No']
+              ..['College Name'] = parent['College Name']
+              ..['Enquiry History'] = history;
+            enquiries.add(EnquiryModel.fromMap(latest, id: doc.id));
+            continue;
+          }
+
           final entries = history.whereType<Map>().map((value) {
             final item = Map<String, dynamic>.from(value);
             item['Mobile No'] ??= parent['Mobile No'];
@@ -51,8 +74,6 @@ class GetEnquiryData {
           }).toList();
           if (entries.isEmpty) continue;
 
-          // Team leads, mentors, and instructors get one card per enquiry
-          // they personally created, including older entries in the history.
           if (isTeamLeadMentorOrInstructor) {
             for (final entry in entries) {
               enquiries.add(

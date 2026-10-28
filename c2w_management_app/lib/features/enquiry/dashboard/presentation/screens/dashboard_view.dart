@@ -162,21 +162,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
 
     if (state is DashBoardEmpty ||
         (state is DashBoardLoaded && state.enquiries.isEmpty)) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
-        child: Center(
-          child: Column(
-            children: [
-              const Icon(Icons.inbox_outlined, color: Colors.white38, size: 44),
-              const SizedBox(height: 10),
-              Text(
-                'No enquiries found',
-                style: GoogleFonts.figtree(color: Colors.white54, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     if (state is DashBoardLoaded) {

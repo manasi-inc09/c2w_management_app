@@ -98,9 +98,11 @@ class WalletActionFailure extends WalletLoaded {
 }
 
 class WalletBloc extends Bloc<WalletEvent, WalletState> {
+  static const _loadTimeout = Duration(seconds: 30);
   final CreateExpenseUseCase _expenseUseCase;
   StreamSubscription<double>? _balanceSubscription;
   StreamSubscription<List<Map<String, dynamic>>>? _expensesSubscription;
+  Timer? _initialLoadTimer;
   double? _latestBalance;
   List<Map<String, dynamic>>? _latestExpenses;
 
@@ -112,6 +114,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     on<SettleWalletExpense>(_settle);
     on<_WalletDataChanged>(_updateWalletData);
     on<_WalletStreamFailure>((event, emit) {
+      _initialLoadTimer?.cancel();
       emit(WalletLoadFailure(_errorMessage(event.error)));
     });
   }
@@ -133,9 +136,19 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   Future<void> _load(LoadWallet event, Emitter<WalletState> emit) async {
     await _balanceSubscription?.cancel();
     await _expensesSubscription?.cancel();
+    _initialLoadTimer?.cancel();
     _latestBalance = null;
     _latestExpenses = null;
     emit(WalletLoading());
+    _initialLoadTimer = Timer(_loadTimeout, () {
+      if (!isClosed && (_latestBalance == null || _latestExpenses == null)) {
+        add(
+          _WalletStreamFailure(
+            TimeoutException('Wallet loading timed out after 30 seconds.'),
+          ),
+        );
+      }
+    });
     _balanceSubscription = _expenseUseCase.watchWalletBalance().listen(
       (balance) {
         if (!isClosed) add(_WalletDataChanged(balance: balance));
@@ -158,6 +171,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     if (event.balance != null) _latestBalance = event.balance;
     if (event.expenses != null) _latestExpenses = event.expenses;
     if (_latestBalance == null || _latestExpenses == null) return;
+    _initialLoadTimer?.cancel();
 
     if (state is! WalletActionInProgress) {
       emit(WalletLoaded(balance: _latestBalance!, expenses: _latestExpenses!));
@@ -280,6 +294,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
 
   @override
   Future<void> close() async {
+    _initialLoadTimer?.cancel();
     await _balanceSubscription?.cancel();
     await _expensesSubscription?.cancel();
     return super.close();
