@@ -45,7 +45,6 @@ class MonthwiseIndividualListview {
         final colorOffset = months
             .take(groupIndex)
             .fold<int>(0, (total, key) => total + grouped[key]!.length);
-        final avatarColors = ColorList().colorList;
         final monthTotal = monthTransactions.fold<double>(
           0,
           (runningTotal, transaction) =>
@@ -120,8 +119,7 @@ class MonthwiseIndividualListview {
               final initial = title.trim().isEmpty
                   ? 'T'
                   : title.trim()[0].toUpperCase();
-              final avatarColor =
-                  avatarColors[(colorOffset + entry.key) % avatarColors.length];
+              final avatarColor = ColorList().colorForIndex(colorOffset + entry.key);
               final subtitle = [
                 category,
                 transaction['company']?.toString() ?? '',
