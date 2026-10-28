@@ -25,12 +25,14 @@ double _amount(dynamic value) {
 }
 
 class _MembersListState extends State<MembersList> {
+  late final ExpenseFilterBloc _expenseFilterBloc;
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
 
   @override
   void dispose() {
+    _expenseFilterBloc.add(ResetExpenseFilters());
     _searchController.dispose();
     super.dispose();
   }
@@ -47,6 +49,8 @@ class _MembersListState extends State<MembersList> {
   @override
   void initState() {
     super.initState();
+    _expenseFilterBloc = context.read<ExpenseFilterBloc>();
+    _expenseFilterBloc.add(ResetExpenseFilters());
     context.read<MembersBloc>().add(LoadMembers());
   }
 
@@ -270,7 +274,12 @@ class _MembersListState extends State<MembersList> {
                                         height: 50,
                                         width: 50,
                                         decoration: BoxDecoration(
-                                          color: const Color.fromARGB(255, 153, 217, 157),
+                                          color: const Color.fromARGB(
+                                            255,
+                                            153,
+                                            217,
+                                            157,
+                                          ),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             width: 1,
@@ -278,7 +287,11 @@ class _MembersListState extends State<MembersList> {
                                           ),
                                         ),
                                         clipBehavior: Clip.antiAlias,
-                                        child: profileImage.isEmpty?Icon(Icons.person_rounded,color: Colors.black,)
+                                        child: profileImage.isEmpty
+                                            ? Icon(
+                                                Icons.person_rounded,
+                                                color: Colors.black,
+                                              )
                                             // ? Image.asset(
                                             //     "assets/image.png",
                                             //     fit: BoxFit.cover,
@@ -291,7 +304,9 @@ class _MembersListState extends State<MembersList> {
                                                     //   "assets/image.png",
                                                     //   fit: BoxFit.cover,
                                                     // ),
-                                                    Icon(Icons.person_2_outlined)
+                                                    Icon(
+                                                      Icons.person_2_outlined,
+                                                    ),
                                               ),
                                       ),
                                       const SizedBox(width: 10),

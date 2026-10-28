@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 
 class CommonBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
+  final List<BottomNavigationBarItem> items;
   final Function(int) onTap;
 
   const CommonBottomNavigationBar({
     super.key,
     required this.currentIndex,
+    required this.items,
     required this.onTap,
   });
 
@@ -20,18 +22,7 @@ class CommonBottomNavigationBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Colors.amber,
       unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.contact_support_outlined),
-          label: 'Enquiry',
-          
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.currency_rupee),
-          label: 'Expense',
-        ),
-        
-      ],
+      items: items,
     );
   }
 }

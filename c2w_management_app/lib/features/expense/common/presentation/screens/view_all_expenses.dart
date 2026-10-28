@@ -18,12 +18,14 @@ class ViewAllExpenses extends StatefulWidget {
 }
 
 class _ViewAllExpensesState extends State<ViewAllExpenses> {
+  late final ExpenseFilterBloc _expenseFilterBloc;
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
 
   @override
   void dispose() {
+    _expenseFilterBloc.add(ResetExpenseFilters());
     _searchController.dispose();
     super.dispose();
   }
@@ -63,6 +65,8 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
   @override
   void initState() {
     super.initState();
+    _expenseFilterBloc = context.read<ExpenseFilterBloc>();
+    _expenseFilterBloc.add(ResetExpenseFilters());
     context.read<ExpenseHistoryBloc>().add(LoadAllExpenses());
   }
 
