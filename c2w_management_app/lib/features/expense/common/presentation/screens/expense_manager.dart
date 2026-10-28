@@ -1,24 +1,13 @@
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_admin_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_category_bloc.dart';
-<<<<<<< HEAD
-=======
-import 'package:c2w_management_app/features/expense/common/presentation/screens/wallet_screen.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
->>>>>>> 9b099cbf7c98d606e943242ba78f4308cd0855b1
 import 'package:c2w_management_app/features/expense/common/presentation/screens/manage_categories.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/memberslist.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/view_all_expenses.dart';
-<<<<<<< HEAD
 import 'package:c2w_management_app/features/expense/common/presentation/screens/wallet_screen.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
-=======
-import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
-
->>>>>>> 9b099cbf7c98d606e943242ba78f4308cd0855b1
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -118,7 +107,6 @@ class _ExpenseManagerState extends State<ExpenseManager> {
             );
         final unpaidAmount = totalAmount - paidAmount;
         final recentExpenses = expenses.take(5).toList();
-        final avatarColors = ColorList().colorList;
 
         return Scaffold(
           backgroundColor: backgroundColor,
@@ -453,8 +441,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color:
-                                      avatarColors[index % avatarColors.length],
+                                  color: ColorList().colorForIndex(index),
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,

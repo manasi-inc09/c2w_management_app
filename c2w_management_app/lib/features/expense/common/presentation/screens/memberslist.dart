@@ -270,6 +270,7 @@ class _MembersListState extends State<MembersList> {
                                         height: 50,
                                         width: 50,
                                         decoration: BoxDecoration(
+                                          color: const Color.fromARGB(255, 153, 217, 157),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             width: 1,
@@ -277,19 +278,20 @@ class _MembersListState extends State<MembersList> {
                                           ),
                                         ),
                                         clipBehavior: Clip.antiAlias,
-                                        child: profileImage.isEmpty
-                                            ? Image.asset(
-                                                "assets/image.png",
-                                                fit: BoxFit.cover,
-                                              )
+                                        child: profileImage.isEmpty?Icon(Icons.person_rounded,color: Colors.black,)
+                                            // ? Image.asset(
+                                            //     "assets/image.png",
+                                            //     fit: BoxFit.cover,
+                                            //   )
                                             : Image.network(
                                                 profileImage,
                                                 fit: BoxFit.cover,
                                                 errorBuilder: (_, _, _) =>
-                                                    Image.asset(
-                                                      "assets/image.png",
-                                                      fit: BoxFit.cover,
-                                                    ),
+                                                    // Image.asset(
+                                                    //   "assets/image.png",
+                                                    //   fit: BoxFit.cover,
+                                                    // ),
+                                                    Icon(Icons.person_2_outlined)
                                               ),
                                       ),
                                       const SizedBox(width: 10),
