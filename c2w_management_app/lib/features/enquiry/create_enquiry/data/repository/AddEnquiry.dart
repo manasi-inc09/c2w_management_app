@@ -6,10 +6,62 @@ class AddEnquiryRepository {
   AddEnquiryRepository({FirebaseFirestore? firestore})
     : firestore = firestore ?? FirebaseFirestore.instance;
 
+  Future<List<Map<String, String>>> findEnquiriesByMobilePrefix(
+    String prefix,
+  ) async {
+    final normalizedPrefix = _normalizeMobile(prefix);
+    if (normalizedPrefix.length < 4) return const [];
+
+    final docs = (await firestore.collection('Enquiries').get()).docs;
+    final matchesByMobile = <String, Map<String, String>>{};
+    final datesByMobile = <String, DateTime>{};
+
+    for (final doc in docs) {
+      final data = doc.data();
+      final history = data['Enquiry History'];
+      final entries = <Map<String, dynamic>>[];
+      if (history is List) {
+        entries.addAll(
+          history.whereType<Map>().map((value) => Map<String, dynamic>.from(value)),
+        );
+      }
+      // Also search legacy documents that store the enquiry fields at the root.
+      if (data['Student Name'] != null || entries.isEmpty) entries.add(data);
+
+      for (final entry in entries) {
+        final mobileNo = (entry['Mobile No'] ?? data['Mobile No'] ?? '')
+            .toString();
+        final normalizedMobile = _normalizeMobile(mobileNo);
+        if (!normalizedMobile.startsWith(normalizedPrefix)) {
+          continue;
+        }
+
+        final date = _dateFrom(entry['Created At']);
+        final existingDate = datesByMobile[normalizedMobile];
+        if (existingDate != null && !date.isAfter(existingDate)) continue;
+        datesByMobile[normalizedMobile] = date;
+        matchesByMobile[normalizedMobile] = {
+          'mobileNo': mobileNo,
+          'studentName': (entry['Student Name'] ?? '').toString(),
+          'collegeName': (entry['College Name'] ?? data['College Name'] ?? '')
+              .toString(),
+          'referenceBy': (entry['Reference By'] ?? '').toString(),
+          'enquirySource': (entry['Enquiry Source'] ?? '').toString(),
+        };
+      }
+    }
+
+    final matches = matchesByMobile.values.toList()
+      ..sort((a, b) => a['mobileNo']!.compareTo(b['mobileNo']!));
+    return matches;
+  }
+
   Future<bool> createEnquiry({
     required String studentName,
     required String mobileNo,
     required String collegeName,
+    required String academicYear,
+    required String branch,
     required List<String> interestedBatches,
     required String mode,
     required String studentFeedback,
@@ -31,6 +83,8 @@ class AddEnquiryRepository {
     final entry = <String, dynamic>{
       'History Id': '',
       'Student Name': studentName,
+      'Academic Year': academicYear,
+      'Branch': branch,
       'Interested Batch': interestedBatches,
       'Mode': mode,
       'Student Feedback': studentFeedback,

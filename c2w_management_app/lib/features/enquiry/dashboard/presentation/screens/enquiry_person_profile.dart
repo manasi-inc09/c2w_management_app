@@ -55,6 +55,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       enquirySource: historyItem.enquirySource,
       enquiryAddedBy: historyItem.enquiryAddedBy,
       callStatus: historyItem.callStatus,
+      callFeedback: historyItem.callFeedback,
       admissionStatus: historyItem.admissionStatus,
       enquiryHistory: base.enquiryHistory,
       callStatusUpdatedAt: historyItem.callStatusUpdatedAt,
@@ -151,6 +152,19 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
     }
   }
 
+  Future<void> _editCallFeedback() async {
+    final enquiry = _enquiry;
+    if (enquiry == null || enquiry.callStatus != 'Done') return;
+    final feedback = await showDialog<String>(
+      context: context,
+      builder: (_) => _CallFeedbackDialog(
+        initialFeedback: enquiry.callFeedback,
+      ),
+    );
+    if (feedback == null) return;
+    await _saveEnquiryField('Call Feedback', feedback);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DashBoardBloc, DashBoardState>(
@@ -158,7 +172,9 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         final screenSize = MediaQuery.sizeOf(context);
         final isCompact = screenSize.width < 380;
         _currentExpandedHeight = isCompact ? 305 : expandedHeight;
-        _currentBottomHeight = isCompact ? 100 : bottomHeight;
+        _currentBottomHeight =
+            (isCompact ? 100 : bottomHeight) +
+            (_enquiry?.callStatus == 'Done' ? 44 : 0);
         if (state is DashBoardLoaded && state.enquiries.isNotEmpty) {
           _activeEnquiry = widget.enquiry == null
               ? state.enquiries.first
@@ -365,6 +381,45 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
               ],
             ),
           ),
+          if (_enquiry?.callStatus == 'Done') ...[
+            const Divider(height: 1, color: Colors.white12),
+            InkWell(
+              onTap: _editCallFeedback,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Text(
+                      'Call Feedback',
+                      style: GoogleFonts.figtree(
+                        fontSize: isNarrow ? 11 : 13,
+                        color: Colors.white54,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        (_enquiry?.callFeedback.isNotEmpty == true)
+                            ? _enquiry!.callFeedback
+                            : 'Add feedback',
+                        textAlign: TextAlign.right,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.figtree(
+                          fontSize: 12,
+                          color: _enquiry?.callFeedback.isNotEmpty == true
+                              ? Colors.white
+                              : blue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.edit, size: 14, color: Colors.white54),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -612,7 +667,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
             width: 260,
             child: Image.asset("assets/images/sales_admin/nulllist.png"),
           ),
-        ],
+        ]
+        ,
       );
     } else {
       final chronologicalHistory = enquiryHistory;
@@ -625,6 +681,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
             ),
           const SizedBox(height: 40),
         ],
+
       );
     }
   }
@@ -652,19 +709,20 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         ? const Color(0xFF13CE8B)
         : Colors.redAccent;
 
-    return Material(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
+      child: Material(
+        color: cardColor,
         borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          setState(() => _selectedHistoryId = item.id);
-          _tabController.animateTo(0);
-        },
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.fromLTRB(8, 10, 8, 0),
-          padding: const EdgeInsets.fromLTRB(8, 8, 9, 9),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            setState(() => _selectedHistoryId = item.id);
+            _tabController.animateTo(0);
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(8, 8, 9, 9),
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
           child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,6 +779,10 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                   valueColor: _callStatusColor(item.callStatus),
                   showDot: true,
                 ),
+                if (item.callStatus == 'Done') ...[
+                  _historyDivider(),
+                  _historyRow('Call Feedback', item.callFeedback),
+                ],
                 _historyDivider(),
                 Text(
                   'User feedback',
@@ -754,11 +816,13 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                     ),
                   ),
                 ),
+                
               ],
             ),
           ),
         ],
       ),
+          ),
         ),
       ),
     );
@@ -851,6 +915,66 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         Text(
           value,
           style: GoogleFonts.figtree(fontSize: 16, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+
+class _CallFeedbackDialog extends StatefulWidget {
+  const _CallFeedbackDialog({required this.initialFeedback});
+
+  final String initialFeedback;
+
+  @override
+  State<_CallFeedbackDialog> createState() => _CallFeedbackDialogState();
+}
+
+class _CallFeedbackDialogState extends State<_CallFeedbackDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialFeedback);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: _EnquiryPersonProfileState.cardColor,
+      title: const Text('Call Feedback', style: TextStyle(color: Colors.white)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLines: 3,
+        minLines: 1,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          hintText: 'Enter call feedback',
+          hintStyle: TextStyle(color: Colors.white54),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.white38),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: _EnquiryPersonProfileState.blue),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Save'),
         ),
       ],
     );

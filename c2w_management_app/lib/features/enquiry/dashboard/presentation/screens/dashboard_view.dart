@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:c2w_management_app/core/commom_bottom_navigationbar.dart';
 import 'package:c2w_management_app/features/Profile/presentation/screens/profile.dart';
 import 'package:c2w_management_app/features/enquiry/create_enquiry/presentation/screens/create_equiry.dart';
@@ -87,6 +85,9 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
       _email.contains('salesadmin_') ||
       _email.contains('superadmin_');
 
+  bool get _canOpenEnquiryDetails =>
+      _email.contains('salesadmin_') || _email.contains('superadmin_');
+
   /// Instructor / super admin get the ExpenseManager, everyone else gets
   /// their own IndividualExpenses screen.
   bool get _isExpenseManagerRole =>
@@ -113,7 +114,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
         return Colors.green;
       case 'offline':
         return const Color.fromRGBO(5, 164, 255, 1);
-      case 'recorded':
+      case 'virtual':
         return Colors.orange;
       default:
         return const Color.fromRGBO(5, 164, 255, 1);
@@ -209,18 +210,13 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: () {
-            log(AuthRepository.authEmail!);
-            if (_canOpenEnquiryOverview) {
-              log("in card..");
-
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EnquiryPersonProfile(enquiry: item),
-                ),
-              );
-            }
-          },
+          onTap: _canOpenEnquiryDetails
+              ? () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EnquiryPersonProfile(enquiry: item),
+                  ),
+                )
+              : null,
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(

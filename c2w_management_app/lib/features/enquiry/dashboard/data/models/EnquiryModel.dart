@@ -13,6 +13,7 @@ class EnquiryHistoryItem extends Equatable {
   final String enquirySource;
   final String enquiryAddedBy;
   final String callStatus;
+  final String callFeedback;
   final String admissionStatus;
   final DateTime? callStatusUpdatedAt;
   final DateTime? admissionStatusUpdatedAt;
@@ -30,6 +31,7 @@ class EnquiryHistoryItem extends Equatable {
     required this.enquirySource,
     this.enquiryAddedBy = '',
     required this.callStatus,
+    this.callFeedback = '',
     required this.admissionStatus,
     this.callStatusUpdatedAt,
     this.admissionStatusUpdatedAt,
@@ -53,6 +55,7 @@ class EnquiryHistoryItem extends Equatable {
       enquirySource: (data['Enquiry Source'] ?? '').toString(),
       enquiryAddedBy: (data['enquiryAddedBy'] ?? '').toString(),
       callStatus: (data['Call Status'] ?? 'Pending').toString(),
+      callFeedback: (data['Call Feedback'] ?? '').toString(),
       admissionStatus: EnquiryModel.parseAdmissionStatus(data),
       callStatusUpdatedAt: EnquiryModel.parseDateTime(
         data['Call Status Updated At'],
@@ -82,6 +85,8 @@ class EnquiryHistoryItem extends Equatable {
     'Enquiry Source': enquirySource,
     'enquiryAddedBy': enquiryAddedBy,
     'Call Status': callStatus,
+    if (callStatus == 'Done' && callFeedback.isNotEmpty)
+      'Call Feedback': callFeedback,
     'Admission Status': admissionStatus,
     'Call Status Updated At': callStatusUpdatedAt == null
         ? null
@@ -105,6 +110,7 @@ class EnquiryHistoryItem extends Equatable {
     enquirySource,
     enquiryAddedBy,
     callStatus,
+    callFeedback,
     admissionStatus,
     callStatusUpdatedAt,
     admissionStatusUpdatedAt,
@@ -125,6 +131,7 @@ class EnquiryModel extends Equatable {
   final String enquirySource;
   final String enquiryAddedBy;
   final String callStatus;
+  final String callFeedback;
   final String admissionStatus;
   final List<EnquiryHistoryItem> enquiryHistory;
   final DateTime? callStatusUpdatedAt;
@@ -149,6 +156,7 @@ class EnquiryModel extends Equatable {
     required this.enquirySource,
     this.enquiryAddedBy = '',
     this.callStatus = 'Pending',
+    this.callFeedback = '',
     this.admissionStatus = 'Not Yet',
     this.enquiryHistory = const [],
     this.callStatusUpdatedAt,
@@ -209,6 +217,7 @@ class EnquiryModel extends Equatable {
       enquirySource: (data['Enquiry Source'] ?? '').toString().trim(),
       enquiryAddedBy: (data['enquiryAddedBy'] ?? '').toString().trim(),
       callStatus: _parseCallStatus(data['Call Status']),
+      callFeedback: (data['Call Feedback'] ?? '').toString().trim(),
       admissionStatus: _parseAdmissionStatus(data),
       enquiryHistory: _parseHistory(
         data['Enquiry History'],
@@ -237,6 +246,7 @@ class EnquiryModel extends Equatable {
       enquirySource: enquirySource,
       enquiryAddedBy: enquiryAddedBy,
       callStatus: callStatus,
+      callFeedback: callFeedback,
       admissionStatus: admissionStatus,
       enquiryHistory: enquiryHistory ?? this.enquiryHistory,
       callStatusUpdatedAt: callStatusUpdatedAt,
@@ -341,6 +351,8 @@ class EnquiryModel extends Equatable {
       'Enquiry Source': enquirySource,
       'enquiryAddedBy': enquiryAddedBy,
       'Call Status': callStatus,
+      if (callStatus == 'Done' && callFeedback.isNotEmpty)
+        'Call Feedback': callFeedback,
       'Admission Status': admissionStatus,
       'Enquiry History': enquiryHistory.map((item) => item.toMap()).toList(),
       'Admission Completed': admissionCompleted,
@@ -368,6 +380,7 @@ class EnquiryModel extends Equatable {
     enquirySource,
     enquiryAddedBy,
     callStatus,
+    callFeedback,
     admissionStatus,
     enquiryHistory,
     callStatusUpdatedAt,
