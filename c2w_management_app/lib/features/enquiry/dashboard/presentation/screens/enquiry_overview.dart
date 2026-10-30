@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/
 import 'package:c2w_management_app/features/enquiry/dashboard/data/models/EnquiryModel.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/enquiry_person_profile.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/widgets/filters.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,6 +20,11 @@ class _EnquiryState extends State<Enquiry> {
   Map<String, String?> appliedFilters = {};
   bool isSearchVisible = false;
   String searchQuery = '';
+
+  bool get _canOpenEnquiryDetails {
+    final email = (AuthRepository.authEmail ?? '').trim().toLowerCase();
+    return email.contains('superadmin_') || email.contains('salesadmin_');
+  }
 
   Color _callStatusColor(String status) {
     switch (status) {
@@ -185,11 +191,13 @@ class _EnquiryState extends State<Enquiry> {
               color: const Color(0xFF161B2E),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => EnquiryPersonProfile(enquiry: item),
-                  ),
-                ),
+                onTap: _canOpenEnquiryDetails
+                    ? () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => EnquiryPersonProfile(enquiry: item),
+                        ),
+                      )
+                    : null,
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal:

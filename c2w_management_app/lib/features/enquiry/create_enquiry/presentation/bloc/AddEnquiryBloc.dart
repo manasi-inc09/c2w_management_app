@@ -21,6 +21,8 @@ class AddEnquiryBloc extends Bloc<AddEnquiryEvent, AddEnquiryState> {
         studentName: event.studentName,
         mobileNo: event.mobileNo,
         collegeName: event.collegeName,
+        academicYear: event.academicYear,
+        branch: event.branch,
         interestedBatches: event.interestedBatches,
         mode: event.mode,
         studentFeedback: event.studentFeedback,

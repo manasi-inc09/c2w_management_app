@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardEvent.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/bloc/DashBoardState.dart';
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/enquiry_person_profile.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,13 +24,18 @@ class EnquiryList extends StatefulWidget {
 }
 
 class _EnquiryListState extends State<EnquiryList> {
+  bool get _canOpenEnquiryDetails {
+    final email = (AuthRepository.authEmail ?? '').trim().toLowerCase();
+    return email.contains('superadmin_') || email.contains('salesadmin_');
+  }
+
   Color _modeColor(String mode) {
     switch (mode.toLowerCase()) {
       case 'online':
         return Colors.green;
       case 'offline':
         return const Color.fromRGBO(5, 164, 255, 1);
-      case 'recorded':
+      case 'virtual':
         return Colors.orange;
       default:
         return const Color.fromRGBO(5, 164, 255, 1);
@@ -122,13 +128,13 @@ class _EnquiryListState extends State<EnquiryList> {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const EnquiryPersonProfile(),
-              ),
-            );
-          },
+          onTap: _canOpenEnquiryDetails
+              ? () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EnquiryPersonProfile(enquiry: item),
+                  ),
+                )
+              : null,
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
