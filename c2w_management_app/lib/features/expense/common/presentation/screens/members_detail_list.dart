@@ -68,14 +68,17 @@ class _MembersDetailListState extends State<MembersDetailList> {
   }
 
   double _settled(List<Map<String, dynamic>> expenses) {
-    return expenses
-        .where(
-          (expense) => expense['status']?.toString().toLowerCase() == 'settled',
-        )
-        .fold<double>(
-          0,
-          (runningTotal, expense) => runningTotal + _amount(expense['amount']),
-        );
+    return expenses.fold<double>(0, (runningTotal, expense) {
+      final total = _amount(expense['amount']);
+      final value = expense['settledAmount'];
+      final settled = value is num
+          ? value.toDouble()
+          : double.tryParse(value?.toString() ?? '') ??
+                (expense['status']?.toString().toLowerCase() == 'settled'
+                    ? total
+                    : 0);
+      return runningTotal + settled.clamp(0, total);
+    });
   }
 
   @override
@@ -205,6 +208,28 @@ class _MembersDetailListState extends State<MembersDetailList> {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      RichText(
+                        text: TextSpan(
+                          text: "Remaining: ",
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.white,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: _formatAmount(
+                                (total - settled).clamp(0, total),
+                              ),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFFFF5271),
                               ),
                             ),
                           ],

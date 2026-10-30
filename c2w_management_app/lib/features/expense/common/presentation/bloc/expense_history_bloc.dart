@@ -48,7 +48,7 @@ class ExpenseHistoryBloc
     Emitter<ExpenseHistoryState> emit,
   ) async {
     await _loadStream(
-      _expenseUseCase.watchExpensesByEmail(event.email),
+      _expenseUseCase.watchExpenseHistoryByEmail(event.email),
       emit,
     );
   }
@@ -57,10 +57,7 @@ class ExpenseHistoryBloc
     LoadAllExpenses event,
     Emitter<ExpenseHistoryState> emit,
   ) async {
-    await _loadStream(
-      _expenseUseCase.watchAllExpenses(),
-      emit,
-    );
+    await _loadStream(_expenseUseCase.watchAllExpenseHistory(), emit);
   }
 
   Future<void> _loadStream(

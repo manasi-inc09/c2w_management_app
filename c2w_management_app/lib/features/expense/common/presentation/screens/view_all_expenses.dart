@@ -3,6 +3,7 @@ import 'package:c2w_management_app/features/expense/common/presentation/bloc/exp
 import 'package:c2w_management_app/features/expense/common/presentation/bloc/expense_filter_bloc.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,7 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
     if (query.isEmpty) return true;
     return [
       expense['claimantName'],
+      expense['groupName'],
       expense['description'],
       expense['category'],
       expense['subCategory'],
@@ -102,6 +104,16 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
                 ),
               ),
         actions: [
+          IconButton(
+            tooltip: 'Event expenses',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const EventExpenseGroupsScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.groups_outlined, color: Colors.white),
+          ),
           IconButton(
             onPressed: _isSearching
                 ? _toggleSearch

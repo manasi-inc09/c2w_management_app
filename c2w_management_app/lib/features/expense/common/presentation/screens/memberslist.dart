@@ -343,15 +343,43 @@ class _MembersListState extends State<MembersList> {
                                           ],
                                         ),
                                       ),
-                                      Text(
-                                        _formatAmount(member['totalAmount']),
-                                        style: GoogleFonts.figtree(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight(600),
-                                          color: (member['status'] == "settled")
-                                              ? Colors.green
-                                              : Colors.red,
-                                        ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            _formatAmount(
+                                              member['totalAmount'],
+                                            ),
+                                            style: GoogleFonts.figtree(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight(600),
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          if (_amount(
+                                                member['settledAmount'],
+                                              ) >
+                                              0)
+                                            Text(
+                                              '${_formatAmount(member['settledAmount'])} settled',
+                                              style: const TextStyle(
+                                                color: Color(0xFF00D09C),
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          if (_amount(
+                                                member['remainingAmount'],
+                                              ) >
+                                              0)
+                                            Text(
+                                              '${_formatAmount(member['remainingAmount'])} remaining',
+                                              style: const TextStyle(
+                                                color: Color(0xFFFF5271),
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                       const SizedBox(width: 10),
                                     ],

@@ -43,6 +43,21 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   @override
+  Stream<List<Map<String, dynamic>>> watchExpenseHistoryByEmail(String email) {
+    return _remoteDataSource.watchExpenseHistoryByEmail(email);
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchAllExpenseHistory() {
+    return _remoteDataSource.watchAllExpenseHistory();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllExpenseHistory() {
+    return _remoteDataSource.getAllExpenseHistory();
+  }
+
+  @override
   Future<double> getWalletBalance() {
     return _remoteDataSource.getWalletBalance();
   }
@@ -70,11 +85,15 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<void> settleWalletExpense({
     required String expenseId,
+    String? groupId,
+    String? contributionId,
     required double amount,
     required bool fromWallet,
   }) {
     return _remoteDataSource.settleWalletExpense(
       expenseId: expenseId,
+      groupId: groupId,
+      contributionId: contributionId,
       amount: amount,
       fromWallet: fromWallet,
     );
@@ -83,6 +102,11 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<List<Map<String, dynamic>>> getMembers() {
     return _remoteDataSource.getMembers();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllMemberExpenses() {
+    return _remoteDataSource.getAllMemberExpenses();
   }
 
   @override

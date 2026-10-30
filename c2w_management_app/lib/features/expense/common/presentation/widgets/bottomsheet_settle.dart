@@ -30,6 +30,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
   @override
   void initState() {
     super.initState();
+    _fromWallet = true;
     final walletBloc = context.read<WalletBloc>();
     if (walletBloc.state is WalletInitial ||
         walletBloc.state is WalletLoadFailure) {
@@ -38,10 +39,27 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
   }
 
   double get _totalAmount {
+    final remaining = widget.expense['remainingAmount'];
+    if (remaining is num) return remaining.toDouble();
+    final parsedRemaining = double.tryParse(remaining?.toString() ?? '');
+    if (parsedRemaining != null) return parsedRemaining;
+
     final value = widget.expense['amount'];
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0;
+    final total = value is num
+        ? value.toDouble()
+        : double.tryParse(value?.toString() ?? '') ?? 0;
+    final settledValue = widget.expense['settledAmount'];
+    final settled = settledValue is num
+        ? settledValue.toDouble()
+        : double.tryParse(settledValue?.toString() ?? '') ?? 0;
+    return (total - settled).clamp(0, total);
   }
+
+  bool get _mustUseWallet => !_customAmount;
+  bool get _isPrepaid =>
+      widget.expense['source']?.toString().trim().toLowerCase() == 'prepaid' ||
+      widget.expense['paymentSource']?.toString().trim().toLowerCase() ==
+          'prepaid';
 
   @override
   void dispose() {
@@ -50,6 +68,10 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
   }
 
   void _settle() {
+    if (_isPrepaid) {
+      _showError('Prepaid transactions do not need settlement.');
+      return;
+    }
     if (!canSettleWalletExpenses()) {
       _showError('Only SuperAdmin or Instructor can settle transactions.');
       return;
@@ -62,7 +84,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
       return;
     }
     if (amount > _totalAmount) {
-      _showError('Settlement amount cannot exceed the transaction total.');
+      _showError('Settlement amount cannot exceed the remaining amount.');
       return;
     }
     final expenseId = widget.expense['id']?.toString();
@@ -74,8 +96,10 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
     context.read<WalletBloc>().add(
       SettleWalletExpense(
         expenseId: expenseId,
+        groupId: widget.expense['groupId']?.toString(),
+        contributionId: widget.expense['contributionId']?.toString(),
         amount: amount,
-        fromWallet: _fromWallet,
+        fromWallet: _mustUseWallet || _fromWallet,
       ),
     );
   }
@@ -136,6 +160,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
                         selected: !_customAmount,
                         onTap: () => setState(() {
                           _customAmount = false;
+                          _fromWallet = true;
                           _errorMessage = null;
                         }),
                       ),
@@ -147,6 +172,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
                         selected: _customAmount,
                         onTap: () => setState(() {
                           _customAmount = true;
+                          _fromWallet = false;
                           _errorMessage = null;
                         }),
                       ),
@@ -170,13 +196,16 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
                         setState(() => _errorMessage = null);
                       }
                     },
+                    cursorColor: Colors.blue,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Settlement amount',
                       prefixText: '₹ ',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(),
-                      focusedBorder: OutlineInputBorder(
+                      helperText: 'Remaining: ${_formatAmount(_totalAmount)}',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      helperStyle: const TextStyle(color: Colors.white60),
+                      enabledBorder: const OutlineInputBorder(),
+                      focusedBorder: const OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.blue),
                       ),
                     ),
@@ -187,7 +216,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
                     child: Row(
                       children: [
                         Text(
-                          'Total Amount',
+                          'Remaining Amount',
                           style: GoogleFonts.roboto(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
@@ -238,14 +267,18 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
                   child: Material(
                     color: Colors.transparent,
                     child: CheckboxListTile(
-                      value: _fromWallet,
-                      onChanged: (value) =>
-                          setState(() => _fromWallet = value ?? false),
-                      activeColor: Colors.green,
+                      value: _mustUseWallet || _fromWallet,
+                      onChanged: _mustUseWallet
+                          ? null
+                          : (value) =>
+                                setState(() => _fromWallet = value ?? false),
+                      activeColor: const Color(0xFF00D09C),
                       checkColor: Colors.white,
                       side: const BorderSide(color: Colors.white),
                       title: Text(
-                        'Settle from Wallet',
+                        _mustUseWallet
+                            ? 'Settle from Wallet (required for total)'
+                            : 'Settle from Wallet',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           color: Colors.white,

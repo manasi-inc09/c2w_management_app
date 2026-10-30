@@ -6,10 +6,7 @@ import 'package:c2w_management_app/features/expense/common/presentation/screens/
 import 'package:c2w_management_app/features/expense/common/presentation/screens/memberslist.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/view_all_expenses.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/screens/wallet_screen.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
-import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
 
@@ -100,17 +97,22 @@ class _ExpenseManagerState extends State<ExpenseManager> {
           (runningTotal, expense) =>
               runningTotal + _expenseAmount(expense['amount']),
         );
-        final paidAmount = expenses
-            .where(
-              (expense) =>
-                  expense['status']?.toString().toLowerCase() == 'settled',
-            )
-            .fold<double>(
-              0,
-              (runningTotal, expense) =>
-                  runningTotal + _expenseAmount(expense['amount']),
-            );
+        final paidAmount = expenses.fold<double>(0, (runningTotal, expense) {
+          return runningTotal +
+              _settledExpenseAmount(
+                expense,
+                _expenseAmount(expense['amount']),
+              );
+        });
         final unpaidAmount = totalAmount - paidAmount;
+        final prepaidAmount = expenses.fold<double>(
+          0,
+          (total, expense) => total + _sourceAmount(expense, 'Prepaid'),
+        );
+        final walletAmount = expenses.fold<double>(
+          0,
+          (total, expense) => total + _sourceAmount(expense, 'Wallet'),
+        );
         final recentExpenses = expenses.take(5).toList();
 
         return Scaffold(
@@ -128,6 +130,16 @@ class _ExpenseManagerState extends State<ExpenseManager> {
             centerTitle: true,
             backgroundColor: Color.fromRGBO(31, 34, 49, 1),
             actions: [
+              IconButton(
+                tooltip: 'Event expenses',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const EventExpenseGroupsScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.groups_outlined, color: Colors.white),
+              ),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -278,6 +290,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                                 iconColor: const Color(0xFF00D09C),
                                 iconBgColor: const Color(0xFF0D3838),
                                 cardBg: cardColor,
+                                valueColor: const Color(0xFF00D09C),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -291,6 +304,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                                   iconColor: const Color(0xFFFF5271),
                                   iconBgColor: const Color(0xFF3E1D2D),
                                   cardBg: cardColor,
+                                  valueColor: const Color(0xFFFF5271),
                                 ),
                               ),
                             ),
@@ -363,6 +377,43 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                     ],
                   ),
                   const SizedBox(height: 20),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Expense source totals',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildSourceSummary(
+                              'Wallet',
+                              walletAmount,
+                              const Color(0xFFFFC857),
+                            ),
+                            _buildSourceSummary(
+                              'Prepaid',
+                              prepaidAmount,
+                              const Color(0xFFB69CFF),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       const SizedBox(width: 10),
@@ -413,6 +464,8 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
                       final expense = recentExpenses[index];
+                      final isGroupExpense =
+                          expense['eventExpenseGroup'] == true;
                       final name =
                           expense['claimantName']?.toString() ??
                           'Unknown member';
@@ -423,13 +476,27 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                       final description =
                           expense['description']?.toString().trim() ?? '';
                       final category = expense['category']?.toString() ?? '';
+                      final paymentSource = _paymentSourceLabel(
+                        isGroupExpense
+                            ? null
+                            : expense['source']?.toString(),
+                      );
                       final date = _expenseDate(expense);
+                      final total = _expenseAmount(expense['amount']);
+                      final settled = _settledExpenseAmount(expense, total);
+                      final remaining = (total - settled)
+                          .clamp(0, total)
+                          .toDouble();
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => TransactionDetails(expense),
+                              builder: (context) => isGroupExpense
+                                  ? EventExpenseGroupDetailsScreen(
+                                      groupId: expense['groupId'].toString(),
+                                    )
+                                  : TransactionDetails(expense),
                             ),
                           );
                         },
@@ -476,39 +543,125 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                                       ),
                                     ),
                                     SizedBox(height: 4),
-                                    Text(
-                                      description.isEmpty
-                                          ? category
-                                          : description,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Color.fromRGBO(126, 139, 155, 1),
-                                        fontSize: 12,
-                                      ),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Text(
+                                          isGroupExpense
+                                              ? 'Group Expense • $description'
+                                              : description.isEmpty
+                                              ? category
+                                              : description,
+                                          style: const TextStyle(
+                                            color: Color.fromRGBO(
+                                              126,
+                                              139,
+                                              155,
+                                              1,
+                                            ),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        if (isGroupExpense)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF143048),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              expense['groupName']
+                                                      ?.toString() ??
+                                                  'Event group',
+                                              style: const TextStyle(
+                                                color: Color(0xFF8CCBFF),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        if (isGroupExpense &&
+                                            _expenseAmount(
+                                                  expense['walletAmount'],
+                                                ) >
+                                                0)
+                                          _buildGroupSourceTag(
+                                            'Paid from Wallet',
+                                            _expenseAmount(
+                                              expense['walletAmount'],
+                                            ),
+                                            const Color(0xFFFFC857),
+                                          ),
+                                        if (isGroupExpense &&
+                                            _expenseAmount(
+                                                  expense['prepaidAmount'],
+                                                ) >
+                                                0)
+                                          _buildGroupSourceTag(
+                                            'Prepaid',
+                                            _expenseAmount(
+                                              expense['prepaidAmount'],
+                                            ),
+                                            const Color(0xFFB69CFF),
+                                          ),
+                                        if (paymentSource != null)
+                                          _buildGroupSourceTag(
+                                            paymentSource,
+                                            0,
+                                            paymentSource == 'Prepaid'
+                                                ? const Color(0xFFB69CFF)
+                                                : const Color(0xFFFFC857),
+                                            includeAmount: false,
+                                          ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
 
                               SizedBox(
-                                width: 90,
+                                width: 100,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      _formatAmount(
-                                        _expenseAmount(expense['amount']),
-                                      ),
+                                      _formatAmount(total),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    SizedBox(height: 4),
+                                    if (settled > 0)
+                                      Text(
+                                        '+${_formatAmount(settled)} paid',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFF00D09C),
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    if (remaining > 0)
+                                      Text(
+                                        '${_formatAmount(remaining)} left',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFFFF5271),
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       date == null
                                           ? '—'
@@ -579,6 +732,19 @@ class _ExpenseManagerState extends State<ExpenseManager> {
     return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 
+  double _settledExpenseAmount(
+    Map<String, dynamic> expense,
+    double totalAmount,
+  ) {
+    final value = expense['settledAmount'];
+    if (value is num) return value.toDouble().clamp(0, totalAmount);
+    final parsed = double.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed.clamp(0, totalAmount);
+    return expense['status']?.toString().toLowerCase() == 'settled'
+        ? totalAmount
+        : 0;
+  }
+
   String _formatAmount(double amount) {
     final formatted = amount == amount.roundToDouble()
         ? amount.toStringAsFixed(0)
@@ -611,6 +777,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
     required Color iconColor,
     required Color iconBgColor,
     required Color cardBg,
+    Color valueColor = Colors.white,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
@@ -636,8 +803,8 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: valueColor,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -654,6 +821,88 @@ class _ExpenseManagerState extends State<ExpenseManager> {
             child: Icon(icon, color: iconColor, size: 20),
           ),
         ],
+      ),
+    );
+  }
+
+  double _sourceAmount(Map<String, dynamic> expense, String source) {
+    if (expense['eventExpenseGroup'] == true) {
+      final field = source == 'Prepaid'
+          ? 'prepaidAmount'
+          : source == 'Wallet'
+          ? 'walletAmount'
+          : null;
+      return field == null ? 0 : _expenseAmount(expense[field]);
+    }
+
+    final expenseSource = expense['source']?.toString().trim();
+    if (source == 'Wallet') {
+      return expenseSource?.toLowerCase() == 'wallet' ||
+              expenseSource?.toLowerCase() == 'self paid' ||
+              expenseSource == null ||
+              expenseSource.isEmpty
+          ? _expenseAmount(expense['amount'])
+          : 0;
+    }
+    return expenseSource?.toLowerCase() == source.toLowerCase()
+        ? _expenseAmount(expense['amount'])
+        : 0;
+  }
+
+  Widget _buildSourceSummary(String label, double amount, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: color, fontSize: 11),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _formatAmount(amount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _paymentSourceLabel(String? source) {
+    switch (source?.trim().toLowerCase()) {
+      case 'prepaid':
+        return 'Prepaid';
+      case 'wallet':
+      case 'self paid':
+        return 'Paid from Wallet';
+      default:
+        return 'Paid from Wallet';
+    }
+  }
+
+  Widget _buildGroupSourceTag(
+    String label,
+    double amount,
+    Color color, {
+    bool includeAmount = true,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        includeAmount ? '$label ${_formatAmount(amount)}' : label,
+        style: TextStyle(color: color, fontSize: 10),
       ),
     );
   }

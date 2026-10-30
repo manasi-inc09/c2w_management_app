@@ -1,6 +1,7 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_manager.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
@@ -94,6 +95,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
     if (query.isEmpty) return true;
     return [
       expense['claimantName'],
+      expense['groupName'],
       expense['description'],
       expense['category'],
       expense['subCategory'],
@@ -180,6 +182,16 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
 
         actions: [
           IconButton(
+            tooltip: 'Event expenses',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const EventExpenseGroupsScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.groups_outlined, color: Colors.white),
+          ),
+          IconButton(
             onPressed: _isSearching
                 ? _toggleSearch
                 : () => setState(() => _isSearching = true),
@@ -218,16 +230,13 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                   0,
                   (sum, expense) => sum + _expenseAmount(expense),
                 );
-                settled = expenses
-                    .where(
-                      (expense) =>
-                          expense['status']?.toString().toLowerCase() ==
-                          'settled',
-                    )
-                    .fold<double>(
-                      0,
-                      (sum, expense) => sum + _expenseAmount(expense),
-                    );
+                settled = expenses.fold<double>(0, (sum, expense) {
+                  return sum +
+                      _settledExpenseAmount(
+                        expense,
+                        _expenseAmount(expense),
+                      );
+                });
               }
               return Row(
                 children: [
@@ -237,6 +246,12 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                     'Settled',
                     settled,
                     amountColor: const Color.fromRGBO(28, 205, 128, 1),
+                  ),
+                  Container(height: 65, width: 1, color: Colors.white24),
+                  _buildHistorySummary(
+                    'Unsettled',
+                    (total - settled).clamp(0, total),
+                    amountColor: const Color(0xFFFF5271),
                   ),
                 ],
               );
@@ -346,6 +361,19 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
     final amount = expense['amount'];
     if (amount is num) return amount.toDouble();
     return double.tryParse(amount?.toString() ?? '') ?? 0;
+  }
+
+  double _settledExpenseAmount(
+    Map<String, dynamic> expense,
+    double totalAmount,
+  ) {
+    final value = expense['settledAmount'];
+    if (value is num) return value.toDouble().clamp(0, totalAmount);
+    final parsed = double.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed.clamp(0, totalAmount);
+    return expense['status']?.toString().toLowerCase() == 'settled'
+        ? totalAmount
+        : 0;
   }
 
   Widget _buildHistorySummary(
