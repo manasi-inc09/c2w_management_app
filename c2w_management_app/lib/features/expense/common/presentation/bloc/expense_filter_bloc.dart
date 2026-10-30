@@ -223,7 +223,10 @@ List<Map<String, dynamic>> filterExpenses(
 
   return expenses.where((expense) {
     final email = expense['email']?.toString().toLowerCase();
-    if (selection.transactionType == 'My Transactions') {
+    final isGroupTotal =
+        expense['eventExpenseGroup'] == true &&
+        expense['eventExpenseGroupContribution'] != true;
+    if (selection.transactionType == 'My Transactions' && !isGroupTotal) {
       final currentRawEmail = currentEmail?.toLowerCase() ?? '';
       final normalizedCurrentEmail = _normalizeEmail(
         currentEmail ?? '',

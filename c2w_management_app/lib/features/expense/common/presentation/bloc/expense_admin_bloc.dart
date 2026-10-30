@@ -36,15 +36,16 @@ class ExpenseManagerBloc extends Bloc<LoadExpenseManagerData, Object> {
   Future<void> _load(LoadExpenseManagerData event, Emitter<Object> emit) async {
     emit(ExpenseManagerLoading());
     try {
-      final results = await Future.wait([
-        _expenseUseCase.getAllExpenses(),
-        _expenseUseCase.getMembers(),
-      ]).timeout(
-        _loadTimeout,
-        onTimeout: () => throw TimeoutException(
-          'Expense data loading timed out after 30 seconds.',
-        ),
-      );
+      final results =
+          await Future.wait([
+            _expenseUseCase.getAllExpenseHistory(),
+            _expenseUseCase.getMembers(),
+          ]).timeout(
+            _loadTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Expense data loading timed out after 30 seconds.',
+            ),
+          );
       final expenses = results[0];
       final members = results[1];
       _sortExpenses(expenses);
@@ -92,15 +93,16 @@ class MembersBloc extends Bloc<LoadMembers, Object> {
   Future<void> _load(LoadMembers event, Emitter<Object> emit) async {
     emit(MembersLoading());
     try {
-      final results = await Future.wait([
-        _expenseUseCase.getMembers(),
-        _expenseUseCase.getAllExpenses(),
-      ]).timeout(
-        _loadTimeout,
-        onTimeout: () => throw TimeoutException(
-          'Member data loading timed out after 30 seconds.',
-        ),
-      );
+      final results =
+          await Future.wait([
+            _expenseUseCase.getMembers(),
+            _expenseUseCase.getAllMemberExpenses(),
+          ]).timeout(
+            _loadTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Member data loading timed out after 30 seconds.',
+            ),
+          );
       final members = results[0];
       final expenses = results[1];
       final expensesByEmail = <String, List<Map<String, dynamic>>>{};
@@ -119,6 +121,15 @@ class MembersBloc extends Bloc<LoadMembers, Object> {
           0,
           (runningTotal, expense) => runningTotal + _amount(expense['amount']),
         );
+        member['settledAmount'] = memberExpenses.fold<double>(
+          0,
+          (runningTotal, expense) =>
+              runningTotal + _settledAmount(expense),
+        );
+        member['remainingAmount'] =
+            (_amount(member['totalAmount']) -
+                    _amount(member['settledAmount']))
+                .clamp(0, _amount(member['totalAmount']));
       }
       members.sort(
         (first, second) => (first['name'] as String).toLowerCase().compareTo(
@@ -207,6 +218,18 @@ DateTime? _expenseDate(Map<String, dynamic> expense) {
 double _amount(dynamic value) {
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double _settledAmount(Map<String, dynamic> expense) {
+  final total = _amount(expense['amount']);
+  final value = expense['settledAmount'];
+  final settled = value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ??
+            (expense['status']?.toString().toLowerCase() == 'settled'
+                ? total
+                : 0);
+  return settled.clamp(0, total);
 }
 
 String _errorMessage(Object error) {

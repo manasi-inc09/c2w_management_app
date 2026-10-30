@@ -90,9 +90,12 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
       detailsController.text = expense['description']?.toString() ?? '';
       selectedCategory = expense['category']?.toString();
       selectedSubCategory = expense['subCategory']?.toString();
-      selectedOption = expense['source']?.toString().toLowerCase() == 'wallet'
-          ? 'Option 2'
-          : 'Option 1';
+      final source = expense['source']?.toString().toLowerCase();
+      selectedOption = switch (source) {
+        'wallet' => 'Option 2',
+        'prepaid' => 'Option 3',
+        _ => 'Option 1',
+      };
       existingReceiptUrl = expense['receiptUrl']?.toString();
     }
     context.read<ExpenseCategoryBloc>().add(LoadExpenseCategories());
@@ -259,12 +262,21 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
               Row(
                 children: [
                   buildRadioBox(title: "Self Paid", value: "Option 1"),
+                  const SizedBox(width: 10),
+                  buildRadioBox(title: "Prepaid", value: "Option 3"),
                   // const SizedBox(width: 12),
                   // (AuthRepository.authEmail?.startsWith("instructor_") ?? false)
                   //     ? buildRadioBox(title: "Wallet", value: "Option 2")
                   //     : const SizedBox(),
                 ],
               ),
+              if (selectedOption == "Option 3") ...[
+                const SizedBox(height: 8),
+                const Text(
+                  "Select Prepaid if you have already paid this expense.",
+                  style: TextStyle(color: Colors.white60, fontSize: 13),
+                ),
+              ],
               const SizedBox(height: 5),
               (selectedOption == "Option 2") ? showWalletbalance() : SizedBox(),
               const SizedBox(height: 20),
@@ -785,7 +797,11 @@ class _CreateNewTransactionState extends State<CreateNewTransaction> {
       return;
     }
 
-    final String source = selectedOption == 'Option 2' ? 'Wallet' : 'Self Paid';
+    final String source = switch (selectedOption) {
+      'Option 2' => 'Wallet',
+      'Option 3' => 'Prepaid',
+      _ => 'Self Paid',
+    };
 
     String? categoryCompany = widget.expense?['company']?.toString();
     if (categoryState is ExpenseCategoryLoaded) {

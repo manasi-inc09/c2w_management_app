@@ -29,11 +29,15 @@ class AddWalletTopUp extends WalletEvent {
 
 class SettleWalletExpense extends WalletEvent {
   final String expenseId;
+  final String? groupId;
+  final String? contributionId;
   final double amount;
   final bool fromWallet;
 
   SettleWalletExpense({
     required this.expenseId,
+    this.groupId,
+    this.contributionId,
     required this.amount,
     required this.fromWallet,
   });
@@ -248,6 +252,8 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     try {
       await _expenseUseCase.settleWalletExpense(
         expenseId: event.expenseId,
+        groupId: event.groupId,
+        contributionId: event.contributionId,
         amount: event.amount,
         fromWallet: event.fromWallet,
       );

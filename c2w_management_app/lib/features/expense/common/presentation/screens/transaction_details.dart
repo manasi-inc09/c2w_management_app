@@ -20,7 +20,6 @@ class TransactionDetails extends StatefulWidget {
 }
 
 class _TransactionDetailsState extends State<TransactionDetails> {
-  bool _settledLocally = false;
   late Map<String, dynamic> _expense;
 
   @override
@@ -29,9 +28,32 @@ class _TransactionDetailsState extends State<TransactionDetails> {
     _expense = Map<String, dynamic>.from(widget.expense);
   }
 
-  bool get _isSettled =>
-      _settledLocally ||
-      _expense['status']?.toString().trim().toLowerCase() == 'settled';
+  double get _totalAmount {
+    final value = _expense['amount'];
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  double get _settledAmount {
+    if (_isPrepaid) return _totalAmount;
+    final value = _expense['settledAmount'];
+    final settled = value is num
+        ? value.toDouble()
+        : double.tryParse(value?.toString() ?? '') ??
+              (_expense['status']?.toString().trim().toLowerCase() == 'settled'
+                  ? _totalAmount
+                  : 0);
+    return settled.clamp(0, _totalAmount);
+  }
+
+  double get _remainingAmount =>
+      (_totalAmount - _settledAmount).clamp(0, _totalAmount);
+
+  bool get _isSettled => _remainingAmount == 0 && _totalAmount > 0;
+  bool get _isPrepaid =>
+      _expense['source']?.toString().trim().toLowerCase() == 'prepaid';
+  String get _paymentSourceLabel =>
+      _isPrepaid ? 'Prepaid' : 'Paid from Wallet';
 
   bool get _canEditAnyExpense => canSettleWalletExpenses();
 
@@ -56,7 +78,6 @@ class _TransactionDetailsState extends State<TransactionDetails> {
           if (!mounted) return;
           setState(() {
             _expense = {..._expense, ...expense};
-            _settledLocally = false;
           });
           return;
         }
@@ -65,6 +86,7 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   }
 
   Future<void> _onActionTap() async {
+    if (_isPrepaid) return;
     if (_isSettled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This transaction is already settled.')),
@@ -80,11 +102,12 @@ class _TransactionDetailsState extends State<TransactionDetails> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       clipBehavior: Clip.antiAlias,
-      builder: (context) => BottomsheetSettle().getBottomSheetOpen(_expense),
+      builder: (context) => BottomsheetSettle().getBottomSheetOpen({
+        ..._expense,
+        'remainingAmount': _remainingAmount,
+      }),
     );
-    if (settled == true && mounted) {
-      setState(() => _settledLocally = true);
-    }
+    if (settled == true && mounted) await _refreshExpense();
   }
 
   Future<void> _onEditTap() async {
@@ -204,15 +227,53 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                   ),
                 ),
                 Text(
-                  (_expense['amount'].toString()),
+                  _formatAmount(_totalAmount),
                   style: GoogleFonts.poppins(
-                    color: _isSettled
-                        ? Colors.green
-                        : Color.fromRGBO(255, 77, 106, 1),
+                    color: Colors.white,
                     fontSize: 32,
-                    fontWeight: FontWeight(600),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (_isPrepaid
+                            ? const Color(0xFFB69CFF)
+                            : const Color(0xFFFFC857))
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _paymentSourceLabel,
+                    style: TextStyle(
+                      color: _isPrepaid
+                          ? const Color(0xFFB69CFF)
+                          : const Color(0xFFFFC857),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (_settledAmount > 0)
+                  Text(
+                    'Settled: ${_formatAmount(_settledAmount)}',
+                    style: const TextStyle(
+                      color: Color(0xFF00D09C),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                if (_remainingAmount > 0)
+                  Text(
+                    'Remaining: ${_formatAmount(_remainingAmount)}',
+                    style: const TextStyle(
+                      color: Color(0xFFFF5271),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 SizedBox(height: 20),
                 Container(
                   padding: EdgeInsets.all(15),
@@ -345,8 +406,23 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                     ],
                   ),
                 ),
+                if (_canEditAnyExpense) _buildSettlementHistory(),
                 const SizedBox(height: 20),
-                if (_canEditAnyExpense)
+                if (_canEditAnyExpense && _isPrepaid)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _onEditTap,
+                        child: const Text(
+                          'Edit',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (_canEditAnyExpense)
                   Container(
                     height: 100,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -356,31 +432,44 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: _onEditTap,
-                            child:Text('Edit',style:GoogleFonts.figtree(fontSize: 15,color: Colors.white),),
+                            child: Text(
+                              'Edit',
+                              style: GoogleFonts.figtree(
+                                fontSize: 15,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.blue)),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll(
+                                Colors.blue,
+                              ),
+                            ),
                             onPressed: _isSettled ? null : _onActionTap,
                             child: Text(
-                              _isSettled ? 'Already Settled' : 'Settle',style: GoogleFonts.figtree(color: Colors.white),
+                              _isSettled ? 'Already Settled' : 'Settle',
+                              style: GoogleFonts.figtree(color: Colors.white),
                             ),
                           ),
                         ),
                       ],
                     ),
                   )
-                else
+                else if (_canEditOwnExpense)
                   SettleButton().getSettleButton(
                     context,
-                    _canEditOwnExpense
-                        ? 'Edit'
-                        : _isSettled
-                        ? 'Already Settled'
-                        : 'Settle',
-                    onTap: _canEditOwnExpense ? _onEditTap : _onActionTap,
+                    'Edit',
+                    onTap: _onEditTap,
+                  )
+                else if (!_isPrepaid)
+                  SettleButton().getSettleButton(
+                    context,
+                    _isSettled ? 'Already Settled' : 'Settle',
+                    onTap: _onActionTap,
                   ),
               ],
             ),
@@ -397,6 +486,117 @@ class _TransactionDetailsState extends State<TransactionDetails> {
         color: Colors.white,
         fontSize: 36,
         fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  String _formatAmount(double amount) {
+    final value = amount == amount.roundToDouble()
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+    return '₹$value';
+  }
+
+  Widget _buildSettlementHistory() {
+    final expenseId = _expense['id']?.toString();
+    if (expenseId == null || expenseId.isEmpty) return const SizedBox.shrink();
+    final historyStream = FirebaseFirestore.instance
+        .collection('expenses')
+        .doc(expenseId)
+        .collection('settlements')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+
+    return Container(
+      width: MediaQuery.of(context).size.width - 30,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: AppTheme().appBarBackgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2C374B)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Settlement history',
+            style: GoogleFonts.figtree(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: historyStream,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text(
+                  'Could not load settlement history: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.white70),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.blue),
+                );
+              }
+              final records = snapshot.data!.docs;
+              if (records.isEmpty) {
+                return const Text(
+                  'No settlement history recorded.',
+                  style: TextStyle(color: Colors.white60),
+                );
+              }
+              return Column(
+                children: records.map((record) {
+                  final settlement = record.data();
+                  final amountPaise = settlement['amountPaise'];
+                  final amount = amountPaise is num
+                      ? amountPaise.toDouble() / 100
+                      : (double.tryParse(amountPaise?.toString() ?? '') ?? 0) /
+                            100;
+                  final settledBy =
+                      settlement['settledByName']
+                              ?.toString()
+                              .trim()
+                              .isNotEmpty ==
+                          true
+                      ? settlement['settledByName'].toString().trim()
+                      : settlement['settledByEmail']?.toString() ?? 'Admin';
+                  final source =
+                      settlement['settlementSource']?.toString() ?? 'Manual';
+                  final createdAt = settlement['createdAt'];
+                  final date = createdAt is Timestamp
+                      ? createdAt.toDate()
+                      : createdAt is DateTime
+                      ? createdAt
+                      : null;
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.check_circle_outline,
+                      color: Color(0xFF00D09C),
+                    ),
+                    title: Text(
+                      '${_formatAmount(amount)} • $source',
+                      style: const TextStyle(
+                        color: Color(0xFF00D09C),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Settled by $settledBy${date == null ? '' : ' • ${DateFormat('dd MMM yyyy, hh:mm a').format(date.toLocal())}'}',
+                      style: const TextStyle(color: Colors.white60),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

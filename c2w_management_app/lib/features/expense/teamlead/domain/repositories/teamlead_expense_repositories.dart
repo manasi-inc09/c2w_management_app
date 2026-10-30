@@ -16,6 +16,12 @@ abstract class ExpenseRepository {
 
   Future<List<Map<String, dynamic>>> getAllExpenses();
 
+  Stream<List<Map<String, dynamic>>> watchExpenseHistoryByEmail(String email);
+
+  Stream<List<Map<String, dynamic>>> watchAllExpenseHistory();
+
+  Future<List<Map<String, dynamic>>> getAllExpenseHistory();
+
   Future<double> getWalletBalance();
 
   Stream<double> watchWalletBalance();
@@ -28,11 +34,15 @@ abstract class ExpenseRepository {
 
   Future<void> settleWalletExpense({
     required String expenseId,
+    String? groupId,
+    String? contributionId,
     required double amount,
     required bool fromWallet,
   });
 
   Future<List<Map<String, dynamic>>> getMembers();
+
+  Future<List<Map<String, dynamic>>> getAllMemberExpenses();
 
   Future<List<Map<String, dynamic>>> getExpensesByEmail(String email);
 

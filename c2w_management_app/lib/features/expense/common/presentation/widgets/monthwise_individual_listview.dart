@@ -1,5 +1,6 @@
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -108,28 +109,50 @@ class MonthwiseIndividualListview {
             ),
             ...monthTransactions.asMap().entries.map((entry) {
               final transaction = entry.value;
-              final settled =
-                  transaction['status']?.toString().toLowerCase() == 'settled';
+              final isGroupExpense = transaction['eventExpenseGroup'] == true;
+              final totalAmount = _transactionAmount(transaction);
+              final settledAmount = _settledAmount(transaction, totalAmount);
+              final remainingAmount = (totalAmount - settledAmount)
+                  .clamp(0, totalAmount)
+                  .toDouble();
+              final groupName = transaction['groupName']?.toString() ?? '';
               final description =
                   transaction['description']?.toString().trim() ?? '';
               final category = transaction['category']?.toString() ?? '';
               final source = transaction['source']?.toString() ?? '';
+              final paymentSource = _paymentSourceLabel(
+                isGroupExpense
+                    ? transaction['paymentSource']?.toString()
+                    : source,
+                isGroupExpense: isGroupExpense,
+              );
               final date = _transactionDate(transaction);
               final title = description.isEmpty ? category : description;
               final initial = title.trim().isEmpty
                   ? 'T'
                   : title.trim()[0].toUpperCase();
-              final avatarColor = ColorList().colorForIndex(colorOffset + entry.key);
+              final avatarColor = ColorList().colorForIndex(
+                colorOffset + entry.key,
+              );
               final subtitle = [
-                category,
-                transaction['company']?.toString() ?? '',
-                source,
-              ].where((value) => value.isNotEmpty).join(' • ');
+                if (!isGroupExpense) category,
+                if (isGroupExpense) 'Group Expense',
+                if (!isGroupExpense) transaction['company']?.toString() ?? '',
+              ].where((value) => value.isNotEmpty).toList();
 
               return GestureDetector(
                 onTap: () {
                   if (onTransactionTap != null) {
                     onTransactionTap(transaction);
+                  } else if (isGroupExpense) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => EventExpenseGroupDetailsScreen(
+                          groupId: transaction['groupId'].toString(),
+                        ),
+                      ),
+                    );
                   } else {
                     Navigator.push(
                       context,
@@ -139,87 +162,149 @@ class MonthwiseIndividualListview {
                     );
                   }
                 },
-                child: Opacity(
-                  opacity: settled ? 0.42 : 1,
-                  child: Container(
-                    color: const Color.fromRGBO(7, 10, 27, 1),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: avatarColor,
-                          child: Text(
-                            initial,
-                            style: const TextStyle(
-                              color: Color(0xFF202435),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                child: Container(
+                  color: const Color.fromRGBO(7, 10, 27, 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: avatarColor,
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Color(0xFF202435),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title.isEmpty ? 'Transaction' : title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                if (subtitle.isNotEmpty)
+                                  Text(
+                                    subtitle.join(' • '),
+                                    style: const TextStyle(
+                                      color: Color(0xFF7E8B9B),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                if (paymentSource != null)
+                                  _paymentSourceTag(paymentSource),
+                                if (isGroupExpense &&
+                                    _readAmount(transaction['walletAmount']) >
+                                        0)
+                                  _groupSourceTag(
+                                    'Paid from Wallet',
+                                    _readAmount(transaction['walletAmount']),
+                                    const Color(0xFFFFC857),
+                                  ),
+                                if (isGroupExpense &&
+                                    _readAmount(transaction['prepaidAmount']) >
+                                        0)
+                                  _groupSourceTag(
+                                    'Prepaid',
+                                    _readAmount(transaction['prepaidAmount']),
+                                    const Color(0xFFB69CFF),
+                                  ),
+                                if (isGroupExpense && groupName.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF143048,
+                                      ).withValues(alpha: 0.8),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      groupName,
+                                      style: const TextStyle(
+                                        color: Color(0xFF8CCBFF),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 100,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _formatAmount(totalAmount),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (settledAmount > 0)
                               Text(
-                                title.isEmpty ? 'Transaction' : title,
+                                '+${_formatAmount(settledAmount)} paid',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF00D09C),
+                                  fontSize: 10,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                            if (remainingAmount > 0)
                               Text(
-                                subtitle,
+                                '${_formatAmount(remainingAmount)} left',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: Color(0xFF7E8B9B),
-                                  fontSize: 12,
+                                  color: Color(0xFFFF5271),
+                                  fontSize: 10,
                                 ),
                               ),
-                            ],
-                          ),
+                            const SizedBox(height: 2),
+                            Text(
+                              date == null
+                                  ? '—'
+                                  : '${date.day} ${_shortMonthName(date.month)}',
+                              style: const TextStyle(
+                                color: Color(0xFF7E8B9B),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 90,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _formatAmount(_transactionAmount(transaction)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                date == null
-                                    ? '—'
-                                    : '${date.day} ${_shortMonthName(date.month)}',
-                                style: const TextStyle(
-                                  color: Color(0xFF7E8B9B),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -242,9 +327,81 @@ class MonthwiseIndividualListview {
   }
 
   static double _transactionAmount(Map<String, dynamic> transaction) {
-    final value = transaction['amount'];
+    return _readAmount(transaction['amount']);
+  }
+
+  static double _readAmount(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _settledAmount(
+    Map<String, dynamic> transaction,
+    double totalAmount,
+  ) {
+    final value = transaction['settledAmount'];
+    if (value is num) return value.toDouble().clamp(0, totalAmount);
+    final parsed = double.tryParse(value?.toString() ?? '');
+    if (parsed != null) return parsed.clamp(0, totalAmount);
+    return transaction['status']?.toString().toLowerCase() == 'settled'
+        ? totalAmount
+        : 0;
+  }
+
+  static String? _paymentSourceLabel(
+    String? source, {
+    required bool isGroupExpense,
+  }) {
+    switch (source?.trim().toLowerCase()) {
+      case 'prepaid':
+        return 'Prepaid';
+      case 'wallet':
+      case 'self paid':
+        return 'Paid from Wallet';
+      case '':
+      case null:
+        return isGroupExpense ? null : 'Paid from Wallet';
+      default:
+        return null;
+    }
+  }
+
+  static Widget _paymentSourceTag(String label) {
+    final isPrepaid = label == 'Prepaid';
+    final color = isPrepaid ? const Color(0xFFB69CFF) : const Color(0xFFFFC857);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  static Widget _groupSourceTag(String label, double amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$label ${_formatAmount(amount)}',
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 
   static String _formatAmount(double amount) {

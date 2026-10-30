@@ -49,6 +49,18 @@ class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
     return repository.getAllExpenses();
   }
 
+  Stream<List<Map<String, dynamic>>> watchExpenseHistoryByEmail(String email) {
+    return repository.watchExpenseHistoryByEmail(email);
+  }
+
+  Stream<List<Map<String, dynamic>>> watchAllExpenseHistory() {
+    return repository.watchAllExpenseHistory();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllExpenseHistory() {
+    return repository.getAllExpenseHistory();
+  }
+
   Future<double> getWalletBalance() {
     return repository.getWalletBalance();
   }
@@ -71,11 +83,15 @@ class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
 
   Future<void> settleWalletExpense({
     required String expenseId,
+    String? groupId,
+    String? contributionId,
     required double amount,
     required bool fromWallet,
   }) {
     return repository.settleWalletExpense(
       expenseId: expenseId,
+      groupId: groupId,
+      contributionId: contributionId,
       amount: amount,
       fromWallet: fromWallet,
     );
@@ -83,6 +99,10 @@ class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
 
   Future<List<Map<String, dynamic>>> getMembers() {
     return repository.getMembers();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllMemberExpenses() {
+    return repository.getAllMemberExpenses();
   }
 
   Future<List<Map<String, dynamic>>> getExpensesByEmail(String email) {
