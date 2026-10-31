@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/bottomsheet_settle.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/transaction_deletion.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/bloc/event_expense_groups_bloc.dart';
 import 'package:c2w_management_app/features/expense/teamlead/data/datasources/teamlead_cloudinary.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EventExpenseGroupsScreen extends StatelessWidget {
@@ -14,8 +17,137 @@ class EventExpenseGroupsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email?.trim().toLowerCase() ?? '';
+    final canCreateGroup = _canManageEventGroups(userEmail);
 
-    return Scaffold(
+    final body = user == null
+        ? const Center(
+            child: Text(
+              'Please log in to view event expenses.',
+              style: TextStyle(color: Colors.white70),
+            ),
+          )
+        : BlocBuilder<EventExpenseGroupsBloc, EventExpenseGroupsState>(
+            builder: (context, state) {
+              if (state.groupsError != null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'Could not load event expenses: ${state.groupsError}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                );
+              }
+              if (state.groupsLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.blue),
+                );
+              }
+
+              final groups = state.groups;
+              if (groups.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'No event groups are available to you.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: groups.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final group = groups[index];
+                  final data = group;
+                  final groupId = group['id']?.toString() ?? '';
+                  final eventName = data['eventName']?.toString() ?? '';
+                  final purpose = data['expensePurpose']?.toString() ?? '';
+                  final amount = _paise(data['totalAmountPaise']);
+                  final count = data['contributionCount'] is num
+                      ? (data['contributionCount'] as num).toInt()
+                      : 0;
+
+                  return Card(
+                    color: const Color(0xFF1E2638),
+                    margin: EdgeInsets.zero,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFF143048),
+                        child: Icon(Icons.groups_outlined, color: Colors.blue),
+                      ),
+                      title: Text(
+                        eventName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          '$purpose • $count ${count == 1 ? 'payment' : 'payments'}',
+                          style: const TextStyle(color: Colors.white60),
+                        ),
+                      ),
+                      trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _formatAmount(amount),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (canCreateGroup)
+                                IconButton(
+                                  tooltip: 'Manage group access',
+                                  onPressed: () => _manageGroupAccess(
+                                    context,
+                                    groupId,
+                                    data,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.visibility_outlined,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              EventExpenseGroupDetailsScreen(groupId: groupId),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+
+    final scaffold = Scaffold(
       backgroundColor: AppTheme().bodyBackgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme().appBarBackgroundColor,
@@ -28,173 +160,154 @@ class EventExpenseGroupsScreen extends StatelessWidget {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
-      body: user == null
-          ? const Center(
-              child: Text(
-                'Please log in to view event expenses.',
-                style: TextStyle(color: Colors.white70),
-              ),
-            )
-          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('eventExpenseGroups')
-                  .orderBy('updatedAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Could not load event expenses: ${snapshot.error}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.blue),
-                  );
-                }
-
-                final groups = snapshot.data!.docs;
-                if (groups.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No event expenses yet. Create a group to start tracking shared payments.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: groups.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    final data = group.data();
-                    final eventName = data['eventName']?.toString() ?? '';
-                    final purpose = data['expensePurpose']?.toString() ?? '';
-                    final amount = _paise(data['totalAmountPaise']);
-                    final count = data['contributionCount'] is num
-                        ? (data['contributionCount'] as num).toInt()
-                        : 0;
-
-                    return Card(
-                      color: const Color(0xFF1E2638),
-                      margin: EdgeInsets.zero,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        leading: const CircleAvatar(
-                          backgroundColor: Color(0xFF143048),
-                          child: Icon(
-                            Icons.groups_outlined,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        title: Text(
-                          eventName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 5),
-                          child: Text(
-                            '$purpose • $count ${count == 1 ? 'payment' : 'payments'}',
-                            style: const TextStyle(color: Colors.white60),
-                          ),
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _formatAmount(amount),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.white54,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) => EventExpenseGroupDetailsScreen(
-                              groupId: group.id,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-      floatingActionButton: user == null
+      body: body,
+      floatingActionButton: !canCreateGroup
           ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _createGroup(context),
-              backgroundColor: Colors.blue,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'New event group',
-                style: TextStyle(color: Colors.white),
+          : Builder(
+              builder: (fabContext) => FloatingActionButton.extended(
+                onPressed: () => _createGroup(fabContext),
+                backgroundColor: Colors.blue,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'New event group',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
+    );
+    if (user == null) return scaffold;
+    return BlocProvider(
+      create: (_) =>
+          EventExpenseGroupsBloc()
+            ..add(
+              EventExpenseGroupsStarted(
+                userUid: user.uid,
+                userEmail: userEmail,
+              ),
+            ),
+      child: BlocListener<EventExpenseGroupsBloc, EventExpenseGroupsState>(
+        listenWhen: (previous, current) =>
+            previous.operationError != current.operationError &&
+            current.operationError != null,
+        listener: (context, state) =>
+            _showMessage(context, state.operationError!),
+        child: scaffold,
+      ),
     );
   }
 
   Future<void> _createGroup(BuildContext context) async {
-    final draft = await showDialog<_EventGroupDraft>(
-      context: context,
-      builder: (_) => const _EventGroupDialog(),
-    );
-    if (draft == null || !context.mounted) return;
-
     final user = FirebaseAuth.instance.currentUser;
     final email = user?.email?.trim().toLowerCase();
-    if (user == null || email == null || email.isEmpty) {
-      _showMessage(context, 'Please log in before creating an event group.');
+    if (user == null || email == null || !_canManageEventGroups(email)) {
+      _showMessage(
+        context,
+        'Only instructors and superadmins can create event groups.',
+      );
       return;
     }
 
-    try {
-      final name = await _memberName(user, email);
-      await FirebaseFirestore.instance.collection('eventExpenseGroups').add({
-        'eventName': draft.eventName,
-        'expensePurpose': draft.expensePurpose,
-        'createdByUid': user.uid,
-        'createdByEmail': email,
-        'createdByName': name,
-        'totalAmountPaise': 0,
-        'settledAmountPaise': 0,
-        'contributionCount': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      if (context.mounted) {
-        _showMessage(context, 'Could not create the event group: $error');
-      }
+    final bloc = context.read<EventExpenseGroupsBloc>();
+    if (bloc.state.usersLoading) {
+      await bloc.stream.firstWhere((state) => !state.usersLoading);
     }
+    if (!context.mounted) return;
+    if (bloc.state.usersError != null) {
+      _showMessage(
+        context,
+        'Could not load members: ${bloc.state.usersError}',
+      );
+      return;
+    }
+
+    final draft = await showDialog<_EventGroupDraft>(
+      context: context,
+      builder: (_) =>
+          _EventGroupDialog(creatorEmail: email, users: bloc.state.users),
+    );
+    if (draft == null || !context.mounted) return;
+
+    if (!_canManageEventGroups(user.email?.trim().toLowerCase() ?? '')) {
+      _showMessage(
+        context,
+        'Only instructors and superadmins can create event groups.',
+      );
+      return;
+    }
+
+    bloc.add(
+      EventGroupCreateRequested(
+        user: user,
+        eventName: draft.eventName,
+        expensePurpose: draft.expensePurpose,
+        selectedMemberEmails: draft.memberEmails,
+      ),
+    );
+  }
+
+  Future<void> _manageGroupAccess(
+    BuildContext context,
+    String groupId,
+    Map<String, dynamic> group,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email?.trim().toLowerCase() ?? '';
+    if (user == null || !_canManageEventGroups(email)) {
+      _showMessage(
+        context,
+        'Only instructors and superadmins can manage group access.',
+      );
+      return;
+    }
+    final bloc = context.read<EventExpenseGroupsBloc>();
+    if (bloc.state.usersLoading) {
+      await bloc.stream.firstWhere((state) => !state.usersLoading);
+    }
+    if (!context.mounted) return;
+    if (bloc.state.usersError != null) {
+      _showMessage(
+        context,
+        'Could not load members: ${bloc.state.usersError}',
+      );
+      return;
+    }
+
+    final creatorEmail =
+        group['createdByEmail']?.toString().trim().toLowerCase() ?? '';
+    final initialEmails =
+        (group['memberEmails'] as List?)
+            ?.map((memberEmail) => memberEmail.toString().trim().toLowerCase())
+            .toSet() ??
+        <String>{};
+    final draft = await showDialog<_EventGroupDraft>(
+      context: context,
+      builder: (_) => _EventGroupDialog(
+        creatorEmail: creatorEmail,
+        initialMemberEmails: initialEmails,
+        accessOnly: true,
+        users: bloc.state.users,
+      ),
+    );
+    if (draft == null || !context.mounted) return;
+
+    final currentEmail =
+        FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase() ?? '';
+    if (!_canManageEventGroups(currentEmail)) {
+      _showMessage(
+        context,
+        'Only instructors and superadmins can manage group access.',
+      );
+      return;
+    }
+
+    bloc.add(
+      EventGroupAccessUpdateRequested(
+        user: user,
+        groupId: groupId,
+        creatorEmail: creatorEmail,
+        memberEmails: draft.memberEmails,
+      ),
+    );
   }
 }
 
@@ -265,6 +378,9 @@ class _EventExpenseGroupDetailsScreenState
         final groupSnapshot = await transaction.get(groupReference);
         if (!groupSnapshot.exists) {
           throw Exception('This event group no longer exists.');
+        }
+        if (!_hasGroupAccess(groupSnapshot.data()!, user.uid, email)) {
+          throw Exception('You do not have access to this event group.');
         }
 
         var amountDifference = draft.amountPaise;
@@ -377,6 +493,9 @@ class _EventExpenseGroupDetailsScreenState
           }
 
           final group = groupSnapshot.data!.data()!;
+          if (!_hasGroupAccess(group, user?.uid, email)) {
+            return _errorMessage('You do not have access to this event group.');
+          }
           final eventName = group['eventName']?.toString() ?? 'Event';
           final purpose = group['expensePurpose']?.toString() ?? '';
           final totalPaise = _paise(group['totalAmountPaise']);
@@ -578,6 +697,18 @@ class _EventExpenseGroupDetailsScreenState
                         final data = payment.data();
                         final ownerUid = data['createdByUid']?.toString();
                         final canEdit = canEditAll || ownerUid == user?.uid;
+                        final deletionRecord = {
+                          ...data,
+                          'id': 'group_${widget.groupId}_${payment.id}',
+                          'groupId': widget.groupId,
+                          'contributionId': payment.id,
+                          'eventExpenseGroup': true,
+                          'eventExpenseGroupContribution': true,
+                          'email': data['createdByEmail']?.toString() ?? '',
+                        };
+                        final canDelete = canDeleteExpenseTransaction(
+                          deletionRecord,
+                        );
                         final payer =
                             data['createdByName']?.toString() ??
                             data['createdByEmail']?.toString() ??
@@ -762,8 +893,24 @@ class _EventExpenseGroupDetailsScreenState
                               ),
                             ),
                             isThreeLine: true,
-                            trailing: canEdit
-                                ? IconButton(
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (canDelete)
+                                  IconButton(
+                                    tooltip: 'Delete payment',
+                                    onPressed: () =>
+                                        deleteExpenseTransactionWithReason(
+                                          context,
+                                          deletionRecord,
+                                        ),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.redAccent,
+                                    ),
+                                  ),
+                                if (canEdit)
+                                  IconButton(
                                     tooltip: 'Edit payment',
                                     onPressed: () => _editContribution(
                                       eventName,
@@ -772,10 +919,11 @@ class _EventExpenseGroupDetailsScreenState
                                     ),
                                     icon: const Icon(
                                       Icons.edit_outlined,
-                                      color: Colors.white70,
+                                      color: Colors.blue,
                                     ),
-                                  )
-                                : null,
+                                  ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -868,6 +1016,11 @@ class _EventExpenseGroupDetailsScreenState
         throw Exception('This event group no longer exists.');
       }
       final group = groupSnapshot.data()!;
+      final user = FirebaseAuth.instance.currentUser;
+      final email = user?.email?.trim().toLowerCase() ?? '';
+      if (!_hasGroupAccess(group, user?.uid, email)) {
+        throw Exception('You do not have access to this event group.');
+      }
       await _editContribution(group['eventName']?.toString() ?? 'Event');
     } catch (error) {
       if (mounted) {
@@ -1118,12 +1271,27 @@ Widget _settlementDetail(String label, String value) {
 class _EventGroupDraft {
   final String eventName;
   final String expensePurpose;
+  final Set<String> memberEmails;
 
-  const _EventGroupDraft(this.eventName, this.expensePurpose);
+  const _EventGroupDraft(
+    this.eventName,
+    this.expensePurpose,
+    this.memberEmails,
+  );
 }
 
 class _EventGroupDialog extends StatefulWidget {
-  const _EventGroupDialog();
+  final String creatorEmail;
+  final Set<String> initialMemberEmails;
+  final bool accessOnly;
+  final List<Map<String, dynamic>> users;
+
+  const _EventGroupDialog({
+    required this.creatorEmail,
+    required this.users,
+    this.initialMemberEmails = const {},
+    this.accessOnly = false,
+  });
 
   @override
   State<_EventGroupDialog> createState() => _EventGroupDialogState();
@@ -1133,37 +1301,171 @@ class _EventGroupDialogState extends State<_EventGroupDialog> {
   final _formKey = GlobalKey<FormState>();
   final _eventController = TextEditingController();
   final _purposeController = TextEditingController();
+  final _memberSearchController = TextEditingController();
+  late final Set<String> _memberEmails;
+
+  @override
+  void initState() {
+    super.initState();
+    _memberEmails = {...widget.initialMemberEmails};
+    if (widget.creatorEmail.isNotEmpty) {
+      _memberEmails.add(widget.creatorEmail);
+    }
+  }
 
   @override
   void dispose() {
     _eventController.dispose();
     _purposeController.dispose();
+    _memberSearchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final query = _memberSearchController.text.trim().toLowerCase();
+    final filteredUsers = widget.users.where((user) {
+      final name = user['displayName']?.toString().toLowerCase() ?? '';
+      final email = user['authEmail']?.toString().toLowerCase() ?? '';
+      return name.contains(query) || email.contains(query);
+    }).toList();
+    final memberPickerHeight =
+        (mediaQuery.size.height - mediaQuery.viewInsets.bottom).clamp(
+          300.0,
+          800.0,
+        ) *
+        0.35;
+
     return AlertDialog(
       backgroundColor: const Color(0xFF1E2638),
-      title: const Text(
-        'Create event group',
-        style: TextStyle(color: Colors.white),
+      scrollable: true,
+      title: Text(
+        widget.accessOnly ? 'Manage group access' : 'Create event group',
+        style: const TextStyle(color: Colors.white),
       ),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _dialogField(
-              controller: _eventController,
-              label: 'Event name',
-              hint: 'Ganpati Festival',
+            if (!widget.accessOnly) ...[
+              _dialogField(
+                controller: _eventController,
+                label: 'Event name',
+                hint: 'Ganpati Festival',
+              ),
+              const SizedBox(height: 12),
+              _dialogField(
+                controller: _purposeController,
+                label: 'Expense group',
+                hint: 'Food',
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Members with access',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            _dialogField(
-              controller: _purposeController,
-              label: 'Expense group',
-              hint: 'Food',
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 360,
+              height: memberPickerHeight.clamp(100.0, 270.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _memberSearchController,
+                    onChanged: (_) => setState(() {}),
+                    cursorColor: Colors.blue,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search members by name',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                      suffixIcon: _memberSearchController.text.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                _memberSearchController.clear();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.close, color: Colors.blue),
+                            ),
+                      isDense: true,
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white24),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: widget.users.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No users available.',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          )
+                        : filteredUsers.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No matching members found.',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredUsers[index];
+                              final email = user['authEmail'].toString();
+                              final name = user['displayName'].toString();
+                              final isAdmin = _isEventGroupAdmin(email);
+                              final selected =
+                                  _memberEmails.contains(email) ||
+                                  (isAdmin && !widget.accessOnly);
+
+                              return CheckboxListTile(
+                                dense: true,
+                                value: selected,
+                                activeColor: Colors.blue,
+                                checkColor: Colors.white,
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  name,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                subtitle: Text(
+                                  email,
+                                  style: const TextStyle(color: Colors.white54),
+                                ),
+                                onChanged:
+                                    email == widget.creatorEmail ||
+                                        (isAdmin && !widget.accessOnly)
+                                    ? null
+                                    : (checked) => setState(() {
+                                        if (checked == true) {
+                                          _memberEmails.add(email);
+                                        } else {
+                                          _memberEmails.remove(email);
+                                        }
+                                      }),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1171,20 +1473,28 @@ class _EventGroupDialogState extends State<_EventGroupDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: Colors.blue),
           child: const Text('Cancel'),
         ),
         FilledButton(
           onPressed: () {
-            if (!_formKey.currentState!.validate()) return;
+            if (!widget.accessOnly && !_formKey.currentState!.validate()) {
+              return;
+            }
             Navigator.pop(
               context,
               _EventGroupDraft(
                 _eventController.text.trim(),
                 _purposeController.text.trim(),
+                Set<String>.from(_memberEmails),
               ),
             );
           },
-          child: const Text('Create group'),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
+          child: Text(widget.accessOnly ? 'Save access' : 'Create group'),
         ),
       ],
     );
@@ -1462,6 +1772,10 @@ class _ContributionDialogState extends State<_ContributionDialog> {
                     label: Text(
                       _receiptFile == null ? 'Choose image' : 'Change image',
                     ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1499,6 +1813,7 @@ class _ContributionDialogState extends State<_ContributionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: Colors.blue),
           child: const Text('Cancel'),
         ),
         FilledButton(
@@ -1522,6 +1837,10 @@ class _ContributionDialogState extends State<_ContributionDialog> {
               ),
             );
           },
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Save payment'),
         ),
       ],
@@ -1596,6 +1915,28 @@ String _profileEmail(String email) {
     if (email.startsWith(prefix)) return email.substring(prefix.length);
   }
   return email;
+}
+
+bool _canManageEventGroups(String email) =>
+    email.startsWith('superadmin_') || email.startsWith('instructor_');
+
+bool _isEventGroupAdmin(String email) =>
+    email.startsWith('superadmin_') || email.startsWith('instructor_');
+
+bool _hasGroupAccess(
+  Map<String, dynamic> group,
+  String? userUid,
+  String userEmail,
+) {
+  final memberEmails = group['memberEmails'];
+  if (memberEmails is List) {
+    return memberEmails.any(
+      (memberEmail) =>
+          memberEmail?.toString().trim().toLowerCase() == userEmail,
+    );
+  }
+
+  return userUid != null && group['createdByUid']?.toString() == userUid;
 }
 
 int _paise(dynamic value) {

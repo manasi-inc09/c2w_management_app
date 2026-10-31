@@ -52,14 +52,14 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   bool get _isSettled => _remainingAmount == 0 && _totalAmount > 0;
   bool get _isPrepaid =>
       _expense['source']?.toString().trim().toLowerCase() == 'prepaid';
-  String get _paymentSourceLabel =>
-      _isPrepaid ? 'Prepaid' : 'Paid from Wallet';
+  String get _paymentSourceLabel => _isPrepaid ? 'Prepaid' : 'Paid from Wallet';
 
   bool get _canEditAnyExpense => canSettleWalletExpenses();
 
   bool get _canEditOwnExpense {
     final email = AuthRepository.authEmail?.toLowerCase() ?? '';
-    return email.startsWith('mentor_') || email.startsWith('teamlead_');
+    return !_isSettled &&
+        (email.startsWith('mentor_') || email.startsWith('teamlead_'));
   }
 
   Future<void> _refreshExpense() async {
@@ -111,6 +111,17 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   }
 
   Future<void> _onEditTap() async {
+    if (_isSettled && !_canEditAnyExpense) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Only instructors and superadmins can edit settled transactions.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -241,10 +252,11 @@ class _TransactionDetailsState extends State<TransactionDetails> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: (_isPrepaid
-                            ? const Color(0xFFB69CFF)
-                            : const Color(0xFFFFC857))
-                        .withValues(alpha: 0.12),
+                    color:
+                        (_isPrepaid
+                                ? const Color(0xFFB69CFF)
+                                : const Color(0xFFFFC857))
+                            .withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

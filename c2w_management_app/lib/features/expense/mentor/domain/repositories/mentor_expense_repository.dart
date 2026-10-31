@@ -8,4 +8,11 @@ abstract class MentorExpenseRepository {
     required Expense expense,
     required String? existingReceiptUrl,
   });
+
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  });
 }

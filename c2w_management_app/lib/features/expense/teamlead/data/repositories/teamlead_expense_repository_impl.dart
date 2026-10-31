@@ -28,6 +28,21 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   @override
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _remoteDataSource.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
+  }
+
+  @override
   Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email) {
     return _remoteDataSource.watchExpensesByEmail(email);
   }

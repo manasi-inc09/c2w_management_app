@@ -10,6 +10,8 @@ class MonthwiseIndividualListview {
     List<Map<String, dynamic>> transactions, {
     bool shrinkWrap = false,
     ValueChanged<Map<String, dynamic>>? onTransactionTap,
+    bool Function(Map<String, dynamic>)? canDeleteTransaction,
+    Future<bool> Function(Map<String, dynamic>)? onDeleteTransaction,
   }) {
     final grouped = <DateTime?, List<Map<String, dynamic>>>{};
 
@@ -140,7 +142,7 @@ class MonthwiseIndividualListview {
                 if (!isGroupExpense) transaction['company']?.toString() ?? '',
               ].where((value) => value.isNotEmpty).toList();
 
-              return GestureDetector(
+              final transactionCard = GestureDetector(
                 onTap: () {
                   if (onTransactionTap != null) {
                     onTransactionTap(transaction);
@@ -308,11 +310,40 @@ class MonthwiseIndividualListview {
                   ),
                 ),
               );
+              if (onDeleteTransaction == null ||
+                  canDeleteTransaction?.call(transaction) != true) {
+                return transactionCard;
+              }
+
+              final transactionId = transaction['id']?.toString();
+              return Dismissible(
+                key: ValueKey(
+                  transactionId?.isNotEmpty == true
+                      ? transactionId
+                      : '${month?.millisecondsSinceEpoch ?? 'unknown'}-${entry.key}',
+                ),
+                direction: DismissDirection.horizontal,
+                confirmDismiss: (_) => onDeleteTransaction(transaction),
+                background: _deleteSwipeBackground(alignment: Alignment.centerLeft),
+                secondaryBackground: _deleteSwipeBackground(
+                  alignment: Alignment.centerRight,
+                ),
+                child: transactionCard,
+              );
             }),
             const SizedBox(height: 8),
           ],
         );
       },
+    );
+  }
+
+  Widget _deleteSwipeBackground({required Alignment alignment}) {
+    return Container(
+      color: Colors.redAccent,
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
     );
   }
 

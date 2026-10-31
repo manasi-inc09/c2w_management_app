@@ -9,4 +9,18 @@ class CreateInstructorExpenseUseCase {
   Future<String> createExpense(Expense expense) {
     return _repository.createExpense(expense);
   }
+
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _repository.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
+  }
 }

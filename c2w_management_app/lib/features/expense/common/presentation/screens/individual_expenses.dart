@@ -2,7 +2,9 @@ import 'package:c2w_management_app/core/app_theme.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/create_transaction_page.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_deletion_logs.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_manager.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/transaction_deletion.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
@@ -181,6 +183,17 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
               ),
 
         actions: [
+          if (role == 'instructor' || role == 'superadmin')
+            IconButton(
+              tooltip: 'Transaction deletion logs',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const ExpenseDeletionLogsScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.history, color: Colors.white),
+            ),
           IconButton(
             tooltip: 'Event expenses',
             onPressed: () => Navigator.push(
@@ -328,7 +341,16 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
                         return RefreshIndicator(
                           onRefresh: _refreshHistory,
                           child: MonthwiseIndividualListview()
-                              .getExpenseHistoryListview(expenses),
+                              .getExpenseHistoryListview(
+                                expenses,
+                                canDeleteTransaction:
+                                    canDeleteExpenseTransaction,
+                                onDeleteTransaction: (expense) =>
+                                    deleteExpenseTransactionWithReason(
+                                      context,
+                                      expense,
+                                    ),
+                              ),
                         );
                       }
                       return const SizedBox.shrink();
@@ -395,7 +417,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
             Text(
               '₹$formatted',
               style: GoogleFonts.poppins(
-                fontSize: 26,
+                fontSize: 23,
                 fontWeight: FontWeight.w500,
                 color: amountColor,
               ),
@@ -403,7 +425,7 @@ class _IndividualExpensesState extends State<IndividualExpenses> {
             Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: const Color.fromRGBO(255, 255, 255, 0.6),
               ),
