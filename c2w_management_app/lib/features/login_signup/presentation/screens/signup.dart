@@ -43,10 +43,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (RegExp(r'[A-Z]').hasMatch(email)) {
       return 'Capital letters are not allowed in email';
     }
-    if (!RegExp(
-      r"^[\w.!#$%&'*+/=?^`{|}~-]+@[\w-]+(\.[\w-]+)+$",
-    ).hasMatch(email)) {
-      return 'Enter a valid email address';
+    if (!email.endsWith('@gmail.com')) {
+      return 'Email must end with @gmail.com';
+    }
+    if (!AuthRepository.isValidAuthEmail(email)) {
+      return 'Enter a valid lowercase Gmail address';
     }
     return null;
   }
@@ -224,6 +225,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
                             keyboardType: TextInputType.emailAddress,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                            ],
                             validator: _validateEmail,
                             style: const TextStyle(
                               color: Colors.white,

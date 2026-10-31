@@ -34,6 +34,9 @@ class AuthRepository {
     return _roleAliases[normalized] ?? normalized.replaceAll(' ', '');
   }
 
+  static bool isValidAuthEmail(String email) =>
+      RegExp(r'^[a-z0-9._%+-]+@gmail\.com$').hasMatch(email.trim());
+
   static bool roleRequiresUpi(String role) {
     final normalizedRole = normalizeRole(role);
     return normalizedRole != 'salesadmin' &&
@@ -97,10 +100,12 @@ class AuthRepository {
     required String role,
   }) async {
     final normalizedRole = normalizeRole(role);
-    final normalizedEmail = cleanEmail(email).toLowerCase();
+    final normalizedEmail = cleanEmail(email).trim();
     log(normalizedEmail);
-    if (normalizedEmail.isEmpty) {
-      throw ArgumentError('Email is required to log in.');
+    if (!isValidAuthEmail(normalizedEmail)) {
+      throw ArgumentError(
+        'Use a lowercase Gmail address ending with @gmail.com.',
+      );
     }
 
     final userData = await _firebaseFirestore
@@ -160,7 +165,13 @@ class AuthRepository {
     required String role,
   }) async {
     final normalizedRole = normalizeRole(role);
-    final createdEmail = '${normalizedRole}_$email';
+    final normalizedEmail = email.trim();
+    if (!isValidAuthEmail(normalizedEmail)) {
+      throw ArgumentError(
+        'Use a lowercase Gmail address ending with @gmail.com.',
+      );
+    }
+    final createdEmail = '${normalizedRole}_$normalizedEmail';
 
     final app = _userCreationApp ??= await Firebase.initializeApp(
       name: _userCreationAppName,
@@ -199,6 +210,11 @@ class AuthRepository {
     required String dob,
     required String role,
   }) async {
+    if (!isValidAuthEmail(email)) {
+      throw ArgumentError(
+        'Use a lowercase Gmail address ending with @gmail.com.',
+      );
+    }
     role = normalizeRole(role);
     final userData = <String, dynamic>{
       'Name': name,
