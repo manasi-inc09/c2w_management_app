@@ -7,6 +7,7 @@ import 'package:c2w_management_app/features/expense/common/presentation/screens/
 import 'package:c2w_management_app/features/expense/common/presentation/screens/transaction_details.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/view_all_expenses.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/transaction_deletion.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/colorlist.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
 
@@ -99,10 +100,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
         );
         final paidAmount = expenses.fold<double>(0, (runningTotal, expense) {
           return runningTotal +
-              _settledExpenseAmount(
-                expense,
-                _expenseAmount(expense['amount']),
-              );
+              _settledExpenseAmount(expense, _expenseAmount(expense['amount']));
         });
         final unpaidAmount = totalAmount - paidAmount;
         final prepaidAmount = expenses.fold<double>(
@@ -477,9 +475,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                           expense['description']?.toString().trim() ?? '';
                       final category = expense['category']?.toString() ?? '';
                       final paymentSource = _paymentSourceLabel(
-                        isGroupExpense
-                            ? null
-                            : expense['source']?.toString(),
+                        isGroupExpense ? null : expense['source']?.toString(),
                       );
                       final date = _expenseDate(expense);
                       final total = _expenseAmount(expense['amount']);
@@ -487,7 +483,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                       final remaining = (total - settled)
                           .clamp(0, total)
                           .toDouble();
-                      return GestureDetector(
+                      final transactionCard = GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
@@ -678,6 +674,35 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                           ),
                         ),
                       );
+                      if (!canDeleteExpenseTransaction(expense)) {
+                        return transactionCard;
+                      }
+
+                      final expenseId = expense['id']?.toString();
+                      return Dismissible(
+                        key: ValueKey(
+                          expenseId?.isNotEmpty == true
+                              ? expenseId
+                              : 'recent-expense-$index',
+                        ),
+                        direction: DismissDirection.horizontal,
+                        confirmDismiss: (_) async {
+                          final deleted =
+                              await deleteExpenseTransactionWithReason(
+                                context,
+                                expense,
+                              );
+                          if (deleted && mounted) await _refreshExpenses();
+                          return deleted;
+                        },
+                        background: _deleteSwipeBackground(
+                          alignment: Alignment.centerLeft,
+                        ),
+                        secondaryBackground: _deleteSwipeBackground(
+                          alignment: Alignment.centerRight,
+                        ),
+                        child: transactionCard,
+                      );
                     },
                   ),
                 ],
@@ -688,6 +713,15 @@ class _ExpenseManagerState extends State<ExpenseManager> {
           //bottomNavigationBar: CommonBottomNavigationBar(currentIndex: , onTap: onTap),
         );
       },
+    );
+  }
+
+  Widget _deleteSwipeBackground({required Alignment alignment}) {
+    return Container(
+      color: Colors.redAccent,
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
     );
   }
 
