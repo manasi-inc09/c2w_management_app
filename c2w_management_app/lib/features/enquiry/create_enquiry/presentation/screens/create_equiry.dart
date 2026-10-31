@@ -36,6 +36,11 @@ class _CreateEquiryState extends State<CreateEquiry> {
   String? _mobileLookupError;
   List<Map<String, String>> _mobileMatches = [];
 
+  bool get _isCommunityMember =>
+      (AuthRepository.authEmail ?? '').trim().toLowerCase().startsWith(
+        'communitymember_',
+      );
+
   final List<String> colleges = [
     "SKNCOE Smt. Kashibai Navale College of Engineering, Vadgaon, Pune",
     "Zeal College of Engineering & Research, Narhe, Pune",
@@ -427,6 +432,8 @@ class _CreateEquiryState extends State<CreateEquiry> {
 
   void _onMobileChanged(String value) {
     _mobileLookupTimer?.cancel();
+    if (_isCommunityMember) return;
+
     final request = ++_mobileLookupRequest;
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 4) {
@@ -616,7 +623,7 @@ class _CreateEquiryState extends State<CreateEquiry> {
                 style: TextStyle(color: Colors.white),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-                onChanged: _onMobileChanged,
+                onChanged: _isCommunityMember ? null : _onMobileChanged,
                 validator: (value) => value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value.trim()) ? 'Enter a valid mobile number' : null,
                 decoration: InputDecoration(
                   hintText: 'Enter 10-digit mobile no.',
@@ -634,9 +641,10 @@ class _CreateEquiryState extends State<CreateEquiry> {
                   ),
                 ),
               ),
-              if (_isLookingUpMobile ||
-                  _mobileMatches.isNotEmpty ||
-                  _mobileLookupError != null)
+              if (!_isCommunityMember &&
+                  (_isLookingUpMobile ||
+                      _mobileMatches.isNotEmpty ||
+                      _mobileLookupError != null))
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(top: 6),

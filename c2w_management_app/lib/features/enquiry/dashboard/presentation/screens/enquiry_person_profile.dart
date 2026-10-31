@@ -44,6 +44,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
     if (base == null || historyItem == null) return base;
     return EnquiryModel(
       id: base.id,
+      collectionName: base.collectionName,
       currentHistoryId: historyItem.id,
       studentName: historyItem.studentName,
       mobileNo: historyItem.mobileNo,
@@ -135,6 +136,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       }
       await GetEnquiryData().updateEnquiryFields(
         enquiryId: enquiry.id,
+        collectionName: enquiry.collectionName,
         historyId: enquiry.currentHistoryId.isNotEmpty
             ? enquiry.currentHistoryId
             : enquiry.enquiryHistory.isEmpty
@@ -181,6 +183,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
               : state.enquiries.firstWhere(
                   (item) =>
                       item.id == widget.enquiry!.id &&
+                      item.collectionName == widget.enquiry!.collectionName &&
                       (widget.enquiry!.currentHistoryId.isEmpty ||
                           item.currentHistoryId ==
                               widget.enquiry!.currentHistoryId),

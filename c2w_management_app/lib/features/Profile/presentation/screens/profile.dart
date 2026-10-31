@@ -7,6 +7,7 @@ import 'package:c2w_management_app/features/Profile/presentation/bloc/ProfileSta
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpBloc.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (email != null) {
       final cleanedEmail = email.trim().replaceFirst(
         RegExp(
-          r'^(superadmin|salesadmin|teamlead|instructor|mentor|admin)_',
+          r'^(superadmin|salesadmin|teamlead|instructor|mentor|communitymember|admin)_',
           caseSensitive: false,
         ),
         '',
@@ -274,6 +275,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           .startsWith('superadmin_') ==
                       true ||
                   user.role.toLowerCase() == 'superadmin';
+              final isCommunityMember =
+                  FirebaseAuth.instance.currentUser?.email
+                          ?.toLowerCase()
+                          .startsWith('communitymember_') ==
+                      true ||
+                  user.role.toLowerCase() == 'communitymember';
 
               return SingleChildScrollView(
                 child: Column(
@@ -300,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Container(
                       color: cardColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: isSalesAdmin || isSuperAdmin
+                      child: isSalesAdmin || isSuperAdmin || isCommunityMember
                           ? Row(
                               children: [
                                 StatItem(
@@ -339,7 +346,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ProfileTile(
                       icon: Icons.person_outline,
                       title: 'Personal Information',
-                      subtitle: 'Full name, Mobile no., Email id, DOB, UPI',
+                      subtitle: isSalesAdmin || isCommunityMember
+                          ? 'Full name, Mobile no., Email id, DOB'
+                          : 'Full name, Mobile no., Email id, DOB, UPI',
                       onTap: () {
                         final email = profileDocumentId;
 
@@ -566,6 +575,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   late final List<InfoField> fields;
 
+  bool get _showUpiField =>
+      AuthRepository.roleRequiresUpi(widget.user.role);
+
   @override
   void initState() {
     super.initState();
@@ -598,12 +610,13 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         TextInputType.emailAddress,
       ),
 
-      InfoField(
-        Icons.account_balance_wallet_outlined,
-        'UPI ID',
-        user.upiId,
-        TextInputType.text,
-      ),
+      if (_showUpiField)
+        InfoField(
+          Icons.account_balance_wallet_outlined,
+          'UPI ID',
+          user.upiId,
+          TextInputType.text,
+        ),
     ];
   }
 
@@ -643,13 +656,24 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         showMessage('${field.label} cannot be empty');
         return;
       }
+      if (field.label == 'Mobile No.' &&
+          !RegExp(r'^[6-9]\d{9}$').hasMatch(field.controller.text.trim())) {
+        showMessage('Mobile number must be 10 digits and start with 6 to 9');
+        return;
+      }
     }
 
+    String valueOf(String label) => fields
+        .firstWhere((field) => field.label == label)
+        .controller
+        .text
+        .trim();
+
     final updatedData = <String, dynamic>{
-      'Name': fields[0].controller.text.trim(),
-      'DOB': fields[1].controller.text.trim(),
-      'Mobile No': fields[2].controller.text.trim(),
-      'UPI ID': fields[4].controller.text.trim(),
+      'Name': valueOf('Full Name'),
+      'DOB': valueOf('Date of Birth'),
+      'Mobile No': valueOf('Mobile No.'),
+      if (_showUpiField) 'UPI ID': valueOf('UPI ID'),
     };
 
     FocusScope.of(context).unfocus();
@@ -799,6 +823,12 @@ class InfoRow extends StatelessWidget {
                   TextField(
                     controller: field.controller,
                     keyboardType: field.keyboardType,
+                    inputFormatters: field.label == 'Mobile No.'
+                        ? [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ]
+                        : null,
                     maxLines: null,
                     style: GoogleFonts.figtree(
                       fontSize: 14,

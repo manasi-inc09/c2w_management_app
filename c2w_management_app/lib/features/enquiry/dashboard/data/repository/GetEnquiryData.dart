@@ -23,14 +23,28 @@ class GetEnquiryData {
           email.startsWith('teamlead_') ||
           email.startsWith('mentor_') ||
           email.startsWith('instructor_');
-      final snapshot = await _firestore.collection('Enquiries').get();
-      if (snapshot.docs.isEmpty) {
+      final collectionNames = isSalesAdminOrSuperAdmin
+          ? const ['Enquiries', 'Community Enquiries']
+          : [
+              email.startsWith('communitymember_')
+                  ? 'Community Enquiries'
+                  : 'Enquiries',
+            ];
+      final snapshots = await Future.wait(
+        collectionNames.map((name) => _firestore.collection(name).get()),
+      );
+      if (snapshots.every((snapshot) => snapshot.docs.isEmpty)) {
         log('No enquiries found in Firestore');
         return const <EnquiryModel>[];
       }
 
       final enquiries = <EnquiryModel>[];
-      for (final doc in snapshot.docs) {
+      for (var collectionIndex = 0;
+          collectionIndex < snapshots.length;
+          collectionIndex++) {
+        final collectionName = collectionNames[collectionIndex];
+        final snapshot = snapshots[collectionIndex];
+        for (final doc in snapshot.docs) {
         final parent = doc.data();
         if (parent['Is Historical'] == true &&
             !isSalesAdminOrSuperAdmin &&
@@ -54,7 +68,13 @@ class GetEnquiryData {
               ..['Mobile No'] = parent['Mobile No']
               ..['College Name'] = parent['College Name']
               ..['Enquiry History'] = history;
-            enquiries.add(EnquiryModel.fromMap(latest, id: doc.id));
+            enquiries.add(
+              EnquiryModel.fromMap(
+                latest,
+                id: doc.id,
+                collectionName: collectionName,
+              ),
+            );
             continue;
           }
 
@@ -80,7 +100,7 @@ class GetEnquiryData {
                 EnquiryModel.fromMap({
                   ...entry,
                   'Enquiry History': entries,
-                }, id: doc.id),
+                }, id: doc.id, collectionName: collectionName),
               );
             }
             continue;
@@ -93,7 +113,7 @@ class GetEnquiryData {
             EnquiryModel.fromMap({
               ...latest,
               'Enquiry History': entries,
-            }, id: doc.id),
+            }, id: doc.id, collectionName: collectionName),
           );
           continue;
         }
@@ -108,7 +128,10 @@ class GetEnquiryData {
                     email)) {
           continue;
         }
-        enquiries.add(EnquiryModel.fromFirestore(doc));
+        enquiries.add(
+          EnquiryModel.fromFirestore(doc, collectionName: collectionName),
+        );
+        }
       }
       enquiries.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
@@ -133,9 +156,21 @@ class GetEnquiryData {
   Future<void> updateEnquiryFields({
     required String enquiryId,
     String? historyId,
+    String? collectionName,
     required Map<String, dynamic> fields,
   }) async {
-    final reference = _firestore.collection('Enquiries').doc(enquiryId);
+    final email = (FirebaseAuth.instance.currentUser?.email ??
+            AuthRepository.authEmail ??
+            '')
+        .trim()
+        .toLowerCase();
+    final targetCollectionName = collectionName ??
+        (email.startsWith('communitymember_')
+            ? 'Community Enquiries'
+            : 'Enquiries');
+    final reference = _firestore
+        .collection(targetCollectionName)
+        .doc(enquiryId);
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(reference);
       final data = snapshot.data() ?? {};

@@ -49,6 +49,7 @@ class _DashboardViewContent extends StatefulWidget {
 class _DashboardViewContentState extends State<_DashboardViewContent> {
   // Index of the selected bottom navigation tab (0 = Home, 1 = Expenses)
   int currentIndex = 0;
+  String _selectedAdminEnquiryCollection = 'Enquiries';
 
   @override
   void initState() {
@@ -78,6 +79,11 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
       _email.startsWith('teamlead_') ||
       _email.startsWith('mentor_') ||
       _email.startsWith('instructor_');
+
+  bool get _isCommunityMember => _email.startsWith('communitymember_');
+
+  bool get _showsOfficeAndCommunityEnquiries =>
+      _isSalesAdmin || _email.startsWith('superadmin_');
 
   /// These roles can open their own date-sorted enquiry list and history.
   bool get _canOpenEnquiryOverview =>
@@ -121,7 +127,11 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
     }
   }
 
-  Widget _buildEnquiriesList(BuildContext context, DashBoardState state) {
+  Widget _buildEnquiriesList(
+    BuildContext context,
+    DashBoardState state, {
+    List<EnquiryModel>? enquiries,
+  }) {
     if (state is DashBoardLoading || state is DashBoardInitial) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 36),
@@ -175,9 +185,20 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
       );
     }
 
-    if (state is DashBoardEmpty ||
-        (state is DashBoardLoaded && state.enquiries.isEmpty)) {
-      return const SizedBox.shrink();
+    final displayedEnquiries =
+        enquiries ??
+        (state is DashBoardLoaded ? state.enquiries : const <EnquiryModel>[]);
+    if (state is DashBoardEmpty || displayedEnquiries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+        child: Center(
+          child: Text(
+            'No enquiries found. Add a new enquiry to get started.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.figtree(color: Colors.white70, fontSize: 14),
+          ),
+        ),
+      );
     }
 
     if (state is DashBoardLoaded) {
@@ -185,15 +206,168 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: state.enquiries.length,
+        itemCount: displayedEnquiries.length,
         itemBuilder: (context, index) {
-          final item = state.enquiries[index];
+          final item = displayedEnquiries[index];
           return _buildEnquiryCard(context, item);
         },
       );
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _buildEnquirySectionHeader(
+    String title,
+    int? count, {
+    bool showSeeAll = false,
+  }) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.figtree(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        if (count != null) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color.fromRGBO(110, 75, 239, 0.25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color.fromRGBO(110, 75, 239, 0.8),
+              ),
+            ),
+            child: Text(
+              '$count',
+              style: GoogleFonts.figtree(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+        const Spacer(),
+        if (showSeeAll)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => Enquiry()),
+              );
+            },
+            child: Row(
+              children: [
+                Text(
+                  'See all',
+                  style: GoogleFonts.figtree(fontSize: 14, color: Colors.grey),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAdminEnquiryHeader(int? count) {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedAdminEnquiryCollection,
+                    dropdownColor: const Color(0xFF161B2E),
+                    iconEnabledColor: Colors.white70,
+                    iconSize: 20,
+                    isDense: true,
+                    style: GoogleFonts.figtree(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Enquiries',
+                        child: Text('Office Enquiries'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Community Enquiries',
+                        child: Text('Community Enquiries'),
+                      ),
+                    ],
+                    onChanged: (collectionName) {
+                      if (collectionName == null) return;
+                      setState(() {
+                        _selectedAdminEnquiryCollection = collectionName;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              if (count != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(110, 75, 239, 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color.fromRGBO(110, 75, 239, 0.8),
+                    ),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: GoogleFonts.figtree(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.only(left: 8, right: 0),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => Enquiry(
+                  collectionName: _selectedAdminEnquiryCollection,
+                ),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              Text(
+                'See all',
+                style: GoogleFonts.figtree(fontSize: 14, color: Colors.grey),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildEnquiryCard(BuildContext context, EnquiryModel item) {
@@ -505,90 +679,52 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                       SizedBox(height: sectionSpacing),
                       BlocBuilder<DashBoardBloc, DashBoardState>(
                         builder: (context, state) {
+                          final allEnquiries = state is DashBoardLoaded
+                              ? state.enquiries
+                              : const <EnquiryModel>[];
                           final count = state is DashBoardLoaded
-                              ? state.enquiries.length
+                              ? allEnquiries.length
                               : null;
 
+                          if (_showsOfficeAndCommunityEnquiries) {
+                            final selectedEnquiries = allEnquiries
+                                .where(
+                                  (item) =>
+                                      item.collectionName ==
+                                      _selectedAdminEnquiryCollection,
+                                )
+                                .toList();
+
+                            return Column(
+                              children: [
+                                _buildAdminEnquiryHeader(
+                                  state is DashBoardLoaded
+                                      ? selectedEnquiries.length
+                                      : null,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildEnquiriesList(
+                                  context,
+                                  state,
+                                  enquiries: selectedEnquiries,
+                                ),
+                              ],
+                            );
+                          }
+
+                          final title =
+                              (_isTeamLeadMentorOrInstructor ||
+                                  _isCommunityMember)
+                              ? 'My Enquiries'
+                              : 'New Enquiry';
                           return Column(
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    _isTeamLeadMentorOrInstructor
-                                        ? 'My Enquiries'
-                                        : 'New Enquiry',
-                                    style: GoogleFonts.figtree(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  if (count != null) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromRGBO(
-                                          110,
-                                          75,
-                                          239,
-                                          0.25,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: const Color.fromRGBO(
-                                            110,
-                                            75,
-                                            239,
-                                            0.8,
-                                          ),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "$count",
-                                        style: GoogleFonts.figtree(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  const Spacer(),
-                                  // "See all" is hidden for instructor_ / mentor_ / teamlead_
-                                 if (_canOpenEnquiryOverview &&
-    (AuthRepository.authEmail?.contains("salesadmin_") == true ||
-     AuthRepository.authEmail?.contains("superadmin_") == true)) ...[
-  TextButton(
-    onPressed: () {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Enquiry(),
-        ),
-      );
-    },
-    child: Row(
-      children: [
-        Text(
-          "See all",
-          style: GoogleFonts.figtree(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
-        const Icon(
-          Icons.chevron_right,
-          color: Colors.grey,
-        ),
-      ],
-    ),
-  ),
-],
-                                ],
+                              _buildEnquirySectionHeader(
+                                title,
+                                count,
+                                showSeeAll: _canOpenEnquiryOverview &&
+                                    (_email.contains('salesadmin_') ||
+                                        _email.contains('superadmin_')),
                               ),
                               const SizedBox(height: 12),
                               _buildEnquiriesList(context, state),
@@ -638,7 +774,7 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
-      bottomNavigationBar: _isSalesAdmin
+      bottomNavigationBar: _isSalesAdmin || _isCommunityMember
           ? null
           : CommonBottomNavigationBar(
               currentIndex: currentIndex,

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddEnquiryRepository {
   final FirebaseFirestore firestore;
@@ -6,13 +8,24 @@ class AddEnquiryRepository {
   AddEnquiryRepository({FirebaseFirestore? firestore})
     : firestore = firestore ?? FirebaseFirestore.instance;
 
+  String get _collectionName {
+    final email = (FirebaseAuth.instance.currentUser?.email ??
+            AuthRepository.authEmail ??
+            '')
+        .trim()
+        .toLowerCase();
+    return email.startsWith('communitymember_')
+        ? 'Community Enquiries'
+        : 'Enquiries';
+  }
+
   Future<List<Map<String, String>>> findEnquiriesByMobilePrefix(
     String prefix,
   ) async {
     final normalizedPrefix = _normalizeMobile(prefix);
     if (normalizedPrefix.length < 4) return const [];
 
-    final docs = (await firestore.collection('Enquiries').get()).docs;
+    final docs = (await firestore.collection(_collectionName).get()).docs;
     final matchesByMobile = <String, Map<String, String>>{};
     final datesByMobile = <String, DateTime>{};
 
@@ -70,7 +83,7 @@ class AddEnquiryRepository {
     required String enquiryAddedBy,
     required String enquiryType,              /// for dashboard only (i.e General)
   }) async {
-    final collection = firestore.collection('Enquiries');
+    final collection = firestore.collection(_collectionName);
     final docs = (await collection.get()).docs.where((doc) {
       final data = doc.data();
       return _normalizeMobile((data['Mobile No'] ?? '').toString()) ==

@@ -14,11 +14,20 @@ class UsersScreen extends StatefulWidget {
 
 class _UsersScreenState extends State<UsersScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearchOpen = false;
+  String _searchQuery = '';
 
   String get _email => AuthRepository.authEmail ?? '';
 
   bool get _canAddUser =>
       _email.startsWith('superadmin_') || _email.startsWith('instructor_');
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +51,40 @@ class _UsersScreenState extends State<UsersScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Users',
-          style: GoogleFonts.figtree(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        title: _isSearchOpen
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: GoogleFonts.figtree(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  hintText: 'Search name, email, role, or mobile',
+                  hintStyle: GoogleFonts.figtree(color: Colors.white54),
+                  border: InputBorder.none,
+                ),
+              )
+            : Text(
+                'Users',
+                style: GoogleFonts.figtree(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            tooltip: _isSearchOpen ? 'Close search' : 'Search users',
+            onPressed: () {
+              setState(() {
+                _isSearchOpen = !_isSearchOpen;
+                _searchQuery = '';
+                _searchController.clear();
+              });
+            },
+            icon: Icon(_isSearchOpen ? Icons.close : Icons.search),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -87,13 +122,45 @@ class _UsersScreenState extends State<UsersScreen> {
               );
             }
 
-            final users = snapshot.data?.docs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+            final allUsers =
+                snapshot.data?.docs ??
+                const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
-            if (users.isEmpty) {
+            if (allUsers.isEmpty) {
               return Center(
                 child: Text(
                   'No users found.',
                   style: GoogleFonts.figtree(color: Colors.white70, fontSize: 16),
+                ),
+              );
+            }
+
+            final query = _searchQuery.trim().toLowerCase();
+            final users = query.isEmpty
+                ? allUsers
+                : allUsers.where((doc) {
+                    final user = doc.data();
+                    return [
+                      user['Name'],
+                      user['Email'],
+                      user['Role'],
+                      user['Mobile No'],
+                    ].any(
+                      (value) =>
+                          (value ?? '').toString().toLowerCase().contains(
+                            query,
+                          ),
+                    );
+                  }).toList();
+
+            if (users.isEmpty) {
+              return Center(
+                child: Text(
+                  'No users match your search.',
+                  style: GoogleFonts.figtree(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
                 ),
               );
             }

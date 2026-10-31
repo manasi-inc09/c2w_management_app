@@ -21,7 +21,6 @@ class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
     FetchEnquiriesEvent event,
     Emitter<DashBoardState> emit,
   ) async {
-    final loadStartedAt = DateTime.now();
     emit(const DashBoardLoading());
     try {
       final enquiries = await repository.fetchEnquiries().timeout(
@@ -31,8 +30,6 @@ class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
         ),
       );
       if (enquiries.isEmpty) {
-        await _waitOutEmptyResultLoader(loadStartedAt);
-        if (emit.isDone) return;
         emit(const DashBoardEmpty());
       } else {
         emit(DashBoardLoaded(enquiries));
@@ -47,7 +44,6 @@ class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
     RefreshEnquiriesEvent event,
     Emitter<DashBoardState> emit,
   ) async {
-    final loadStartedAt = DateTime.now();
     emit(const DashBoardLoading());
     try {
       final enquiries = await repository.fetchEnquiries().timeout(
@@ -57,8 +53,6 @@ class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
         ),
       );
       if (enquiries.isEmpty) {
-        await _waitOutEmptyResultLoader(loadStartedAt);
-        if (emit.isDone) return;
         emit(const DashBoardEmpty());
       } else {
         emit(DashBoardLoaded(enquiries));
@@ -69,12 +63,6 @@ class DashBoardBloc extends Bloc<DashBoardEvent, DashBoardState> {
     }
   }
 
-  Future<void> _waitOutEmptyResultLoader(DateTime loadStartedAt) async {
-    final remaining = _loadTimeout - DateTime.now().difference(loadStartedAt);
-    if (remaining > Duration.zero) {
-      await Future<void>.delayed(remaining);
-    }
-  }
 }
 
 /// Typedef matching the file name 'DashBoardBoc.dart' for backwards compatibility

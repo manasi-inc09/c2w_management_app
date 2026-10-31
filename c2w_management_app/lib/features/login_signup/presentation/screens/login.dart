@@ -253,6 +253,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text('Mentor'),
                           ),
                           DropdownMenuItem(
+                            value: 'communitymember',
+                            child: Text('Community Member'),
+                          ),
+                          DropdownMenuItem(
                             value: 'teamlead',
                             child: Text('Team Lead'),
                           ),
