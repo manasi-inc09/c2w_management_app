@@ -122,12 +122,9 @@ class MonthwiseIndividualListview {
                   transaction['description']?.toString().trim() ?? '';
               final category = transaction['category']?.toString() ?? '';
               final source = transaction['source']?.toString() ?? '';
-              final paymentSource = _paymentSourceLabel(
-                isGroupExpense
-                    ? transaction['paymentSource']?.toString()
-                    : source,
-                isGroupExpense: isGroupExpense,
-              );
+              final paymentSource = isGroupExpense
+                  ? null
+                  : _paymentSourceLabel(source);
               final date = _transactionDate(transaction);
               final title = description.isEmpty ? category : description;
               final initial = title.trim().isEmpty
@@ -324,7 +321,9 @@ class MonthwiseIndividualListview {
                 ),
                 direction: DismissDirection.horizontal,
                 confirmDismiss: (_) => onDeleteTransaction(transaction),
-                background: _deleteSwipeBackground(alignment: Alignment.centerLeft),
+                background: _deleteSwipeBackground(
+                  alignment: Alignment.centerLeft,
+                ),
                 secondaryBackground: _deleteSwipeBackground(
                   alignment: Alignment.centerRight,
                 ),
@@ -379,10 +378,7 @@ class MonthwiseIndividualListview {
         : 0;
   }
 
-  static String? _paymentSourceLabel(
-    String? source, {
-    required bool isGroupExpense,
-  }) {
+  static String? _paymentSourceLabel(String? source) {
     switch (source?.trim().toLowerCase()) {
       case 'prepaid':
         return 'Prepaid';
@@ -391,7 +387,7 @@ class MonthwiseIndividualListview {
         return 'Paid from Wallet';
       case '':
       case null:
-        return isGroupExpense ? null : 'Paid from Wallet';
+        return 'Paid from Wallet';
       default:
         return null;
     }
