@@ -175,6 +175,8 @@ class _UsersScreenState extends State<UsersScreen> {
                 final email = (user['Email'] ?? '').toString();
                 final role = (user['Role'] ?? '').toString();
                 final mobile = (user['Mobile No'] ?? '').toString();
+                final profileImageUrl =
+                    (user['profileImage'] ?? '').toString().trim();
                 final initials = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
 
                 return Container(
@@ -192,14 +194,31 @@ class _UsersScreenState extends State<UsersScreen> {
                     ),
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundColor:  Colors.blue,
-                      child: Text(
-                        initials,
-                        style: GoogleFonts.figtree(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      backgroundColor: Colors.blue,
+                      child: profileImageUrl.isEmpty
+                          ? Text(
+                              initials,
+                              style: GoogleFonts.figtree(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            )
+                          : ClipOval(
+                              child: Image.network(
+                                profileImageUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Text(
+                                      initials,
+                                      style: GoogleFonts.figtree(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                              ),
+                            ),
                     ),
                     title: Text(
                       name,
