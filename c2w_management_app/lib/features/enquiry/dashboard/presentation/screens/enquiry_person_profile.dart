@@ -173,10 +173,12 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
       builder: (context, state) {
         final screenSize = MediaQuery.sizeOf(context);
         final isCompact = screenSize.width < 380;
-        _currentExpandedHeight = isCompact ? 305 : expandedHeight;
+        final callIsDone = _enquiry?.callStatus == 'Done';
+        final feedbackHeight = callIsDone ? 44.0 : 0.0;
+        _currentExpandedHeight =
+            (isCompact ? 305.0 : expandedHeight) + feedbackHeight;
         _currentBottomHeight =
-            (isCompact ? 100 : bottomHeight) +
-            (_enquiry?.callStatus == 'Done' ? 44 : 0);
+            (isCompact ? 100.0 : bottomHeight) + feedbackHeight;
         if (state is DashBoardLoaded && state.enquiries.isNotEmpty) {
           _activeEnquiry = widget.enquiry == null
               ? state.enquiries.first
@@ -234,6 +236,8 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
                       ),
                       Text(
                         '${_enquiry?.interestedBatchDisplay ?? 'Interested for- Not specified'} • ${_enquiry?.formattedDate ?? 'N/A'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.figtree(
                           fontSize: 13,
                           color: Colors.white54,
@@ -509,7 +513,7 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
         sidePadding,
         kToolbarHeight + MediaQuery.of(context).padding.top + 8,
         sidePadding,
-        0,
+        12,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,35 +570,40 @@ class _EnquiryPersonProfileState extends State<EnquiryPersonProfile>
               ),
               SizedBox(width: isCompact ? 6 : 12),
               Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: displayedBatches.map((batch) {
-                    return ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxBatchWidth),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
-                          color: const Color.fromRGBO(42, 45, 62, 1),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Text(
-                          batch,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.figtree(
-                            fontSize: isCompact ? 12 : 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                child: SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: displayedBatches.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final batch = displayedBatches[index];
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxBatchWidth),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(25),
+                            color: const Color.fromRGBO(42, 45, 62, 1),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            batch,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.figtree(
+                              fontSize: isCompact ? 12 : 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],

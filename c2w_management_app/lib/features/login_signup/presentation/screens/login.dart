@@ -5,6 +5,7 @@ import 'package:c2w_management_app/features/login_signup/presentation/bloc/Login
 import 'package:c2w_management_app/features/enquiry/dashboard/presentation/screens/dashboard_view.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/screens/complete_profile_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _hint = Color(0xFF5C6078);
 
   bool get _canSubmit =>
-      _userCtrl.text.trim().isNotEmpty &&
+      AuthRepository.isValidAuthEmail(_userCtrl.text) &&
       _passCtrl.text.isNotEmpty &&
       _roleCtrl.text.isNotEmpty;
 
@@ -183,6 +184,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       _label('Email'),
                       TextField(
                         controller: _userCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        textCapitalization: TextCapitalization.none,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                        ],
+                        onChanged: (_) => setState(() {}),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -192,6 +199,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Enter your registered username',
                         ),
                       ),
+                      if (_userCtrl.text.isNotEmpty &&
+                          !AuthRepository.isValidAuthEmail(_userCtrl.text))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Enter a lowercase Gmail address ending with @gmail.com',
+                              style: GoogleFonts.figtree(
+                                color: Colors.redAccent,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
 
                       _label('Password'),
                       TextField(
