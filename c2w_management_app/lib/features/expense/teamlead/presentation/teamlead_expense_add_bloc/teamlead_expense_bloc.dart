@@ -10,6 +10,7 @@ class CreateExpenseBloc extends Bloc<CreateExpenseEvent, CreateExpenseState> {
     : super(CreateExpenseInitial()) {
     on<SubmitExpenseEvent>(_onSubmitExpense);
     on<UpdateExpenseEvent>(_onUpdateExpense);
+    on<DeleteExpenseEvent>(_onDeleteExpense);
   }
 
   Future<void> _onSubmitExpense(
@@ -43,6 +44,31 @@ class CreateExpenseBloc extends Bloc<CreateExpenseEvent, CreateExpenseState> {
         expenseId: event.expenseId,
         expense: event.expense,
         existingReceiptUrl: event.existingReceiptUrl,
+      );
+      emit(CreateExpenseSuccess());
+    } catch (error) {
+      emit(CreateExpenseFailure(_getErrorMessage(error)));
+    }
+  }
+
+  Future<void> _onDeleteExpense(
+    DeleteExpenseEvent event,
+    Emitter<CreateExpenseState> emit,
+  ) async {
+    emit(CreateExpenseLoading());
+
+    try {
+      final deleter = createExpenseUseCase;
+      if (deleter is! ExpenseDeleter) {
+        throw Exception(
+          'Transaction deletion is not available for this account.',
+        );
+      }
+      await (deleter as ExpenseDeleter).deleteExpense(
+        expenseId: event.expenseId,
+        reason: event.reason,
+        groupId: event.groupId,
+        contributionId: event.contributionId,
       );
       emit(CreateExpenseSuccess());
     } catch (error) {

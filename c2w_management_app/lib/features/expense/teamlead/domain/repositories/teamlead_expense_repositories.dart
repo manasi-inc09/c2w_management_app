@@ -10,6 +10,13 @@ abstract class ExpenseRepository {
     required String? existingReceiptUrl,
   });
 
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  });
+
   Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email);
 
   Stream<List<Map<String, dynamic>>> watchAllExpenses();

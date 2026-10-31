@@ -14,7 +14,17 @@ abstract interface class ExpenseUpdater {
   });
 }
 
-class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
+abstract interface class ExpenseDeleter {
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  });
+}
+
+class CreateExpenseUseCase
+    implements ExpenseCreator, ExpenseUpdater, ExpenseDeleter {
   final ExpenseRepository repository;
 
   CreateExpenseUseCase(this.repository);
@@ -34,6 +44,21 @@ class CreateExpenseUseCase implements ExpenseCreator, ExpenseUpdater {
       expenseId: expenseId,
       expense: expense,
       existingReceiptUrl: existingReceiptUrl,
+    );
+  }
+
+  @override
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return repository.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
     );
   }
 

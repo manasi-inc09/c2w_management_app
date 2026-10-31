@@ -19,3 +19,17 @@ class UpdateExpenseEvent extends CreateExpenseEvent {
     required this.existingReceiptUrl,
   });
 }
+
+class DeleteExpenseEvent extends CreateExpenseEvent {
+  final String expenseId;
+  final String reason;
+  final String? groupId;
+  final String? contributionId;
+
+  DeleteExpenseEvent({
+    required this.expenseId,
+    required this.reason,
+    this.groupId,
+    this.contributionId,
+  });
+}

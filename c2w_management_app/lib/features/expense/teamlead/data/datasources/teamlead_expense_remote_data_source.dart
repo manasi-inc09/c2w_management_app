@@ -163,6 +163,225 @@ class ExpenseRemoteDataSource {
     });
   }
 
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) async {
+    final normalizedReason = reason.trim();
+    if (normalizedReason.isEmpty) {
+      throw Exception('A reason is required to delete a transaction.');
+    }
+
+    final user = _auth.currentUser;
+    final authEmail = user?.email?.trim().toLowerCase() ?? '';
+    final actorRole = _expenseRole(authEmail);
+    if (user == null || actorRole == null) {
+      throw Exception('Your account is not allowed to delete transactions.');
+    }
+
+    final actorProfileEmail = _profileEmail(authEmail);
+    final actorProfile = await _firestore
+        .collection('UserData')
+        .doc(actorProfileEmail)
+        .get();
+    final actorName =
+        actorProfile.data()?['Name']?.toString().trim().isNotEmpty == true
+        ? actorProfile.data()!['Name'].toString().trim()
+        : user.displayName?.trim().isNotEmpty == true
+        ? user.displayName!.trim()
+        : actorProfileEmail;
+
+    final logReference = _firestore.collection('expenseDeletionLogs').doc();
+    if (groupId != null || contributionId != null) {
+      if (groupId == null ||
+          groupId.trim().isEmpty ||
+          contributionId == null ||
+          contributionId.trim().isEmpty) {
+        throw Exception('This group transaction could not be identified.');
+      }
+
+      final groupReference = _firestore
+          .collection('eventExpenseGroups')
+          .doc(groupId);
+      final contributionReference = groupReference
+          .collection('contributions')
+          .doc(contributionId);
+      await _firestore.runTransaction((transaction) async {
+        final groupSnapshot = await transaction.get(groupReference);
+        final contributionSnapshot = await transaction.get(
+          contributionReference,
+        );
+        if (!groupSnapshot.exists || !contributionSnapshot.exists) {
+          throw Exception('This group transaction no longer exists.');
+        }
+
+        final group = groupSnapshot.data()!;
+        final contribution = contributionSnapshot.data()!;
+        final settlementSnapshot = await groupReference
+            .collection('settlements')
+            .where('contributionId', isEqualTo: contributionId)
+            .get();
+        _ensureCanDeleteExpense(
+          actorRole: actorRole,
+          actorProfileEmail: actorProfileEmail,
+          ownerAuthEmail: contribution['createdByEmail']?.toString() ?? '',
+          transaction: contribution,
+          isGroupContribution: true,
+        );
+        final amountPaise = _toPaise(contribution['amountPaise']);
+        final settledPaise = _toPaise(
+          contribution['settledAmountPaise'],
+        ).clamp(0, amountPaise);
+        final totalAfterDelete =
+            (_toPaise(group['totalAmountPaise']) - amountPaise).clamp(
+              0,
+              1 << 62,
+            );
+        final settledAfterDelete =
+            (_toPaise(group['settledAmountPaise']) - settledPaise).clamp(
+              0,
+              totalAfterDelete,
+            );
+        final remainingAfterDelete = totalAfterDelete - settledAfterDelete;
+        final status = remainingAfterDelete == 0 && totalAfterDelete > 0
+            ? 'Settled'
+            : settledAfterDelete > 0
+            ? 'Partially Settled'
+            : 'Pending';
+
+        transaction.update(groupReference, {
+          'totalAmountPaise': totalAfterDelete,
+          'settledAmountPaise': settledAfterDelete,
+          'contributionCount': (_toPaise(group['contributionCount']) - 1).clamp(
+            0,
+            1 << 62,
+          ),
+          'status': status,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        transaction.delete(contributionReference);
+        transaction.set(logReference, {
+          'transactionId': 'group_${groupId}_$contributionId',
+          'transactionType': 'group_contribution',
+          'groupId': groupId,
+          'contributionId': contributionId,
+          'groupName': group['eventName']?.toString() ?? 'Event',
+          'reason': normalizedReason,
+          'deletedByUid': user.uid,
+          'deletedByEmail': authEmail,
+          'deletedByName': actorName,
+          'deletedByRole': actorRole,
+          'deletedAt': FieldValue.serverTimestamp(),
+          'transactionDetails': {
+            ...contribution,
+            'settlementHistory': settlementSnapshot.docs
+                .map((settlement) => settlement.data())
+                .toList(),
+          },
+        });
+      });
+      return;
+    }
+
+    if (expenseId.trim().isEmpty || expenseId.startsWith('group_')) {
+      throw Exception('This transaction could not be identified.');
+    }
+
+    final expenseReference = _firestore.collection('expenses').doc(expenseId);
+    await _firestore.runTransaction((transaction) async {
+      final expenseSnapshot = await transaction.get(expenseReference);
+      if (!expenseSnapshot.exists) {
+        throw Exception('This transaction no longer exists.');
+      }
+      final expense = expenseSnapshot.data()!;
+      final settlementSnapshot = await expenseReference
+          .collection('settlements')
+          .get();
+      _ensureCanDeleteExpense(
+        actorRole: actorRole,
+        actorProfileEmail: actorProfileEmail,
+        ownerAuthEmail: expense['email']?.toString() ?? '',
+        transaction: expense,
+      );
+      transaction.set(logReference, {
+        'transactionId': expenseId,
+        'transactionType': 'expense',
+        'reason': normalizedReason,
+        'deletedByUid': user.uid,
+        'deletedByEmail': authEmail,
+        'deletedByName': actorName,
+        'deletedByRole': actorRole,
+        'deletedAt': FieldValue.serverTimestamp(),
+        'transactionDetails': {
+          ...expense,
+          'settlementHistory': settlementSnapshot.docs
+              .map((settlement) => settlement.data())
+              .toList(),
+        },
+      });
+      transaction.delete(expenseReference);
+    });
+  }
+
+  void _ensureCanDeleteExpense({
+    required String actorRole,
+    required String actorProfileEmail,
+    required String ownerAuthEmail,
+    required Map<String, dynamic> transaction,
+    bool isGroupContribution = false,
+  }) {
+    if (actorRole == 'instructor' || actorRole == 'superadmin') return;
+    if (_isSettledTransaction(
+          transaction,
+          isGroupContribution: isGroupContribution,
+        ) &&
+        !_isPrepaidTransaction(transaction)) {
+      throw Exception(
+        'Only instructors and superadmins can delete settled transactions.',
+      );
+    }
+    if ((actorRole == 'teamlead' || actorRole == 'mentor') &&
+        _profileEmail(ownerAuthEmail.trim().toLowerCase()) ==
+            actorProfileEmail) {
+      return;
+    }
+    throw Exception('You are not allowed to delete this transaction.');
+  }
+
+  bool _isSettledTransaction(
+    Map<String, dynamic> transaction, {
+    required bool isGroupContribution,
+  }) {
+    final amount = _readNumericAmount(
+      transaction[isGroupContribution ? 'amountPaise' : 'amount'],
+    );
+    if (amount <= 0) return false;
+    final settledAmount = _readNumericAmount(
+      transaction[isGroupContribution ? 'settledAmountPaise' : 'settledAmount'],
+    );
+    return settledAmount >= amount ||
+        transaction['status']?.toString().trim().toLowerCase() == 'settled';
+  }
+
+  bool _isPrepaidTransaction(Map<String, dynamic> transaction) =>
+      transaction['source']?.toString().trim().toLowerCase() == 'prepaid' ||
+      transaction['paymentSource']?.toString().trim().toLowerCase() ==
+          'prepaid';
+
+  double _readNumericAmount(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String? _expenseRole(String email) {
+    for (final role in ['teamlead', 'mentor', 'instructor', 'superadmin']) {
+      if (email.startsWith('${role}_')) return role;
+    }
+    return null;
+  }
+
   Stream<List<Map<String, dynamic>>> watchExpensesByEmail(String email) {
     return _firestore
         .collection('expenses')
@@ -369,8 +588,8 @@ class ExpenseRemoteDataSource {
             final totalPaise = _toPaise(group['totalAmountPaise']);
             final settledPaise =
                 (_toPaise(group['settledAmountPaise']) +
-                          ((sourceTotals['prepaidNotSettledAmount'] ?? 0) * 100)
-                              .round())
+                        ((sourceTotals['prepaidNotSettledAmount'] ?? 0) * 100)
+                            .round())
                     .clamp(0, totalPaise);
             final remainingPaise = (totalPaise - settledPaise).clamp(
               0,
@@ -452,6 +671,7 @@ class ExpenseRemoteDataSource {
         ...contribution,
         'id': 'group_${groupId}_${document.id}',
         'groupId': groupId,
+        'contributionId': document.id,
         'eventExpenseGroup': true,
         'eventExpenseGroupContribution': true,
         'groupName': eventName,

@@ -26,4 +26,19 @@ class MentorExpenseRepositoryImpl implements MentorExpenseRepository {
       existingReceiptUrl: existingReceiptUrl,
     );
   }
+
+  @override
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _remoteDataSource.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
+  }
 }

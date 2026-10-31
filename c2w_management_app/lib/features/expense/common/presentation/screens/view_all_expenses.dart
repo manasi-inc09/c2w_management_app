@@ -4,6 +4,8 @@ import 'package:c2w_management_app/features/expense/common/presentation/bloc/exp
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/floating_button.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/screens/event_expense_groups.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/screens/expense_deletion_logs.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/transaction_deletion.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
 import 'package:flutter/material.dart';
@@ -74,6 +76,14 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
 
   @override
   Widget build(BuildContext context) {
+    final authEmail =
+        (FirebaseAuth.instance.currentUser?.email ?? AuthRepository.authEmail)
+            ?.toLowerCase() ??
+        '';
+    final canViewDeletionLogs =
+        authEmail.startsWith('instructor_') ||
+        authEmail.startsWith('superadmin_');
+
     return Scaffold(
       backgroundColor: AppTheme().appBarBackgroundColor,
       appBar: AppBar(
@@ -104,6 +114,17 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
                 ),
               ),
         actions: [
+          if (canViewDeletionLogs)
+            IconButton(
+              tooltip: 'Transaction deletion logs',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const ExpenseDeletionLogsScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.history, color: Colors.white),
+            ),
           IconButton(
             tooltip: 'Event expenses',
             onPressed: () => Navigator.push(
@@ -193,6 +214,9 @@ class _ViewAllExpensesState extends State<ViewAllExpenses> {
               onRefresh: _refreshExpenses,
               child: MonthwiseIndividualListview().getExpenseHistoryListview(
                 filteredExpenses,
+                canDeleteTransaction: canDeleteExpenseTransaction,
+                onDeleteTransaction: (expense) =>
+                    deleteExpenseTransactionWithReason(context, expense),
               ),
             );
           }

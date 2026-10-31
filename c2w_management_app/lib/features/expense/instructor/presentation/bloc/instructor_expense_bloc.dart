@@ -11,7 +11,7 @@ class InstructorExpenseBloc extends CreateExpenseBloc {
        );
 }
 
-class _InstructorExpenseCreator implements ExpenseCreator {
+class _InstructorExpenseCreator implements ExpenseCreator, ExpenseDeleter {
   final CreateInstructorExpenseUseCase _useCase;
 
   _InstructorExpenseCreator(this._useCase);
@@ -19,5 +19,20 @@ class _InstructorExpenseCreator implements ExpenseCreator {
   @override
   Future<String> call(Expense expense) {
     return _useCase.createExpense(expense);
+  }
+
+  @override
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _useCase.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
   }
 }

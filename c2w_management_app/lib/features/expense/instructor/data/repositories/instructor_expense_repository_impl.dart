@@ -13,4 +13,19 @@ class InstructorExpenseRepositoryImpl implements InstructorExpenseRepository {
   Future<String> createExpense(Expense expense) {
     return _remoteDataSource.createExpense(expense);
   }
+
+  @override
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _remoteDataSource.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
+  }
 }

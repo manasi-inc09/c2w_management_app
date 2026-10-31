@@ -11,4 +11,18 @@ class InstructorExpenseRemoteDataSource {
   Future<String> createExpense(Expense expense) {
     return _expenseDataSource.createExpense(expense);
   }
+
+  Future<void> deleteExpense({
+    required String expenseId,
+    required String reason,
+    String? groupId,
+    String? contributionId,
+  }) {
+    return _expenseDataSource.deleteExpense(
+      expenseId: expenseId,
+      reason: reason,
+      groupId: groupId,
+      contributionId: contributionId,
+    );
+  }
 }

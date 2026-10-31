@@ -5,6 +5,7 @@ import 'package:c2w_management_app/features/expense/common/presentation/widgets/
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/common_filters.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/monthwise_individual_listview.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/utils/reload_after_event.dart';
+import 'package:c2w_management_app/features/expense/common/presentation/utils/transaction_deletion.dart';
 import 'package:c2w_management_app/features/expense/common/presentation/widgets/settle_button.dart';
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -304,6 +305,19 @@ class _MembersDetailListState extends State<MembersDetailList> {
                       : MonthwiseIndividualListview().getExpenseHistoryListview(
                           expenses,
                           shrinkWrap: true,
+                          canDeleteTransaction:
+                              canDeleteExpenseTransaction,
+                          onDeleteTransaction: (expense) async {
+                            final deleted =
+                                await deleteExpenseTransactionWithReason(
+                                  context,
+                                  expense,
+                                );
+                            if (deleted && mounted) {
+                              await _refreshMemberDetails();
+                            }
+                            return deleted;
+                          },
                         ),
                 ],
               ),
