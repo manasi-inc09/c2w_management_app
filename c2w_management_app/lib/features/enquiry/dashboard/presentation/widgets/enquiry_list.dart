@@ -314,7 +314,21 @@ class _EnquiryListState extends State<EnquiryList> {
         final filteredEnquiries = _filterEnquiries(allEnquiries);
 
         if (filteredEnquiries.isEmpty) {
-          if (allEnquiries.isEmpty) return const SizedBox.shrink();
+          if (allEnquiries.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'No enquiries found.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.figtree(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            );
+          }
           return Padding(
             padding: const EdgeInsets.all(24),
             child: Center(

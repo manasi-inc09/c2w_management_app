@@ -10,7 +10,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class Enquiry extends StatefulWidget {
-  const Enquiry({super.key});
+  final String? collectionName;
+
+  const Enquiry({super.key, this.collectionName});
 
   @override
   State<Enquiry> createState() => _EnquiryState();
@@ -68,6 +70,9 @@ class _EnquiryState extends State<Enquiry> {
   List<EnquiryModel> _visibleEnquiries(List<EnquiryModel> enquiries) {
     final query = searchQuery.toLowerCase().trim();
     return enquiries.where((item) {
+      final matchesCollection =
+          widget.collectionName == null ||
+          item.collectionName == widget.collectionName;
       final matchesQuery =
           query.isEmpty ||
           item.studentName.toLowerCase().contains(query) ||
@@ -131,7 +136,8 @@ class _EnquiryState extends State<Enquiry> {
 
       final matchesDate = dateMatches(item.createdAt) ||
           history.any((entry) => dateMatches(entry.createdAt));
-      return matchesQuery &&
+      return matchesCollection &&
+          matchesQuery &&
           matchesInterest &&
           matchesStatus &&
           matchesAdmissionStatus &&
@@ -171,10 +177,23 @@ class _EnquiryState extends State<Enquiry> {
         final all = state is DashBoardLoaded
             ? state.enquiries
             : <EnquiryModel>[];
+        final collectionEnquiries = widget.collectionName == null
+            ? all
+            : all
+                  .where(
+                    (item) => item.collectionName == widget.collectionName,
+                  )
+                  .toList();
         final visible = _visibleEnquiries(all);
         if (visible.isEmpty) {
-          if (all.isEmpty) {
-            return _scrollableMessage(const SizedBox.shrink());
+          if (collectionEnquiries.isEmpty) {
+            return _scrollableMessage(
+              const Text(
+                'No enquiries found.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
           }
           return _scrollableMessage(
             const Text(
@@ -488,8 +507,11 @@ class _EnquiryState extends State<Enquiry> {
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             child: BlocBuilder<DashBoardBloc, DashBoardState>(
               builder: (context, state) {
-                final count = state is DashBoardLoaded
-                    ? '${state.enquiries.length}'
+                final loadedEnquiries = state is DashBoardLoaded
+                    ? state.enquiries
+                    : null;
+                final count = loadedEnquiries != null
+                    ? '${widget.collectionName == null ? loadedEnquiries.length : loadedEnquiries.where((item) => item.collectionName == widget.collectionName).length}'
                     : state is DashBoardEmpty
                     ? '0'
                     : null;

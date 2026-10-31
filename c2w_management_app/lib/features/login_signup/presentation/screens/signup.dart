@@ -4,6 +4,7 @@ import 'package:c2w_management_app/features/login_signup/presentation/bloc/Login
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpEvent.dart';
 import 'package:c2w_management_app/features/login_signup/presentation/bloc/LoginSignUpState.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -19,7 +20,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final fullNameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final mobCtrl = TextEditingController();
-  final upiCtrl = TextEditingController();
   final dobCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool obscure = true;
@@ -67,15 +67,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null;
   }
 
-  String? _validateUpi(String? value) {
-    final upi = value?.trim() ?? '';
-    if (upi.isEmpty) return null;
-    if (!RegExp(r'^[\w.-]{2,}@[\w.-]{2,}$').hasMatch(upi)) {
-      return 'Enter a valid UPI ID, for example name@upi';
-    }
-    return null;
-  }
-
   String? _validateDob(String? value) =>
       value == null || value.trim().isEmpty ? null : null;
 
@@ -98,7 +89,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     fullNameCtrl.dispose();
     emailCtrl.dispose();
     mobCtrl.dispose();
-    upiCtrl.dispose();
     dobCtrl.dispose();
     passCtrl.dispose();
     super.dispose();
@@ -132,8 +122,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _validateName(fullNameCtrl.text) == null &&
         _validateEmail(emailCtrl.text) == null &&
         _validatePassword(passCtrl.text) == null &&
-        _validateMobile(mobCtrl.text) == null &&
-        _validateUpi(upiCtrl.text) == null;
+        _validateMobile(mobCtrl.text) == null;
 
     return Scaffold(
       backgroundColor: theme.bodyBackgroundColor,
@@ -277,47 +266,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               fontSize: 14,
                             ),
                             keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
                             validator: _validateMobile,
                             cursorColor: Colors.white,
                             decoration: const InputDecoration(
                               hintText: '10-digit mobile number (optional)',
-                              hintStyle: TextStyle(
-                                color: Color(0xFF5C6078),
-                                fontSize: 14,
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color(0xFF2A2D45),
-                                ),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color(0xFF1E6FB5),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'UPI ID',
-                            style: TextStyle(
-                              color: Color(0xFF9A9DB5),
-                              fontSize: 12,
-                            ),
-                          ),
-                          TextFormField(
-                            controller: upiCtrl,
-                            autovalidateMode:
-                                AutovalidateMode.onUserInteraction,
-                            onChanged: (_) => setState(() {}),
-                            validator: _validateUpi,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                            cursorColor: Colors.white,
-                            decoration: const InputDecoration(
-                              hintText: 'UPI ID (optional)',
                               hintStyle: TextStyle(
                                 color: Color(0xFF5C6078),
                                 fontSize: 14,
@@ -452,7 +408,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       fullName: fullNameCtrl.text.trim(),
                                       email: emailCtrl.text.trim(),
                                       mobile: mobCtrl.text.trim(),
-                                      upi: upiCtrl.text.trim(),
                                       dob: dobCtrl.text.trim(),
                                       password: passCtrl.text,
                                     ),
@@ -494,7 +449,6 @@ class SelectRoleScreen extends StatefulWidget {
   final String fullName;
   final String email;
   final String mobile;
-  final String upi;
   final String dob;
   final String password;
 
@@ -503,7 +457,6 @@ class SelectRoleScreen extends StatefulWidget {
     required this.fullName,
     required this.email,
     required this.mobile,
-    required this.upi,
     required this.dob,
     required this.password,
   });
@@ -514,12 +467,33 @@ class SelectRoleScreen extends StatefulWidget {
 
 class _SelectRoleScreenState extends State<SelectRoleScreen> {
   String? selectedRole;
+  final _upiCtrl = TextEditingController();
   final List<String> _roles = const [
     'TeamLead',
     'Mentor',
+    'Community Member',
     'SalesAdmin',
     'Instructor',
   ];
+
+  bool get _requiresUpi {
+    final role = selectedRole;
+    return role != null && AuthRepository.roleRequiresUpi(role);
+  }
+
+  String? _validateUpi(String? value) {
+    final upi = value?.trim() ?? '';
+    if (upi.isEmpty || RegExp(r'^[\w.-]{2,}@[\w.-]{2,}$').hasMatch(upi)) {
+      return null;
+    }
+    return 'Enter a valid UPI ID, for example name@upi';
+  }
+
+  @override
+  void dispose() {
+    _upiCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -589,14 +563,47 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
                     const SizedBox(height: 20),
                     Expanded(
                       child: ListView.separated(
-                        itemCount: _roles.length,
+                        itemCount: _roles.length + (_requiresUpi ? 1 : 0),
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
+                          if (index == _roles.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'UPI ID (optional)',
+                                    style: GoogleFonts.figtree(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    controller: _upiCtrl,
+                                    validator: _validateUpi,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Enter UPI ID',
+                                      hintStyle: TextStyle(color: Colors.white54),
+                                      enabledBorder: UnderlineInputBorder(
+                                        borderSide: BorderSide(color: Colors.white24),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
                           final role = _roles[index];
                           final isSelected = selectedRole == role;
 
                           return GestureDetector(
-                            onTap: () => setState(() => selectedRole = role),
+                            onTap: () => setState(() {
+                              selectedRole = role;
+                              if (!_requiresUpi) _upiCtrl.clear();
+                            }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -664,12 +671,21 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> {
                       child: ElevatedButton(
                         onPressed: selectedRole != null && !isSubmitting
                             ? () {
+                                final upiError = _requiresUpi
+                                    ? _validateUpi(_upiCtrl.text)
+                                    : null;
+                                if (upiError != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(upiError)),
+                                  );
+                                  return;
+                                }
                                 context.read<Loginsignupbloc>().add(
                                   SignupDataEvent(
                                     widget.fullName,
                                     widget.email,
                                     widget.mobile,
-                                    widget.upi,
+                                    _requiresUpi ? _upiCtrl.text.trim() : '',
                                     widget.dob,
                                     selectedRole!,
                                     widget.password,

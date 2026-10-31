@@ -120,6 +120,7 @@ class EnquiryHistoryItem extends Equatable {
 
 class EnquiryModel extends Equatable {
   final String id;
+  final String collectionName;
   final String currentHistoryId;
   final String studentName;
   final String mobileNo;
@@ -145,6 +146,7 @@ class EnquiryModel extends Equatable {
 
   const EnquiryModel({
     required this.id,
+    this.collectionName = 'Enquiries',
     this.currentHistoryId = '',
     required this.studentName,
     required this.mobileNo,
@@ -197,15 +199,25 @@ class EnquiryModel extends Equatable {
   }
 
   factory EnquiryModel.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+    DocumentSnapshot<Map<String, dynamic>> doc, {
+    String collectionName = 'Enquiries',
+  }) {
     final data = doc.data() ?? {};
-    return EnquiryModel.fromMap(data, id: doc.id);
+    return EnquiryModel.fromMap(
+      data,
+      id: doc.id,
+      collectionName: collectionName,
+    );
   }
 
-  factory EnquiryModel.fromMap(Map<String, dynamic> data, {String? id}) {
+  factory EnquiryModel.fromMap(
+    Map<String, dynamic> data, {
+    String? id,
+    String collectionName = 'Enquiries',
+  }) {
     return EnquiryModel(
       id: id ?? '',
+      collectionName: collectionName,
       currentHistoryId: (data['History Id'] ?? '').toString(),
       studentName: (data['Student Name'] ?? '').toString().trim(),
       mobileNo: (data['Mobile No'] ?? '').toString().trim(),
@@ -235,6 +247,7 @@ class EnquiryModel extends Equatable {
   EnquiryModel copyWith({List<EnquiryHistoryItem>? enquiryHistory}) {
     return EnquiryModel(
       id: id,
+      collectionName: collectionName,
       currentHistoryId: currentHistoryId,
       studentName: studentName,
       mobileNo: mobileNo,
@@ -369,6 +382,7 @@ class EnquiryModel extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    collectionName,
     currentHistoryId,
     studentName,
     mobileNo,

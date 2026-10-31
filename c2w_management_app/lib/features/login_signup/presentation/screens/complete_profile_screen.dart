@@ -7,6 +7,7 @@ import 'package:c2w_management_app/features/enquiry/dashboard/presentation/scree
 import 'package:c2w_management_app/features/login_signup/data/repository/Auth_Repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -26,10 +27,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   String? _profileImagePath;
   String? _profileImageUrl;
   bool _isSaving = false;
+  bool _requiresUpi = true;
 
   @override
   void initState() {
     super.initState();
+    final authRole = (AuthRepository.authEmail ?? '').split('_').first;
+    _requiresUpi = AuthRepository.roleRequiresUpi(authRole);
     _loadExistingProfile();
   }
 
@@ -50,10 +54,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       final upi = (data['UPI ID'] ?? '').toString();
       final dob = (data['DOB'] ?? '').toString();
       final profileImage = (data['profileImage'] ?? '').toString();
+      final storedRole = data['Role']?.toString() ?? '';
+      final authRole = (AuthRepository.authEmail ?? '').split('_').first;
 
       if (!mounted) return;
 
       setState(() {
+        _requiresUpi = AuthRepository.roleRequiresUpi(
+          storedRole.isNotEmpty ? storedRole : authRole,
+        );
         if (mobile.trim().isNotEmpty) _mobileCtrl.text = mobile;
         if (upi.trim().isNotEmpty) _upiCtrl.text = upi;
         if (dob.trim().isNotEmpty) _dobCtrl.text = dob;
@@ -143,7 +152,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         (_profileImagePath != null && _profileImagePath!.trim().isNotEmpty);
 
     final hasMobile = _mobileCtrl.text.trim().isNotEmpty;
-    final hasUpi = _upiCtrl.text.trim().isNotEmpty;
+    final hasUpi = !_requiresUpi || _upiCtrl.text.trim().isNotEmpty;
     final hasDob = _dobCtrl.text.trim().isNotEmpty;
 
     if (!hasMobile || !hasUpi || !hasDob || !hasExistingProfileImage) {
@@ -167,10 +176,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final updatedData = {
+      final updatedData = <String, dynamic>{
         'Mobile No': _mobileCtrl.text.trim(),
-        'UPI ID': _upiCtrl.text.trim(),
         'DOB': _dobCtrl.text.trim(),
+        if (_requiresUpi) 'UPI ID': _upiCtrl.text.trim(),
       };
 
       await FirebaseFirestore.instance
@@ -216,7 +225,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final theme = AppTheme();
     final hasAnySavedValue =
         _mobileCtrl.text.trim().isNotEmpty ||
-        _upiCtrl.text.trim().isNotEmpty ||
+        (_requiresUpi && _upiCtrl.text.trim().isNotEmpty) ||
         _dobCtrl.text.trim().isNotEmpty ||
         (_profileImageUrl != null && _profileImageUrl!.trim().isNotEmpty);
 
@@ -334,6 +343,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   TextFormField(
                     controller: _mobileCtrl,
                     keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     validator: _validateMobile,
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
@@ -341,17 +354,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       hintStyle: TextStyle(color: Color(0xFF9A9DB5)),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  _buildFieldLabel('UPI ID'),
-                  TextFormField(
-                    controller: _upiCtrl,
-                    validator: _validateUpi,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your UPI ID',
-                      hintStyle: TextStyle(color: Color(0xFF9A9DB5)),
+                  if (_requiresUpi) ...[
+                    const SizedBox(height: 20),
+                    _buildFieldLabel('UPI ID'),
+                    TextFormField(
+                      controller: _upiCtrl,
+                      validator: _validateUpi,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your UPI ID',
+                        hintStyle: TextStyle(color: Color(0xFF9A9DB5)),
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 20),
                   _buildFieldLabel('Date of Birth'),
                   TextFormField(

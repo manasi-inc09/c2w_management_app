@@ -22,6 +22,8 @@ class AuthRepository {
     'teamlead': 'teamlead',
     'team lead': 'teamlead',
     'mentor': 'mentor',
+    'communitymember': 'communitymember',
+    'community member': 'communitymember',
     'instructor': 'instructor',
     'superadmin': 'superadmin',
     'super admin': 'superadmin',
@@ -32,12 +34,18 @@ class AuthRepository {
     return _roleAliases[normalized] ?? normalized.replaceAll(' ', '');
   }
 
+  static bool roleRequiresUpi(String role) {
+    final normalizedRole = normalizeRole(role);
+    return normalizedRole != 'salesadmin' &&
+        normalizedRole != 'communitymember';
+  }
+
   static String cleanEmail(String? email) {
     final trimmed = (email ?? '').trim();
     if (trimmed.isEmpty) return '';
     return trimmed.replaceFirst(
       RegExp(
-        r'^(superadmin|salesadmin|teamlead|instructor|mentor|admin)_',
+        r'^(superadmin|salesadmin|teamlead|instructor|mentor|communitymember|admin)_',
         caseSensitive: false,
       ),
       '',
@@ -59,9 +67,17 @@ class AuthRepository {
       if (!data.exists || data.data() == null) return false;
 
       final userData = data.data()!;
+      final storedRole = userData['Role']?.toString() ?? '';
+      final authEmail = (FirebaseAuth.instance.currentUser?.email ??
+              AuthRepository.authEmail ??
+              '')
+          .trim();
+      final role = storedRole.isNotEmpty
+          ? storedRole
+          : authEmail.split('_').first;
       final requiredFields = [
         userData['Mobile No'],
-        userData['UPI ID'],
+        if (roleRequiresUpi(role)) userData['UPI ID'],
         userData['DOB'],
         userData['profileImage'],
       ];
@@ -143,8 +159,8 @@ class AuthRepository {
     required String pass,
     required String role,
   }) async {
-    role = role.toLowerCase();
-    final createdEmail = '${role}_$email';
+    final normalizedRole = normalizeRole(role);
+    final createdEmail = '${normalizedRole}_$email';
 
     final app = _userCreationApp ??= await Firebase.initializeApp(
       name: _userCreationAppName,
@@ -183,7 +199,7 @@ class AuthRepository {
     required String dob,
     required String role,
   }) async {
-    role = role.toLowerCase();
+    role = normalizeRole(role);
     final userData = <String, dynamic>{
       'Name': name,
       'Email': email,
