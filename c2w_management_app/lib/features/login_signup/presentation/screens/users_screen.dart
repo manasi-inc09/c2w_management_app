@@ -57,7 +57,7 @@ class _UsersScreenState extends State<UsersScreen> {
             MaterialPageRoute(builder: (context) => const SignUpScreen()),
           );
         },
-        backgroundColor: const Color(0xFF7C6CFF),
+        backgroundColor:  Colors.blue,
         icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
         label: Text(
           'Add user',
@@ -125,7 +125,7 @@ class _UsersScreenState extends State<UsersScreen> {
                     ),
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundColor: const Color(0xFF7C6CFF),
+                      backgroundColor:  Colors.blue,
                       child: Text(
                         initials,
                         style: GoogleFonts.figtree(

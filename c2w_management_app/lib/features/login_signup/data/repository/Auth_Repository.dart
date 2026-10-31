@@ -82,6 +82,7 @@ class AuthRepository {
   }) async {
     final normalizedRole = normalizeRole(role);
     final normalizedEmail = cleanEmail(email).toLowerCase();
+    log(normalizedEmail);
     if (normalizedEmail.isEmpty) {
       throw ArgumentError('Email is required to log in.');
     }

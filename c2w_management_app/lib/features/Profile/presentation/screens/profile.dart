@@ -74,6 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Logout Account?',
                   style: GoogleFonts.figtree(
                     fontSize: 20,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
