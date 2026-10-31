@@ -94,10 +94,16 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   bool get _canOpenEnquiryDetails =>
       _email.contains('salesadmin_') || _email.contains('superadmin_');
 
-  /// Instructor / super admin get the ExpenseManager, everyone else gets
+  bool get _canAccessExpenseSection =>
+      _email.startsWith('superadmin_') ||
+      _email.startsWith('instructor_') ||
+      _email.startsWith('teamlead_') ||
+      _email.startsWith('mentor_');
+
+  /// Instructor / super admin get the ExpenseManager; teamlead / mentor get
   /// their own IndividualExpenses screen.
   bool get _isExpenseManagerRole =>
-      _email.contains("instructor") || _email.contains("superadmin");
+      _email.startsWith('instructor_') || _email.startsWith('superadmin_');
 
   bool get _canViewUsers =>
       _email.startsWith('instructor_') || _email.startsWith('superadmin_');
@@ -747,23 +753,26 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       _buildHomeTab(context),
-      _isExpenseManagerRole ? ExpenseManager() : IndividualExpenses(),
     ];
-    if (_canViewUsers) {
-      pages.add(const UsersScreen());
-    }
-
     final navItems = <BottomNavigationBarItem>[
       const BottomNavigationBarItem(
         icon: Icon(Icons.contact_support_outlined),
         label: 'Enquiry',
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.currency_rupee),
-        label: 'Expense',
-      ),
     ];
+    if (_canAccessExpenseSection) {
+      pages.add(
+        _isExpenseManagerRole ? const ExpenseManager() : const IndividualExpenses(),
+      );
+      navItems.add(
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.currency_rupee),
+          label: 'Expense',
+        ),
+      );
+    }
     if (_canViewUsers) {
+      pages.add(const UsersScreen());
       navItems.add(
         const BottomNavigationBarItem(
           icon: Icon(Icons.people_alt_outlined),

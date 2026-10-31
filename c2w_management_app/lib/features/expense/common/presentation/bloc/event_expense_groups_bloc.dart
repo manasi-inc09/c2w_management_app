@@ -10,10 +10,7 @@ class EventExpenseGroupsStarted extends EventExpenseGroupsEvent {
   final String userUid;
   final String userEmail;
 
-  EventExpenseGroupsStarted({
-    required this.userUid,
-    required this.userEmail,
-  });
+  EventExpenseGroupsStarted({required this.userUid, required this.userEmail});
 }
 
 class EventExpenseGroupsSnapshotReceived extends EventExpenseGroupsEvent {
@@ -250,8 +247,7 @@ class EventExpenseGroupsBloc
           .collection('UserData')
           .doc(_profileEmail(email))
           .get();
-      final name =
-          profile.data()?['Name']?.toString().trim().isNotEmpty == true
+      final name = profile.data()?['Name']?.toString().trim().isNotEmpty == true
           ? profile.data()!['Name'].toString().trim()
           : user.displayName?.trim().isNotEmpty == true
           ? user.displayName!.trim()
@@ -275,7 +271,11 @@ class EventExpenseGroupsBloc
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (error) {
-      emit(state.copyWith(operationError: 'Could not create the event group: $error'));
+      emit(
+        state.copyWith(
+          operationError: 'Could not create the event group: $error',
+        ),
+      );
     }
   }
 
@@ -286,12 +286,20 @@ class EventExpenseGroupsBloc
     emit(state.copyWith(clearOperationError: true));
     try {
       _ensureGroupManager(event.user.email);
-      await _firestore.collection('eventExpenseGroups').doc(event.groupId).update({
-        'memberEmails': {...event.memberEmails, event.creatorEmail}.toList(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection('eventExpenseGroups')
+          .doc(event.groupId)
+          .update({
+            'memberEmails': {
+              ...event.memberEmails,
+              event.creatorEmail,
+            }.toList(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
     } catch (error) {
-      emit(state.copyWith(operationError: 'Could not update group access: $error'));
+      emit(
+        state.copyWith(operationError: 'Could not update group access: $error'),
+      );
     }
   }
 
@@ -323,13 +331,7 @@ class EventExpenseGroupsBloc
           '',
         ) ??
         '';
-    const supportedRoles = {
-      'teamlead',
-      'mentor',
-      'salesadmin',
-      'instructor',
-      'superadmin',
-    };
+    const supportedRoles = {'teamlead', 'mentor', 'instructor', 'superadmin'};
     if (email.isEmpty || !supportedRoles.contains(role)) return null;
     return email.startsWith('${role}_') ? email : '${role}_$email';
   }
@@ -338,13 +340,7 @@ class EventExpenseGroupsBloc
       email.startsWith('superadmin_') || email.startsWith('instructor_');
 
   String _profileEmail(String email) {
-    for (final role in [
-      'teamlead',
-      'mentor',
-      'instructor',
-      'superadmin',
-      'salesadmin',
-    ]) {
+    for (final role in ['teamlead', 'mentor', 'instructor', 'superadmin']) {
       final prefix = '${role}_';
       if (email.startsWith(prefix)) return email.substring(prefix.length);
     }

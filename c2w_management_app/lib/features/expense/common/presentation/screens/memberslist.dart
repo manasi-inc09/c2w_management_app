@@ -243,7 +243,8 @@ class _MembersListState extends State<MembersList> {
                           log("Member----$member");
                           final name =
                               member['name']?.toString() ?? 'Unnamed member';
-                          final role = member['role']?.toString() ?? 'Member';
+                          final role = (member['role']?.toString() ?? 'Member')
+                              .toUpperCase();
                           final profileImage =
                               member['profileImage']?.toString() ?? '';
                           return Column(
@@ -357,9 +358,7 @@ class _MembersListState extends State<MembersList> {
                                               color: Colors.white,
                                             ),
                                           ),
-                                          if (_amount(
-                                                member['settledAmount'],
-                                              ) >
+                                          if (_amount(member['settledAmount']) >
                                               0)
                                             Text(
                                               '${_formatAmount(member['settledAmount'])} settled',
