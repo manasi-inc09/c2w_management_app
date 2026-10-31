@@ -1,4 +1,4 @@
-package com.example.c2w_management_app
+package com.incubators.c2wenquiry
 
 import io.flutter.embedding.android.FlutterActivity
 
