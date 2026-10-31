@@ -1267,12 +1267,24 @@ class ExpenseRemoteDataSource {
     for (var t in expenseSnapshot.docs) {
       status = t.get("status");
     }
-    return snapshot.docs.map((document) {
+    return snapshot.docs.where((document) {
+      final data = document.data();
+      final role = (data['Role'] ?? data['role'])
+          ?.toString()
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z]'), '');
+      return const {
+        'superadmin',
+        'instructor',
+        'teamlead',
+        'mentor',
+      }.contains(role);
+    }).map((document) {
       final data = document.data();
       return <String, dynamic>{
         'email': document.id,
         'name': data['Name']?.toString() ?? 'Unnamed member',
-        'role': data['role']?.toString() ?? 'Member',
+        'role': (data['Role'] ?? data['role'])?.toString() ?? 'Member',
         'profileImage': data['profileImage']?.toString() ?? '',
         'status': status ?? 'Pending',
         'mobile':
