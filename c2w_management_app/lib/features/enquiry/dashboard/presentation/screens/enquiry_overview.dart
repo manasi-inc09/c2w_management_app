@@ -29,6 +29,9 @@ class _EnquiryState extends State<Enquiry> {
   Color _callStatusColor(String status) {
     switch (status) {
       case 'Done':
+        return const Color.fromARGB(255, 64, 163, 59);
+
+      case 'Not Recieved':
         return const Color(0xFFFF5268);
 
       default:

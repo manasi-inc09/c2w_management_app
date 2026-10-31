@@ -560,43 +560,34 @@ class _DashboardViewContentState extends State<_DashboardViewContent> {
                                   ],
                                   const Spacer(),
                                   // "See all" is hidden for instructor_ / mentor_ / teamlead_
-                                  if (_canOpenEnquiryOverview) ...[
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => Enquiry(),
-                                          ),
-                                        );
-                                      },
-                                      child:
-                                          (AuthRepository.authEmail?.contains(
-                                                    "salesadmin_",
-                                                  ) ==
-                                                  true ||
-                                              AuthRepository.authEmail
-                                                      ?.contains(
-                                                        "superadmin_",
-                                                      ) ==
-                                                  true)
-                                          ? Row(
-                                              children: [
-                                                Text(
-                                                  "See all",
-                                                  style: GoogleFonts.figtree(
-                                                    fontSize: 14,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                                const Icon(
-                                                  Icons.chevron_right,
-                                                  color: Colors.grey,
-                                                ),
-                                              ],
-                                            )
-                                          : const SizedBox.shrink(),
-                                    ),
-                                  ],
+                                 if (_canOpenEnquiryOverview &&
+    (AuthRepository.authEmail?.contains("salesadmin_") == true ||
+     AuthRepository.authEmail?.contains("superadmin_") == true)) ...[
+  TextButton(
+    onPressed: () {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Enquiry(),
+        ),
+      );
+    },
+    child: Row(
+      children: [
+        Text(
+          "See all",
+          style: GoogleFonts.figtree(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+        const Icon(
+          Icons.chevron_right,
+          color: Colors.grey,
+        ),
+      ],
+    ),
+  ),
+],
                                 ],
                               ),
                               const SizedBox(height: 12),

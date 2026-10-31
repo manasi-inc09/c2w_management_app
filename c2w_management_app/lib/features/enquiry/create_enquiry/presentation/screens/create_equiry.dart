@@ -501,10 +501,11 @@ class _CreateEquiryState extends State<CreateEquiry> {
               state.wasRepeatEnquiry
                   ? 'New enquiry added; previous enquiry moved to history'
                   : 'Enquiry Successfully Created',
-              style: TextStyle(
+              style: GoogleFonts.figtree(
                 color: Colors.white70,
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
+                
               ),
             ),
             alignment: Alignment.topCenter,
